@@ -1,22 +1,11 @@
 {
-  "version": 2,
-  "name": "travner-web-frontend",
-  "builds": [
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/travner-web-frontend/browser",
+  "installCommand": "npm install",
+  "rewrites": [
     {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist/travner-web-frontend"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
