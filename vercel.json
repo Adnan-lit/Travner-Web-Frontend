@@ -1,13 +1,22 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist/travner-web-frontend",
-  "devCommand": "ng serve --port 3000",
-  "installCommand": "npm install",
-  "framework": "angular",
-  "rewrites": [
+  "version": 2,
+  "name": "travner-web-frontend",
+  "builds": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist/travner-web-frontend"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
