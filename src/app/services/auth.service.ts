@@ -31,8 +31,8 @@ export interface User {
     providedIn: 'root'
 })
 export class AuthService {
-    // Direct API URL - backend CORS is now working
-    private readonly API_BASE_URL = 'https://travner-backend.up.railway.app';
+    // API URL configuration for different environments
+    private readonly API_BASE_URL = this.getApiBaseUrl();
 
     private currentUserSubject = new BehaviorSubject<User | null>(null);
     public currentUser$ = this.currentUserSubject.asObservable();
@@ -43,9 +43,34 @@ export class AuthService {
         private http: HttpClient,
         private router: Router
     ) {
-        console.log('AuthService initialized with API URL:', this.API_BASE_URL);
+        console.log('🚀 AuthService initialized');
+        console.log('🌐 Environment:', this.isProduction() ? 'Production' : 'Development');
+        console.log('🔗 API Base URL:', this.API_BASE_URL);
+        console.log('🌍 Frontend Origin:', window.location.origin);
         // Check if user is already logged in on service initialization
         this.checkStoredAuth();
+    }
+
+    /**
+     * Determine the appropriate API base URL based on environment
+     */
+    private getApiBaseUrl(): string {
+        // Check if we're in production (Vercel deployment)
+        if (this.isProduction()) {
+            return 'https://travner-backend.up.railway.app';
+        } else {
+            // Development environment
+            return 'https://travner-backend.up.railway.app';
+        }
+    }
+
+    /**
+     * Check if we're running in production environment
+     */
+    private isProduction(): boolean {
+        return window.location.hostname !== 'localhost' &&
+            window.location.hostname !== '127.0.0.1' &&
+            !window.location.hostname.includes('localhost');
     }
 
     /**
@@ -256,83 +281,6 @@ export class AuthService {
         if (authData && authData.user) {
             this.setCurrentUser(authData.user);
         }
-    }
-
-    /**
-     * Test CORS configuration with enhanced debugging
-     */
-    testCorsConfiguration(): Observable<any> {
-        console.log('🧪 Testing CORS configuration...');
-        console.log('Frontend Origin:', window.location.origin);
-        console.log('API Base URL:', this.API_BASE_URL);
-
-        const headers = new HttpHeaders({
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        });
-
-        console.log('🔍 Testing preflight request (OPTIONS)...');
-
-        // Test with a simple OPTIONS request first
-        return this.http.options(`${this.API_BASE_URL}/user`, {
-            headers,
-            observe: 'response'
-        }).pipe(
-            tap(response => {
-                console.log('✅ CORS preflight successful:', response);
-                console.log('📋 Response headers:');
-                response.headers.keys().forEach(key => {
-                    console.log(`  ${key}: ${response.headers.get(key)}`);
-                });
-
-                // Check for required CORS headers
-                const corsHeaders = {
-                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
-                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
-                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers'),
-                    'Access-Control-Allow-Credentials': response.headers.get('Access-Control-Allow-Credentials')
-                };
-
-                console.log('🔎 CORS Headers Analysis:', corsHeaders);
-
-                if (!corsHeaders['Access-Control-Allow-Origin']) {
-                    console.warn('⚠️ Missing Access-Control-Allow-Origin header');
-                }
-                if (!corsHeaders['Access-Control-Allow-Methods']) {
-                    console.warn('⚠️ Missing Access-Control-Allow-Methods header');
-                }
-                if (corsHeaders['Access-Control-Allow-Credentials'] !== 'true') {
-                    console.warn('⚠️ Access-Control-Allow-Credentials not set to true');
-                }
-            }),
-            catchError(error => {
-                console.error('❌ CORS preflight failed:', error);
-                console.error('📊 Error details:', {
-                    status: error.status,
-                    statusText: error.statusText,
-                    message: error.message,
-                    url: error.url
-                });
-
-                if (error.status === 0) {
-                    console.error('🚨 CORS is NOT properly configured on the backend');
-                    console.error('🔧 Backend needs to allow origin:', window.location.origin);
-                    console.error('📝 Required backend configuration:');
-                    console.error('   - Access-Control-Allow-Origin: http://localhost:4200');
-                    console.error('   - Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
-                    console.error('   - Access-Control-Allow-Headers: *');
-                    console.error('   - Access-Control-Allow-Credentials: true');
-                } else if (error.status === 403) {
-                    console.error('🚫 Backend is rejecting preflight requests');
-                    console.error('💡 This suggests CORS configuration is not active');
-                } else if (error.status === 404) {
-                    console.error('🔍 OPTIONS method not allowed on this endpoint');
-                    console.error('💡 Backend may need to explicitly handle OPTIONS requests');
-                }
-
-                throw error;
-            })
-        );
     }
 
     /**

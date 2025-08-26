@@ -19,7 +19,7 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  background: 
+  background:
     radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
     radial-gradient(circle at 80% 70%, var(--primary-400) 0%, transparent 50%);
   animation: backgroundFloat 25s ease-in-out infinite;
@@ -27,8 +27,15 @@
 }
 
 @keyframes backgroundFloat {
-  0%, 100% { transform: rotate(0deg) scale(1); }
-  50% { transform: rotate(180deg) scale(1.1); }
+
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+
+  50% {
+    transform: rotate(180deg) scale(1.1);
+  }
 }
 
 /* Modern Glass Card */
@@ -47,8 +54,15 @@
 }
 
 @keyframes cardFloat {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-12px);
+  }
 }
 
 /* Modern Header */
@@ -107,8 +121,15 @@
 }
 
 @keyframes messageSlide {
-  0% { opacity: 0; transform: translateY(-10px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Form Styling */
@@ -167,8 +188,15 @@
 }
 
 @keyframes errorSlide {
-  0% { opacity: 0; transform: translateY(-8px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Password Input */
@@ -304,8 +332,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Footer */
@@ -385,28 +418,41 @@
   transform: translateY(-2px);
 }
 
-/* Navigation */
-.nav-link {
-  margin-top: var(--space-8);
-  text-align: center;
-}
-
-.back-home {
-  display: inline-flex;
+/* Home Button */
+.home-button {
+  position: absolute;
+  top: var(--space-6);
+  right: var(--space-6);
+  display: flex;
   align-items: center;
-  gap: var(--space-2);
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-xl);
   color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
-  font-size: var(--text-sm);
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.05);
+  transition: all var(--transition-normal);
+  z-index: 10;
+}
+
+.home-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.15);
+}
+
+.home-button svg {
+  stroke-width: 2;
   transition: all var(--transition-normal);
 }
 
-.back-home:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
+.home-button:hover svg {
+  transform: scale(1.1);
 }
 
 /* Responsive */
@@ -414,12 +460,12 @@
   .auth-card {
     padding: var(--space-8);
   }
-  
+
   .form-options {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .social-buttons {
     flex-direction: column;
   }
