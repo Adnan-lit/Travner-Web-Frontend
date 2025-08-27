@@ -25,6 +25,7 @@ export interface User {
     firstName: string;
     lastName: string;
     email: string;
+    roles?: string[];
 }
 
 @Injectable({
@@ -119,36 +120,39 @@ export class AuthService {
         const headers = new HttpHeaders({
             'Authorization': `Basic ${credentials}`,
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest' // Prevents browser auth popup
         });
 
         console.log('Attempting signin with username:', username);
         console.log('API URL:', `${this.API_BASE_URL}/user`);
-        console.log('Auth header:', `Basic ${credentials}`);
         console.log('Request headers:', headers);
 
         return this.http.get<any>(`${this.API_BASE_URL}/user`, {
             headers,
-            withCredentials: true // Basic Auth requires credentials
+            withCredentials: false, // Changed to false to prevent browser auth popup
+            observe: 'response' // Get full response to handle status codes properly
         })
             .pipe(
                 map(response => {
                     console.log('Raw signin response:', response);
 
+                    const body = response.body;
                     // Handle different response formats
                     let user: User;
-                    if (response.userName || response.username) {
+                    if (body.userName || body.username) {
                         // Response is already in the right format or similar
                         user = {
-                            id: response.id,
-                            userName: response.userName || response.username,
-                            firstName: response.firstName || response.firstname,
-                            lastName: response.lastName || response.lastname,
-                            email: response.email
+                            id: body.id,
+                            userName: body.userName || body.username,
+                            firstName: body.firstName || body.firstname,
+                            lastName: body.lastName || body.lastname,
+                            email: body.email,
+                            roles: body.roles || []
                         };
                     } else {
                         // Fallback - use the response as is and hope it has the right structure
-                        user = response as User;
+                        user = body as User;
                     }
 
                     return user;
@@ -169,16 +173,28 @@ export class AuthService {
                         headers: error.headers
                     });
 
-                    // Enhanced CORS detection
-                    if (error.status === 0) {
+                    // Clear any stored auth data on error
+                    this.clearAuthData();
+
+                    // Handle specific error cases
+                    if (error.status === 401) {
+                        console.error('🚫 Authentication failed: Invalid credentials');
+                        // Don't re-throw 401 errors to prevent browser auth popup
+                        const authError = new Error('Invalid username or password');
+                        (authError as any).status = 401;
+                        throw authError;
+                    } else if (error.status === 0) {
                         console.error('🚨 CORS/Network Error Detected:');
                         console.error('- Backend @CrossOrigin may not be working');
                         console.error('- Check browser Network tab for preflight requests');
                         console.error('- Verify backend allows:', window.location.origin);
+                        const networkError = new Error('Network connection failed. Please check your connection and try again.');
+                        (networkError as any).status = 0;
+                        throw networkError;
+                    } else {
+                        // For other errors, throw as-is
+                        throw error;
                     }
-
-                    this.clearAuthData();
-                    throw error;
                 })
             );
     }

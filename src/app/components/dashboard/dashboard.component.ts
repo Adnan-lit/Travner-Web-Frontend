@@ -1,13 +1,13 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
 import { CursorService } from '../../services/cursor.service';
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -23,6 +23,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     private renderer: Renderer2,
     private cursorService: CursorService
   ) { }
+
+  /**
+   * Check if current user is admin
+   */
+  isAdmin(): boolean {
+    return this.currentUser?.roles?.includes('ADMIN') || false;
+  }
 
   ngOnInit(): void {
     this.cursorService.initializeCursor(this.renderer, this.el);

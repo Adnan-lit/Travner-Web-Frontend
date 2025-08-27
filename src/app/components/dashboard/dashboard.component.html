@@ -11,6 +11,7 @@
           <a href="#" class="nav-link">My Trips</a>
           <a href="#" class="nav-link">Discover</a>
           <a href="#" class="nav-link">Profile</a>
+          <a routerLink="/admin" class="nav-link admin-link" *ngIf="isAdmin()">Admin</a>
         </nav>
         <div class="user-menu">
           <div class="user-info" *ngIf="currentUser">

@@ -152,31 +152,11 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
             fullError: error
           });
 
-          // Enhanced CORS detection with browser origin verification
-          const currentOrigin = window.location.origin;
-          console.log('🌐 Current browser origin:', currentOrigin);
-          console.log('🔗 API URL:', error.url);
-
-          // Handle different error scenarios with enhanced CORS debugging
+          // Handle different error scenarios
           if (error.status === 0) {
-            // Status 0 usually indicates CORS or network connectivity issues
-            console.log('🔴 CORS/Network Error Detected:');
-            console.log('- Backend server needs CORS configuration');
-            console.log(`- Backend should allow Origin: ${currentOrigin}`);
-            console.log('- Check if the backend server is running');
-            console.log('- Verify backend CORS allows credentials if needed');
-
-            // Check if this is likely a CORS issue vs network issue
-            if (error.error instanceof ProgressEvent) {
-              console.log('🚫 This appears to be a CORS preflight failure');
-              this.errorMessage = `🔴 CORS Error: Backend server is not configured to allow requests from ${currentOrigin}. ` +
-                'The backend needs to include this origin in its CORS configuration.';
-            } else {
-              console.log('🚫 This appears to be a network connectivity issue');
-              this.errorMessage = '🔴 Network Error: Unable to connect to the backend server. Please check if the server is running.';
-            }
+            this.errorMessage = error.message || 'Network Error: Unable to connect to the backend server. Please check if the server is running.';
           } else if (error.status === 401) {
-            this.errorMessage = 'Invalid username or password. Please check your credentials and try again.';
+            this.errorMessage = error.message || 'Invalid username or password. Please check your credentials and try again.';
           } else if (error.status === 403) {
             this.errorMessage = 'Access denied. Please check your username and password.';
           } else if (error.status === 404) {
@@ -184,16 +164,14 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
           } else if (error.status === 500) {
             this.errorMessage = 'Server error. Please try again later.';
           } else {
-            this.errorMessage = error.error?.message || `Sign in failed (${error.status}). Please check your credentials and try again.`;
+            this.errorMessage = error.message || `Sign in failed. Please check your credentials and try again.`;
           }
 
-          // Log detailed debugging information for developers
+          // Log debugging information for developers
           console.log('🔍 Debugging Information:');
-          console.log(`  - Frontend Origin: ${currentOrigin}`);
-          console.log(`  - Backend URL: ${error.url}`);
+          console.log(`  - Frontend Origin: ${window.location.origin}`);
           console.log(`  - Error Status: ${error.status}`);
-          console.log(`  - Error Type: ${error.error?.constructor?.name || 'Unknown'}`);
-          console.log('  - Suggestion: Test CORS using the button below');
+          console.log(`  - Error Message: ${error.message}`);
         }
       });
     } else {
