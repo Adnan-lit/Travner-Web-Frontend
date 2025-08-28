@@ -52,8 +52,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!this.currentUser) {
       this.router.navigate(['/signin']);
     }
-
-    console.log('Dashboard loaded for user:', this.currentUser);
   }
 
   ngAfterViewInit(): void {
@@ -124,7 +122,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   logout(): void {
-    console.log('Logging out user...');
     this.authService.logout();
     // AuthService.logout() already navigates to home page
   }

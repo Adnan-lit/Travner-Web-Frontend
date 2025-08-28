@@ -72,24 +72,16 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
     ) { }
 
     ngOnInit(): void {
-        console.log('🔧 Admin component initializing...');
-
         // Check authentication first
         const currentUser = this.authService.getCurrentUser();
-        console.log('👤 Current user:', currentUser);
 
         if (!currentUser) {
-            console.log('❌ No user found, redirecting to signin');
             this.router.navigate(['/signin']);
             return;
         }
 
-        console.log('🔑 User roles:', currentUser?.roles);
-        console.log('👑 Is admin check:', this.adminService.isCurrentUserAdmin());
-
         // Check if user has admin privileges
         if (!this.adminService.isCurrentUserAdmin()) {
-            console.log('⚠️ User does not have admin privileges, redirecting to dashboard');
             this.errorMessage = 'Access denied. You need admin privileges to access this page.';
             setTimeout(() => {
                 this.router.navigate(['/dashboard']);
@@ -97,7 +89,6 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
             return;
         }
 
-        console.log('✅ User has admin privileges, initializing dashboard');
         this.initializeForms();
         this.cursorService.initializeCursor(this.renderer, this.el);
 
@@ -150,133 +141,58 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     private loadInitialData(): void {
-        console.log('📊 Loading initial data for activeTab:', this.activeTab);
-
-        // Always load system stats first
         this.loadSystemStats();
-
-        // Load users data
         this.loadUsers();
-
-        console.log('✅ Initial data loading started');
     }
 
     // Tab management
     setActiveTab(tab: string): void {
-        console.log('📦 Switching to tab:', tab);
         this.activeTab = tab;
         this.clearMessages();
 
         if (tab === 'overview') {
-            console.log('📊 Loading overview data...');
             this.loadSystemStats();
         } else if (tab === 'users') {
-            console.log('👥 Loading users data...');
             this.loadUsers();
         }
     }
 
     // Data loading methods
     loadUsers(): void {
-        console.log('👥 Loading users...');
-        console.log('🔗 Admin service available:', !!this.adminService);
-
         this.isLoading = true;
         this.clearMessages();
 
-        try {
-            const subscription = this.adminService.getAllUsers().subscribe({
-                next: (users) => {
-                    console.log('✅ Users loaded successfully:', users.length, 'users');
-                    console.log('📝 Users data sample:', users.slice(0, 2));
-                    this.users = users;
-                    this.applyFilters();
-                    this.isLoading = false;
-                },
-                error: (error) => {
-                    console.error('❌ Error loading users:', error);
-                    console.error('❌ Error details:', {
-                        status: error.status,
-                        message: error.message,
-                        error: error.error
-                    });
-                    this.errorMessage = `Failed to load users: ${error.message}`;
-                    this.isLoading = false;
+        const subscription = this.adminService.getAllUsers().subscribe({
+            next: (users) => {
+                this.users = users;
+                this.applyFilters();
+                this.isLoading = false;
+            },
+            error: (error) => {
+                this.errorMessage = `Failed to load users: ${error.message}`;
+                this.isLoading = false;
+            }
+        });
 
-                    // For debugging - create mock data
-                    console.log('🧪 Creating mock users for debugging');
-                    this.users = [
-                        {
-                            id: '1',
-                            userName: 'testuser',
-                            firstName: 'Test',
-                            lastName: 'User',
-                            email: 'test@example.com',
-                            roles: ['USER']
-                        },
-                        {
-                            id: '2',
-                            userName: 'admin',
-                            firstName: 'Admin',
-                            lastName: 'User',
-                            email: 'admin@example.com',
-                            roles: ['ADMIN', 'USER']
-                        }
-                    ];
-                    this.applyFilters();
-                }
-            });
-
-            this.subscriptions.push(subscription);
-        } catch (error) {
-            console.error('💥 Exception while loading users:', error);
-            this.errorMessage = `System error: ${error}`;
-            this.isLoading = false;
-        }
+        this.subscriptions.push(subscription);
     }
 
     loadSystemStats(): void {
-        console.log('📊 Loading system stats...');
-        console.log('🔗 Admin service available:', !!this.adminService);
-        console.log('🔗 HTTP client configured:', this.adminService);
-
         this.isStatsLoading = true;
         this.clearMessages();
 
-        try {
-            const subscription = this.adminService.getSystemStats().subscribe({
-                next: (stats) => {
-                    console.log('✅ System stats loaded successfully:', stats);
-                    this.systemStats = stats;
-                    this.isStatsLoading = false;
-                },
-                error: (error) => {
-                    console.error('❌ Error loading system stats:', error);
-                    console.error('❌ Error details:', {
-                        status: error.status,
-                        message: error.message,
-                        error: error.error
-                    });
-                    this.errorMessage = `Failed to load system statistics: ${error.message}`;
-                    this.isStatsLoading = false;
+        const subscription = this.adminService.getSystemStats().subscribe({
+            next: (stats) => {
+                this.systemStats = stats;
+                this.isStatsLoading = false;
+            },
+            error: (error) => {
+                this.errorMessage = `Failed to load system statistics: ${error.message}`;
+                this.isStatsLoading = false;
+            }
+        });
 
-                    // For debugging - create mock data
-                    console.log('🧪 Creating mock system stats for debugging');
-                    this.systemStats = {
-                        totalUsers: 0,
-                        adminUsers: 0,
-                        regularUsers: 0,
-                        timestamp: Date.now()
-                    };
-                }
-            });
-
-            this.subscriptions.push(subscription);
-        } catch (error) {
-            console.error('💥 Exception while loading system stats:', error);
-            this.errorMessage = `System error: ${error}`;
-            this.isStatsLoading = false;
-        }
+        this.subscriptions.push(subscription);
     }
 
     // Filtering and sorting
@@ -514,21 +430,6 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
     getCurrentUser(): string {
         const currentUser = this.authService.getCurrentUser();
         return currentUser ? currentUser.userName : '';
-    }
-
-    // Debug method to check admin status
-    isCurrentUserAdminDebug(): boolean {
-        const currentUser = this.authService.getCurrentUser();
-        console.log('🔍 Debug admin check - User:', currentUser);
-        console.log('🔍 Debug admin check - Roles:', currentUser?.roles);
-        const isAdmin = currentUser?.roles?.includes('ADMIN') || false;
-        console.log('🔍 Debug admin check - Is Admin:', isAdmin);
-        return isAdmin;
-    }
-
-    // Make adminService accessible in template for debugging
-    get adminServiceRef() {
-        return this.adminService;
     }
 
     clearMessages(): void {

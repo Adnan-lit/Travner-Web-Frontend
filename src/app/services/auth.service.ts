@@ -44,10 +44,6 @@ export class AuthService {
         private http: HttpClient,
         private router: Router
     ) {
-        console.log('🚀 AuthService initialized');
-        console.log('🌐 Environment:', this.isProduction() ? 'Production' : 'Development');
-        console.log('🔗 API Base URL:', this.API_BASE_URL);
-        console.log('🌍 Frontend Origin:', window.location.origin);
         // Check if user is already logged in on service initialization
         this.checkStoredAuth();
     }
@@ -103,11 +99,7 @@ export class AuthService {
             withCredentials: false // Signup doesn't need credentials
         })
             .pipe(
-                tap(response => {
-                    console.log('Signup response:', response);
-                }),
                 catchError(error => {
-                    console.error('Signup error:', error);
                     throw error;
                 })
             );
@@ -125,10 +117,6 @@ export class AuthService {
             'X-Requested-With': 'XMLHttpRequest' // Prevents browser auth popup
         });
 
-        console.log('Attempting signin with username:', username);
-        console.log('API URL:', `${this.API_BASE_URL}/user`);
-        console.log('Request headers:', headers);
-
         return this.http.get<any>(`${this.API_BASE_URL}/user`, {
             headers,
             withCredentials: false, // Changed to false to prevent browser auth popup
@@ -136,8 +124,6 @@ export class AuthService {
         })
             .pipe(
                 map(response => {
-                    console.log('Raw signin response:', response);
-
                     const body = response.body;
                     // Handle different response formats
                     let user: User;
@@ -162,33 +148,18 @@ export class AuthService {
                     // Store authentication data
                     this.setCurrentUser(user);
                     this.storeAuthData(username, password, user);
-                    console.log('Sign in successful, processed user:', user);
                 }),
                 catchError(error => {
-                    console.error('🔴 Sign in error details:', {
-                        status: error.status,
-                        statusText: error.statusText,
-                        error: error.error,
-                        message: error.message,
-                        url: error.url,
-                        headers: error.headers
-                    });
-
                     // Clear any stored auth data on error
                     this.clearAuthData();
 
                     // Handle specific error cases
                     if (error.status === 401) {
-                        console.error('🚫 Authentication failed: Invalid credentials');
                         // Don't re-throw 401 errors to prevent browser auth popup
                         const authError = new Error('Invalid username or password');
                         (authError as any).status = 401;
                         throw authError;
                     } else if (error.status === 0) {
-                        console.error('🚨 CORS/Network Error Detected:');
-                        console.error('- Backend @CrossOrigin may not be working');
-                        console.error('- Check browser Network tab for preflight requests');
-                        console.error('- Verify backend allows:', window.location.origin);
                         const networkError = new Error('Network connection failed. Please check your connection and try again.');
                         (networkError as any).status = 0;
                         throw networkError;
@@ -222,11 +193,9 @@ export class AuthService {
         })
             .pipe(
                 tap(() => {
-                    console.log('User deleted successfully');
                     this.logout();
                 }),
                 catchError(error => {
-                    console.error('Delete user error:', error);
                     throw error;
                 })
             );
@@ -244,11 +213,7 @@ export class AuthService {
             withCredentials: false
         })
             .pipe(
-                tap(response => {
-                    console.log('Username check response:', response);
-                }),
                 catchError(error => {
-                    console.error('Username check error:', error);
                     throw error;
                 })
             );
@@ -268,11 +233,7 @@ export class AuthService {
             withCredentials: false
         })
             .pipe(
-                tap(response => {
-                    console.log('Password reset request response:', response);
-                }),
                 catchError(error => {
-                    console.error('Password reset request error:', error);
                     throw error;
                 })
             );
@@ -292,11 +253,7 @@ export class AuthService {
             withCredentials: false
         })
             .pipe(
-                tap(response => {
-                    console.log('Password reset response:', response);
-                }),
                 catchError(error => {
-                    console.error('Password reset error:', error);
                     throw error;
                 })
             );
@@ -324,7 +281,6 @@ export class AuthService {
         })
             .pipe(
                 tap(response => {
-                    console.log('Profile updated successfully:', response);
                     // Update local user data
                     const currentUser = this.getCurrentUser();
                     if (currentUser) {
@@ -334,7 +290,6 @@ export class AuthService {
                     }
                 }),
                 catchError(error => {
-                    console.error('Profile update error:', error);
                     throw error;
                 })
             );
@@ -362,7 +317,6 @@ export class AuthService {
         })
             .pipe(
                 tap(response => {
-                    console.log('Profile updated successfully:', response);
                     // Update local user data
                     const currentUser = this.getCurrentUser();
                     if (currentUser) {
@@ -372,7 +326,6 @@ export class AuthService {
                     }
                 }),
                 catchError(error => {
-                    console.error('Profile update error:', error);
                     throw error;
                 })
             );
@@ -402,7 +355,6 @@ export class AuthService {
         })
             .pipe(
                 tap(response => {
-                    console.log('Password changed successfully:', response);
                     // Update stored credentials with new password
                     const currentUser = this.getCurrentUser();
                     if (currentUser) {
@@ -410,7 +362,6 @@ export class AuthService {
                     }
                 }),
                 catchError(error => {
-                    console.error('Password change error:', error);
                     throw error;
                 })
             );
@@ -434,11 +385,7 @@ export class AuthService {
             withCredentials: false
         })
             .pipe(
-                tap(response => {
-                    console.log('First admin created successfully:', response);
-                }),
                 catchError(error => {
-                    console.error('Create first admin error:', error);
                     throw error;
                 })
             );

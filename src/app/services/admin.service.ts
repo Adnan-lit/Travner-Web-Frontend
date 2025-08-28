@@ -49,10 +49,7 @@ export class AdminService {
     constructor(
         private http: HttpClient,
         private authService: AuthService
-    ) {
-        console.log('🔧 AdminService initialized');
-        console.log('🔗 Admin API Base URL:', this.ADMIN_BASE_URL);
-    }
+    ) { }
 
     /**
      * Determine the appropriate admin API base URL based on environment
@@ -107,17 +104,11 @@ export class AdminService {
      * Get all users in the system
      */
     getAllUsers(): Observable<AdminUser[]> {
-        console.log('🔍 Fetching all users...');
-
         return this.http.get<AdminUser[]>(`${this.ADMIN_BASE_URL}/users`, {
             headers: this.getAdminHeaders(),
             withCredentials: false
         }).pipe(
-            tap(users => {
-                console.log('✅ Successfully fetched users:', users.length);
-            }),
             catchError(error => {
-                console.error('❌ Error fetching users:', error);
                 throw this.handleAdminError(error);
             })
         );
@@ -127,17 +118,11 @@ export class AdminService {
      * Get user by username
      */
     getUserByUsername(username: string): Observable<AdminUser> {
-        console.log('🔍 Fetching user:', username);
-
         return this.http.get<AdminUser>(`${this.ADMIN_BASE_URL}/users/${username}`, {
             headers: this.getAdminHeaders(),
             withCredentials: false
         }).pipe(
-            tap(user => {
-                console.log('✅ Successfully fetched user:', user);
-            }),
             catchError(error => {
-                console.error('❌ Error fetching user:', error);
                 throw this.handleAdminError(error);
             })
         );
@@ -147,17 +132,11 @@ export class AdminService {
      * Delete user by username
      */
     deleteUser(username: string): Observable<AdminResponse> {
-        console.log('🗑️ Deleting user:', username);
-
         return this.http.delete<AdminResponse>(`${this.ADMIN_BASE_URL}/users/${username}`, {
             headers: this.getAdminHeaders(),
             withCredentials: false
         }).pipe(
-            tap(response => {
-                console.log('✅ User deleted successfully:', response);
-            }),
             catchError(error => {
-                console.error('❌ Error deleting user:', error);
                 throw this.handleAdminError(error);
             })
         );
@@ -167,19 +146,13 @@ export class AdminService {
      * Update user roles
      */
     updateUserRoles(username: string, roles: string[]): Observable<AdminResponse> {
-        console.log('🔄 Updating roles for user:', username, roles);
-
         const requestBody: UpdateRolesRequest = { roles };
 
         return this.http.put<AdminResponse>(`${this.ADMIN_BASE_URL}/users/${username}/roles`, requestBody, {
             headers: this.getAdminHeaders(),
             withCredentials: false
         }).pipe(
-            tap(response => {
-                console.log('✅ User roles updated successfully:', response);
-            }),
             catchError(error => {
-                console.error('❌ Error updating user roles:', error);
                 throw this.handleAdminError(error);
             })
         );
@@ -189,19 +162,13 @@ export class AdminService {
      * Reset user password
      */
     resetUserPassword(username: string, newPassword: string): Observable<AdminResponse> {
-        console.log('🔐 Resetting password for user:', username);
-
         const requestBody: ResetPasswordRequest = { password: newPassword };
 
         return this.http.put<AdminResponse>(`${this.ADMIN_BASE_URL}/users/${username}/password`, requestBody, {
             headers: this.getAdminHeaders(),
             withCredentials: false
         }).pipe(
-            tap(response => {
-                console.log('✅ Password reset successfully:', response);
-            }),
             catchError(error => {
-                console.error('❌ Error resetting password:', error);
                 throw this.handleAdminError(error);
             })
         );
@@ -211,17 +178,11 @@ export class AdminService {
      * Promote user to admin
      */
     promoteUserToAdmin(username: string): Observable<AdminResponse> {
-        console.log('⬆️ Promoting user to admin:', username);
-
         return this.http.post<AdminResponse>(`${this.ADMIN_BASE_URL}/users/${username}/promote`, {}, {
             headers: this.getAdminHeaders(),
             withCredentials: false
         }).pipe(
-            tap(response => {
-                console.log('✅ User promoted to admin successfully:', response);
-            }),
             catchError(error => {
-                console.error('❌ Error promoting user:', error);
                 throw this.handleAdminError(error);
             })
         );
@@ -231,17 +192,11 @@ export class AdminService {
      * Get users by role
      */
     getUsersByRole(role: string): Observable<AdminUser[]> {
-        console.log('🔍 Fetching users by role:', role);
-
         return this.http.get<AdminUser[]>(`${this.ADMIN_BASE_URL}/users/role/${role}`, {
             headers: this.getAdminHeaders(),
             withCredentials: false
         }).pipe(
-            tap(users => {
-                console.log(`✅ Successfully fetched ${role} users:`, users.length);
-            }),
             catchError(error => {
-                console.error('❌ Error fetching users by role:', error);
                 throw this.handleAdminError(error);
             })
         );
@@ -251,17 +206,11 @@ export class AdminService {
      * Get system statistics
      */
     getSystemStats(): Observable<SystemStats> {
-        console.log('📊 Fetching system statistics...');
-
         return this.http.get<SystemStats>(`${this.ADMIN_BASE_URL}/stats`, {
             headers: this.getAdminHeaders(),
             withCredentials: false
         }).pipe(
-            tap(stats => {
-                console.log('✅ Successfully fetched system stats:', stats);
-            }),
             catchError(error => {
-                console.error('❌ Error fetching system stats:', error);
                 throw this.handleAdminError(error);
             })
         );
@@ -271,17 +220,11 @@ export class AdminService {
      * Create new admin user
      */
     createAdminUser(userData: CreateUserRequest): Observable<AdminResponse> {
-        console.log('➕ Creating new admin user:', userData.userName);
-
         return this.http.post<AdminResponse>(`${this.ADMIN_BASE_URL}/users`, userData, {
             headers: this.getAdminHeaders(),
             withCredentials: false
         }).pipe(
-            tap(response => {
-                console.log('✅ Admin user created successfully:', response);
-            }),
             catchError(error => {
-                console.error('❌ Error creating admin user:', error);
                 throw this.handleAdminError(error);
             })
         );
