@@ -56,11 +56,12 @@ export class AuthService {
      * Determine the appropriate API base URL based on environment
      */
     private getApiBaseUrl(): string {
-        // Check if we're in production (Vercel deployment)
-        if (this.isProduction()) {
-            return 'https://travner-backend.up.railway.app';
+        // For local development, use localhost if backend is running locally
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            // First try localhost:8080 for local development
+            return 'http://localhost:8080';
         } else {
-            // Development environment
+            // Production environment - use Railway deployment
             return 'https://travner-backend.up.railway.app';
         }
     }
@@ -217,7 +218,7 @@ export class AuthService {
 
         return this.http.delete(`${this.API_BASE_URL}/user`, {
             headers,
-            withCredentials: true
+            withCredentials: false
         })
             .pipe(
                 tap(() => {
@@ -226,6 +227,218 @@ export class AuthService {
                 }),
                 catchError(error => {
                     console.error('Delete user error:', error);
+                    throw error;
+                })
+            );
+    }
+
+    /**
+     * Check username availability
+     */
+    checkUsername(username: string): Observable<{ message: string; available: boolean }> {
+        return this.http.get<{ message: string; available: boolean }>(`${this.API_BASE_URL}/public/check-username/${username}`, {
+            headers: new HttpHeaders({
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }),
+            withCredentials: false
+        })
+            .pipe(
+                tap(response => {
+                    console.log('Username check response:', response);
+                }),
+                catchError(error => {
+                    console.error('Username check error:', error);
+                    throw error;
+                })
+            );
+    }
+
+    /**
+     * Request password reset
+     */
+    requestPasswordReset(username: string): Observable<{ message: string; resetToken?: string }> {
+        const requestBody = { username };
+
+        return this.http.post<{ message: string; resetToken?: string }>(`${this.API_BASE_URL}/public/forgot-password`, requestBody, {
+            headers: new HttpHeaders({
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }),
+            withCredentials: false
+        })
+            .pipe(
+                tap(response => {
+                    console.log('Password reset request response:', response);
+                }),
+                catchError(error => {
+                    console.error('Password reset request error:', error);
+                    throw error;
+                })
+            );
+    }
+
+    /**
+     * Reset password with token
+     */
+    resetPasswordWithToken(token: string, newPassword: string): Observable<{ message: string }> {
+        const requestBody = { token, newPassword };
+
+        return this.http.post<{ message: string }>(`${this.API_BASE_URL}/public/reset-password`, requestBody, {
+            headers: new HttpHeaders({
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }),
+            withCredentials: false
+        })
+            .pipe(
+                tap(response => {
+                    console.log('Password reset response:', response);
+                }),
+                catchError(error => {
+                    console.error('Password reset error:', error);
+                    throw error;
+                })
+            );
+    }
+
+    /**
+     * Update user profile (full update)
+     */
+    updateProfile(profileData: { firstName: string; lastName: string; email: string }): Observable<{ message: string }> {
+        const authData = this.getStoredAuthData();
+        if (!authData) {
+            throw new Error('No authentication data found');
+        }
+
+        const credentials = btoa(`${authData.username}:${authData.password}`);
+        const headers = new HttpHeaders({
+            'Authorization': `Basic ${credentials}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        });
+
+        return this.http.put<{ message: string }>(`${this.API_BASE_URL}/user/profile`, profileData, {
+            headers,
+            withCredentials: false
+        })
+            .pipe(
+                tap(response => {
+                    console.log('Profile updated successfully:', response);
+                    // Update local user data
+                    const currentUser = this.getCurrentUser();
+                    if (currentUser) {
+                        const updatedUser = { ...currentUser, ...profileData };
+                        this.setCurrentUser(updatedUser);
+                        this.storeAuthData(authData.username, authData.password, updatedUser);
+                    }
+                }),
+                catchError(error => {
+                    console.error('Profile update error:', error);
+                    throw error;
+                })
+            );
+    }
+
+    /**
+     * Update user profile (partial update)
+     */
+    updateProfilePartial(profileData: Partial<{ firstName: string; lastName: string; email: string }>): Observable<{ message: string }> {
+        const authData = this.getStoredAuthData();
+        if (!authData) {
+            throw new Error('No authentication data found');
+        }
+
+        const credentials = btoa(`${authData.username}:${authData.password}`);
+        const headers = new HttpHeaders({
+            'Authorization': `Basic ${credentials}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        });
+
+        return this.http.patch<{ message: string }>(`${this.API_BASE_URL}/user/profile`, profileData, {
+            headers,
+            withCredentials: false
+        })
+            .pipe(
+                tap(response => {
+                    console.log('Profile updated successfully:', response);
+                    // Update local user data
+                    const currentUser = this.getCurrentUser();
+                    if (currentUser) {
+                        const updatedUser = { ...currentUser, ...profileData };
+                        this.setCurrentUser(updatedUser);
+                        this.storeAuthData(authData.username, authData.password, updatedUser);
+                    }
+                }),
+                catchError(error => {
+                    console.error('Profile update error:', error);
+                    throw error;
+                })
+            );
+    }
+
+    /**
+     * Change user password
+     */
+    changePassword(currentPassword: string, newPassword: string): Observable<{ message: string }> {
+        const authData = this.getStoredAuthData();
+        if (!authData) {
+            throw new Error('No authentication data found');
+        }
+
+        const credentials = btoa(`${authData.username}:${authData.password}`);
+        const headers = new HttpHeaders({
+            'Authorization': `Basic ${credentials}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        });
+
+        const requestBody = { currentPassword, newPassword };
+
+        return this.http.put<{ message: string }>(`${this.API_BASE_URL}/user/password`, requestBody, {
+            headers,
+            withCredentials: false
+        })
+            .pipe(
+                tap(response => {
+                    console.log('Password changed successfully:', response);
+                    // Update stored credentials with new password
+                    const currentUser = this.getCurrentUser();
+                    if (currentUser) {
+                        this.storeAuthData(authData.username, newPassword, currentUser);
+                    }
+                }),
+                catchError(error => {
+                    console.error('Password change error:', error);
+                    throw error;
+                })
+            );
+    }
+
+    /**
+     * Create first admin user (only works if no admin exists)
+     */
+    createFirstAdmin(userData: {
+        userName: string;
+        password: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+    }): Observable<{ message: string }> {
+        return this.http.post<{ message: string }>(`${this.API_BASE_URL}/public/create-first-admin`, userData, {
+            headers: new HttpHeaders({
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }),
+            withCredentials: false
+        })
+            .pipe(
+                tap(response => {
+                    console.log('First admin created successfully:', response);
+                }),
+                catchError(error => {
+                    console.error('Create first admin error:', error);
                     throw error;
                 })
             );
@@ -267,18 +480,29 @@ export class AuthService {
     private storeAuthData(username: string, password: string, user: User): void {
         const authData = {
             username,
-            password, // Note: In production, consider using tokens instead of storing passwords
-            user
+            password // Note: In production, consider using tokens instead of storing passwords
         };
         localStorage.setItem('travner_auth', JSON.stringify(authData));
+        localStorage.setItem('travner_user', JSON.stringify(user));
     }
 
     /**
      * Get stored authentication data
      */
     private getStoredAuthData(): { username: string; password: string; user: User } | null {
-        const stored = localStorage.getItem('travner_auth');
-        return stored ? JSON.parse(stored) : null;
+        const storedAuth = localStorage.getItem('travner_auth');
+        const storedUser = localStorage.getItem('travner_user');
+
+        if (storedAuth && storedUser) {
+            const authData = JSON.parse(storedAuth);
+            const userData = JSON.parse(storedUser);
+            return {
+                username: authData.username,
+                password: authData.password,
+                user: userData
+            };
+        }
+        return null;
     }
 
     /**
@@ -286,6 +510,7 @@ export class AuthService {
      */
     private clearAuthData(): void {
         localStorage.removeItem('travner_auth');
+        localStorage.removeItem('travner_user');
         this.setCurrentUser(null);
     }
 
@@ -293,9 +518,10 @@ export class AuthService {
      * Check if there's stored authentication data on app initialization
      */
     private checkStoredAuth(): void {
-        const authData = this.getStoredAuthData();
-        if (authData && authData.user) {
-            this.setCurrentUser(authData.user);
+        const storedUser = localStorage.getItem('travner_user');
+        if (storedUser) {
+            const user = JSON.parse(storedUser);
+            this.setCurrentUser(user);
         }
     }
 

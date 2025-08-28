@@ -74,6 +74,18 @@
     </div>
   </div>
 
+  <!-- Debug Information (Remove in production) -->
+  <div class="debug-info" style="background: rgba(255,255,255,0.1); padding: 1rem; margin: 1rem 0; border-radius: 8px; font-family: monospace; font-size: 12px;">
+    <h4>Debug Information:</h4>
+    <p><strong>Active Tab:</strong> {{ activeTab }}</p>
+    <p><strong>System Stats:</strong> {{ systemStats ? 'Loaded' : 'Not loaded' }}</p>
+    <p><strong>Users Count:</strong> {{ users.length }}</p>
+    <p><strong>Filtered Users:</strong> {{ filteredUsers.length }}</p>
+    <p><strong>Loading Stats:</strong> {{ isStatsLoading }}</p>
+    <p><strong>Loading Users:</strong> {{ isLoading }}</p>
+    <p><strong>Current User Admin:</strong> {{ isCurrentUserAdminDebug() }}</p>
+  </div>
+
   <!-- Main Content -->
   <main class="admin-main">
     <!-- Overview Tab -->
