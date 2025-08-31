@@ -58,10 +58,6 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
     // Available roles
     availableRoles = ['USER', 'ADMIN'];
 
-    // Diagnostic properties
-    diagnosticResults: any = null;
-    showDiagnosticResults = false;
-
     // Subscriptions
     private subscriptions: Subscription[] = [];
 
@@ -95,9 +91,6 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
 
         this.initializeForms();
         this.cursorService.initializeCursor(this.renderer, this.el);
-
-        // Load data immediately and set active tab
-        this.activeTab = 'users';
         this.loadInitialData();
     }
 
@@ -130,7 +123,6 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     private initializeAnimations(): void {
-        // Animate dashboard elements on load
         const elements = this.el.nativeElement.querySelectorAll('.fade-in');
         elements.forEach((element: HTMLElement, index: number) => {
             this.renderer.setStyle(element, 'opacity', '0');
@@ -147,11 +139,6 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
     private loadInitialData(): void {
         this.loadSystemStats();
         this.loadUsers();
-
-        // Add a small delay and then reload users to ensure proper initialization
-        setTimeout(() => {
-            this.loadUsers();
-        }, 500);
     }
 
     // Tab management
@@ -160,19 +147,16 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
         this.clearMessages();
 
         if (tab === 'overview') {
-            // Only reload stats if we don't have them or they're stale
             if (!this.systemStats || this.isStatsStale()) {
                 this.loadSystemStats();
             }
         } else if (tab === 'users') {
-            // Always reload users to ensure fresh data
             this.loadUsers();
         }
     }
 
     private isStatsStale(): boolean {
         if (!this.systemStats) return true;
-        // Consider stats stale if they're older than 5 minutes
         const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
         return this.systemStats.timestamp < fiveMinutesAgo;
     }
@@ -181,76 +165,18 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
     loadUsers(): void {
         this.isLoading = true;
         this.clearMessages();
-        console.log('🔄 Loading users...');
-
-        // Enhanced debugging: Check authentication and admin status
-        const currentUser = this.authService.getCurrentUser();
-        console.log('👤 Current user in component:', currentUser);
-        console.log('🔐 Is admin:', this.adminService.isCurrentUserAdmin());
-
-        // Enhanced debugging: Check component state before API call
-        console.log('📊 Component state before API call:', {
-            isLoading: this.isLoading,
-            activeTab: this.activeTab,
-            usersCount: this.users.length,
-            filteredUsersCount: this.filteredUsers.length
-        });
 
         const subscription = this.adminService.getAllUsers().subscribe({
             next: (users) => {
-                console.log('✅ Users loaded successfully in component:', users.length, 'users');
-                console.log('📊 Full users data received:', users);
-
-                // Enhanced debugging: Check users data structure
-                if (users && users.length > 0) {
-                    console.log('👥 Sample user structure:', {
-                        firstUser: users[0],
-                        userKeys: Object.keys(users[0]),
-                        hasRequiredFields: {
-                            userName: !!users[0].userName,
-                            firstName: !!users[0].firstName,
-                            lastName: !!users[0].lastName,
-                            email: !!users[0].email,
-                            roles: !!users[0].roles
-                        }
-                    });
-                } else {
-                    console.log('⚠️ Empty users array received from API');
-                }
-
                 this.users = users;
-                console.log('💾 Users assigned to component property:', this.users.length);
-
                 this.applyFilters();
                 this.isLoading = false;
-
-                console.log('📋 Final component state:', {
-                    usersCount: this.users.length,
-                    filteredUsersCount: this.filteredUsers.length,
-                    isLoading: this.isLoading
-                });
             },
             error: (error) => {
-                console.error('❌ Error loading users in component:', error);
-                console.error('🚨 Error details:', {
-                    message: error.message,
-                    status: error.status,
-                    stack: error.stack
-                });
-
                 this.errorMessage = `Failed to load users: ${error.message}`;
                 this.isLoading = false;
-
-                // Ensure arrays are initialized even on error
                 this.users = [];
                 this.filteredUsers = [];
-
-                console.log('📋 Component state after error:', {
-                    errorMessage: this.errorMessage,
-                    usersCount: this.users.length,
-                    filteredUsersCount: this.filteredUsers.length,
-                    isLoading: this.isLoading
-                });
             }
         });
 
@@ -260,19 +186,15 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
     loadSystemStats(): void {
         this.isStatsLoading = true;
         this.clearMessages();
-        console.log('🔄 Loading system stats...');
 
         const subscription = this.adminService.getSystemStats().subscribe({
             next: (stats) => {
-                console.log('✅ System stats loaded successfully:', stats);
                 this.systemStats = stats;
                 this.isStatsLoading = false;
             },
             error: (error) => {
-                console.error('❌ Error loading system stats:', error);
                 this.errorMessage = `Failed to load system statistics: ${error.message}`;
                 this.isStatsLoading = false;
-                // Ensure stats is reset on error
                 this.systemStats = null;
             }
         });
@@ -282,10 +204,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Filtering and sorting
     applyFilters(): void {
-        console.log('🔍 Applying filters to users:', this.users.length, 'users');
-
         if (!this.users || this.users.length === 0) {
-            console.log('⚠️ No users to filter');
             this.filteredUsers = [];
             return;
         }
@@ -301,13 +220,11 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
                 user.lastName.toLowerCase().includes(search) ||
                 user.email.toLowerCase().includes(search)
             );
-            console.log('🔍 After search filter:', filtered.length, 'users');
         }
 
         // Apply role filter
         if (this.userFilter.role) {
             filtered = filtered.filter(user => user.roles.includes(this.userFilter.role));
-            console.log('🔍 After role filter:', filtered.length, 'users');
         }
 
         // Apply sorting
@@ -320,7 +237,6 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
         });
 
         this.filteredUsers = filtered;
-        console.log('✅ Final filtered users:', this.filteredUsers.length);
     }
 
     private getNestedValue(obj: any, path: string): string {
@@ -533,12 +449,6 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
         this.successMessage = '';
     }
 
-    // Force refresh users method for debugging
-    forceRefreshUsers(): void {
-        console.log('🔄 Force refreshing users...');
-        this.loadUsers();
-    }
-
     // Form validation helpers
     isFieldInvalid(form: FormGroup, fieldName: string): boolean {
         const field = form.get(fieldName);
@@ -568,115 +478,5 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
             }
         }
         this.editRolesForm.patchValue({ roles: currentRoles });
-    }
-
-    // Diagnostic methods for debugging frontend issues
-    runDiagnosticTest(): void {
-        console.log('🔧 Running diagnostic test...');
-        this.showDiagnosticResults = true;
-        this.diagnosticResults = {
-            timestamp: new Date().toISOString(),
-            status: 'Running...',
-            steps: []
-        };
-
-        // Step 1: Check authentication
-        const currentUser = this.authService.getCurrentUser();
-        this.diagnosticResults.steps.push({
-            step: 'Authentication Check',
-            status: currentUser ? '✅ Passed' : '❌ Failed',
-            data: currentUser
-        });
-
-        // Step 2: Check admin privileges
-        const isAdmin = this.adminService.isCurrentUserAdmin();
-        this.diagnosticResults.steps.push({
-            step: 'Admin Privileges Check',
-            status: isAdmin ? '✅ Passed' : '❌ Failed',
-            data: { isAdmin, userRoles: currentUser?.roles }
-        });
-
-        // Step 3: Check stored credentials
-        const stored = localStorage.getItem('travner_auth');
-        let credentials = null;
-        if (stored) {
-            try {
-                credentials = JSON.parse(stored);
-                this.diagnosticResults.steps.push({
-                    step: 'Stored Credentials Check',
-                    status: '✅ Found',
-                    data: { username: credentials.username, hasPassword: !!credentials.password }
-                });
-            } catch (e) {
-                this.diagnosticResults.steps.push({
-                    step: 'Stored Credentials Check',
-                    status: '❌ Invalid Format',
-                    data: { error: e }
-                });
-            }
-        } else {
-            this.diagnosticResults.steps.push({
-                step: 'Stored Credentials Check',
-                status: '❌ Not Found',
-                data: null
-            });
-        }
-
-        // Step 4: Test API call
-        this.diagnosticResults.steps.push({
-            step: 'API Call Test',
-            status: '🔄 Testing...',
-            data: null
-        });
-
-        const apiTestIndex = this.diagnosticResults.steps.length - 1;
-
-        const subscription = this.adminService.getAllUsers().subscribe({
-            next: (users) => {
-                console.log('🎯 Diagnostic API test - Success:', users);
-                this.diagnosticResults.steps[apiTestIndex] = {
-                    step: 'API Call Test',
-                    status: '✅ Success',
-                    data: {
-                        usersCount: users.length,
-                        firstUser: users[0] || null,
-                        allUsers: users
-                    }
-                };
-                this.diagnosticResults.status = 'Completed Successfully';
-
-                // Also test the component's loadUsers method
-                this.diagnosticResults.steps.push({
-                    step: 'Component State After API',
-                    status: '📊 Info',
-                    data: {
-                        componentUsersLength: this.users.length,
-                        filteredUsersLength: this.filteredUsers.length,
-                        isLoading: this.isLoading,
-                        activeTab: this.activeTab
-                    }
-                });
-            },
-            error: (error) => {
-                console.error('🎯 Diagnostic API test - Error:', error);
-                this.diagnosticResults.steps[apiTestIndex] = {
-                    step: 'API Call Test',
-                    status: '❌ Failed',
-                    data: {
-                        errorMessage: error.message,
-                        errorStatus: error.status,
-                        fullError: error
-                    }
-                };
-                this.diagnosticResults.status = 'Failed';
-            }
-        });
-
-        this.subscriptions.push(subscription);
-    }
-
-    closeDiagnosticResults(): void {
-        this.showDiagnosticResults = false;
-        this.diagnosticResults = null;
     }
 }

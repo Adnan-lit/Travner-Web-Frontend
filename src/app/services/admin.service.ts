@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+import { catchError, tap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 
 export interface AdminUser {
@@ -55,12 +55,9 @@ export class AdminService {
      * Determine the appropriate admin API base URL based on environment
      */
     private getAdminBaseUrl(): string {
-        // For local development, use localhost if backend is running locally
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            // First try localhost:8080 for local development
             return 'http://localhost:8080/admin';
         } else {
-            // Production environment - use Railway deployment
             return 'https://travner-backend.up.railway.app/admin';
         }
     }
@@ -83,7 +80,6 @@ export class AdminService {
             throw new Error('No authentication data found');
         }
 
-        // Get stored credentials for Basic Auth
         const stored = localStorage.getItem('travner_auth');
         if (!stored) {
             throw new Error('No stored credentials found');
@@ -104,11 +100,50 @@ export class AdminService {
      * Get all users in the system
      */
     getAllUsers(): Observable<AdminUser[]> {
+        console.log('🔄 AdminService: Fetching all users from', `${this.ADMIN_BASE_URL}/users`);
+
+        // Enhanced debugging: Check authentication state
+        const currentUser = this.authService.getCurrentUser();
+        console.log('👤 Current user:', currentUser);
+        console.log('🔐 User has ADMIN role:', currentUser?.roles?.includes('ADMIN'));
+
+        // Enhanced debugging: Check stored credentials
+        const stored = localStorage.getItem('travner_auth');
+        if (stored) {
+            const { username } = JSON.parse(stored);
+            console.log('💾 Stored username:', username);
+        } else {
+            console.error('❌ No stored auth credentials found');
+        }
+
+        let headers;
+        try {
+            headers = this.getAdminHeaders();
+            console.log('📤 Request headers prepared successfully');
+            console.log('🔗 Full request URL:', `${this.ADMIN_BASE_URL}/users`);
+        } catch (error) {
+            console.error('❌ Failed to create headers:', error);
+            throw error;
+        }
+
         return this.http.get<AdminUser[]>(`${this.ADMIN_BASE_URL}/users`, {
-            headers: this.getAdminHeaders(),
+            headers: headers,
             withCredentials: false
         }).pipe(
+            tap(users => {
+                console.log('✅ AdminService: Successfully fetched users:', users.length);
+                console.log('📋 Users data:', users);
+                if (users && users.length > 0) {
+                    console.log('👥 First user sample:', users[0]);
+                } else {
+                    console.log('⚠️ No users returned from API');
+                }
+            }),
             catchError(error => {
+                console.error('❌ AdminService: Error fetching users:', error);
+                console.error('🚨 Request failed for URL:', `${this.ADMIN_BASE_URL}/users`);
+                console.error('🚨 Error status:', error.status);
+                console.error('🚨 Error response:', error.error);
                 throw this.handleAdminError(error);
             })
         );
@@ -206,11 +241,15 @@ export class AdminService {
      * Get system statistics
      */
     getSystemStats(): Observable<SystemStats> {
+        console.log('🔄 AdminService: Fetching system stats from', `${this.ADMIN_BASE_URL}/stats`);
+
         return this.http.get<SystemStats>(`${this.ADMIN_BASE_URL}/stats`, {
             headers: this.getAdminHeaders(),
             withCredentials: false
         }).pipe(
+            tap(stats => console.log('✅ AdminService: Successfully fetched stats:', stats)),
             catchError(error => {
+                console.error('❌ AdminService: Error fetching stats:', error);
                 throw this.handleAdminError(error);
             })
         );
@@ -234,6 +273,14 @@ export class AdminService {
      * Handle admin API errors and provide user-friendly messages
      */
     private handleAdminError(error: any): Error {
+        console.error('🚨 AdminService Error Details:', {
+            status: error.status,
+            statusText: error.statusText,
+            url: error.url,
+            error: error.error,
+            message: error.message
+        });
+
         let errorMessage = 'An error occurred';
 
         if (error.status === 401) {
@@ -251,6 +298,8 @@ export class AdminService {
         } else if (error.message) {
             errorMessage = error.message;
         }
+
+        console.error('🚨 Final error message:', errorMessage);
 
         const customError = new Error(errorMessage);
         (customError as any).status = error.status;

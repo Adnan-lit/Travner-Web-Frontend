@@ -7,6 +7,19 @@
         <p>Manage users and system settings</p>
       </div>
       <div class="header-actions">
+        <button class="btn btn-warning" (click)="runDiagnosticTest()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+          </svg>
+          🔧 Test API
+        </button>
+        <button class="btn btn-info" (click)="forceRefreshUsers()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+          🔄 Refresh Users
+        </button>
         <button class="btn btn-primary" (click)="openCreateUserModal()">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
@@ -151,6 +164,7 @@
           </svg>
           <input 
             type="text" 
+            id="userSearch"
             placeholder="Search users..." 
             [value]="userFilter.search"
             (input)="onSearchInputChange($event)"
@@ -159,6 +173,7 @@
         
         <div class="filter-container">
           <select 
+            id="roleFilter"
             [value]="userFilter.role"
             (change)="onRoleSelectChange($event)"
             class="filter-select">
@@ -405,6 +420,7 @@
           <label *ngFor="let role of availableRoles" class="checkbox-label">
             <input 
               type="checkbox" 
+              [id]="'role-' + role"
               [value]="role"
               [checked]="editRolesForm.value.roles?.includes(role)"
               (change)="onRoleToggle(role, $event)">
@@ -508,6 +524,44 @@
           <span *ngIf="!isLoading">Delete User</span>
           <span *ngIf="isLoading">Deleting...</span>
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Diagnostic Results Modal -->
+<div class="modal-overlay" *ngIf="showDiagnosticResults" (click)="closeDiagnosticResults()">
+  <div class="modal-container diagnostic-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>🔧 Frontend Diagnostic Results</h2>
+      <button class="modal-close" (click)="closeDiagnosticResults()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-content" *ngIf="diagnosticResults">
+      <div class="diagnostic-header">
+        <p><strong>Test Status:</strong> {{ diagnosticResults.status }}</p>
+        <p><strong>Timestamp:</strong> {{ diagnosticResults.timestamp | date:'medium' }}</p>
+      </div>
+      
+      <div class="diagnostic-steps">
+        <div class="diagnostic-step" *ngFor="let step of diagnosticResults.steps">
+          <div class="step-header">
+            <h4>{{ step.step }}</h4>
+            <span class="step-status" [innerHTML]="step.status"></span>
+          </div>
+          <div class="step-data" *ngIf="step.data">
+            <pre>{{ step.data | json }}</pre>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" (click)="closeDiagnosticResults()">Close</button>
+        <button type="button" class="btn btn-secondary" (click)="runDiagnosticTest()">Run Again</button>
       </div>
     </div>
   </div>
