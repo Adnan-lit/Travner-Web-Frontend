@@ -7,11 +7,18 @@
           <h1 class="brand-text">Travner</h1>
         </div>
         <nav class="nav-menu">
-          <a href="#" class="nav-link active">Dashboard</a>
+          <a routerLink="/dashboard" class="nav-link" routerLinkActive="active"
+            >Dashboard</a
+          >
+          <a routerLink="/posts" class="nav-link" routerLinkActive="active"
+            >Travel Posts</a
+          >
           <a href="#" class="nav-link">My Trips</a>
           <a href="#" class="nav-link">Discover</a>
           <a href="#" class="nav-link">Profile</a>
-          <a routerLink="/admin" class="nav-link admin-link" *ngIf="isAdmin()">Admin</a>
+          <a routerLink="/admin" class="nav-link admin-link" *ngIf="isAdmin()"
+            >Admin</a
+          >
         </nav>
         <div class="user-menu">
           <div class="user-info" *ngIf="currentUser">
@@ -89,6 +96,18 @@
             <button class="action-btn">Find People</button>
           </div>
         </div>
+      </section>
+
+      <!-- Travel Posts Section -->
+      <section class="travel-posts-section">
+        <h3 class="section-title">Travel Stories</h3>
+        <p class="section-description">
+          Share your travel experiences or discover amazing journeys from fellow
+          travelers.
+        </p>
+
+        <!-- Travel Posts Component -->
+        <app-post-list></app-post-list>
       </section>
 
       <!-- Recent Activity -->

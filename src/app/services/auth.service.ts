@@ -40,6 +40,9 @@ export class AuthService {
     private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
     public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
+    // Track user roles
+    private userRoles: string[] = [];
+
     constructor(
         private http: HttpClient,
         private router: Router
@@ -49,17 +52,25 @@ export class AuthService {
     }
 
     /**
+     * Check if the current user has a specific role
+     */
+    hasRole(role: string): boolean {
+        return this.userRoles.includes(role);
+    }
+
+    /**
+     * Check if the current user is an admin
+     */
+    isAdmin(): boolean {
+        return this.hasRole('ADMIN');
+    }
+
+    /**
      * Determine the appropriate API base URL based on environment
      */
     private getApiBaseUrl(): string {
-        // For local development, use localhost if backend is running locally
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            // First try localhost:8080 for local development
-            return 'http://localhost:8080';
-        } else {
-            // Production environment - use Railway deployment
-            return 'https://travner-backend.up.railway.app';
-        }
+        // Temporarily use direct backend URL while debugging proxy issues
+        return 'http://localhost:8080';
     }
 
     /**
@@ -419,6 +430,13 @@ export class AuthService {
     private setCurrentUser(user: User | null): void {
         this.currentUserSubject.next(user);
         this.isAuthenticatedSubject.next(!!user);
+
+        // Update roles when setting a new user
+        if (user && user.roles) {
+            this.userRoles = user.roles;
+        } else {
+            this.userRoles = [];
+        }
     }
 
     /**
@@ -458,6 +476,7 @@ export class AuthService {
     private clearAuthData(): void {
         localStorage.removeItem('travner_auth');
         localStorage.removeItem('travner_user');
+        this.userRoles = []; // Clear roles
         this.setCurrentUser(null);
     }
 

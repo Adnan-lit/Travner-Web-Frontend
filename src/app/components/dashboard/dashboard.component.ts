@@ -4,10 +4,11 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
 import { CursorService } from '../../services/cursor.service';
 import { Subscription } from 'rxjs';
+import { PostListComponent } from '../posts/post-list.component';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, PostListComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })

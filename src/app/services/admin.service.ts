@@ -55,11 +55,8 @@ export class AdminService {
      * Determine the appropriate admin API base URL based on environment
      */
     private getAdminBaseUrl(): string {
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            return 'http://localhost:8080/admin';
-        } else {
-            return 'https://travner-backend.up.railway.app/admin';
-        }
+        // Temporarily use direct backend URL while debugging proxy issues
+        return 'http://localhost:8080/admin';
     }
 
     /**
