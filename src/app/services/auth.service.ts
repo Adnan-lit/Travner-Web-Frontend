@@ -70,12 +70,20 @@ export class AuthService {
      */
     private getApiBaseUrl(): string {
         // Check if we're in production (deployed) or development (local)
-        if (window.location.hostname === 'travner.vercel.app') {
+        const hostname = window.location.hostname;
+
+        if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app')) {
             // Production: use your deployed backend URL
+            console.log('🌐 Production environment detected - using Railway backend');
             return 'https://travner-web-backend-production.up.railway.app';
-        } else {
+        } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
             // Development: use local backend
+            console.log('🔧 Development environment detected - using local backend');
             return 'http://localhost:8080';
+        } else {
+            // Fallback for other domains
+            console.log('⚠️ Unknown environment, using Railway backend as fallback');
+            return 'https://travner-web-backend-production.up.railway.app';
         }
     }
 
@@ -128,35 +136,29 @@ export class AuthService {
     signin(username: string, password: string): Observable<User> {
         const credentials = btoa(`${username}:${password}`); // Base64 encode for basic auth
         const headers = new HttpHeaders({
-            'Authorization': `Basic ${credentials}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest' // Prevents browser auth popup
+            'Authorization': `Basic ${credentials}`
         });
 
         return this.http.get<any>(`${this.API_BASE_URL}/user`, {
-            headers,
-            withCredentials: false, // Changed to false to prevent browser auth popup
-            observe: 'response' // Get full response to handle status codes properly
+            headers
         })
             .pipe(
                 map(response => {
-                    const body = response.body;
                     // Handle different response formats
                     let user: User;
-                    if (body.userName || body.username) {
+                    if (response.userName || response.username) {
                         // Response is already in the right format or similar
                         user = {
-                            id: body.id,
-                            userName: body.userName || body.username,
-                            firstName: body.firstName || body.firstname,
-                            lastName: body.lastName || body.lastname,
-                            email: body.email,
-                            roles: body.roles || []
+                            id: response.id,
+                            userName: response.userName || response.username,
+                            firstName: response.firstName || response.firstname,
+                            lastName: response.lastName || response.lastname,
+                            email: response.email,
+                            roles: response.roles || []
                         };
                     } else {
                         // Fallback - use the response as is and hope it has the right structure
-                        user = body as User;
+                        user = response as User;
                     }
 
                     return user;
@@ -170,6 +172,12 @@ export class AuthService {
                     // Clear any stored auth data on error
                     this.clearAuthData();
 
+                    console.error('🔍 Debugging Information:');
+                    console.error('  - Frontend Origin:', window.location.origin);
+                    console.error('  - Backend URL:', this.API_BASE_URL);
+                    console.error('  - Error Status:', error.status);
+                    console.error('  - Error Details:', error);
+
                     // Handle specific error cases
                     if (error.status === 401) {
                         // Don't re-throw 401 errors to prevent browser auth popup
@@ -177,7 +185,17 @@ export class AuthService {
                         (authError as any).status = 401;
                         throw authError;
                     } else if (error.status === 0) {
-                        const networkError = new Error('Network connection failed. Please check your connection and try again.');
+                        // CORS or network error
+                        let errorMessage = 'Network connection failed.';
+
+                        if (window.location.hostname.includes('vercel.app')) {
+                            errorMessage = 'Unable to connect to the backend server. Please check if the server is running and accessible.';
+                            console.error('🚨 Network Issue: Cannot reach backend at:', this.API_BASE_URL);
+                        } else {
+                            errorMessage = 'Network connection failed. Please check your connection and try again.';
+                        }
+
+                        const networkError = new Error(errorMessage);
                         (networkError as any).status = 0;
                         throw networkError;
                     } else {

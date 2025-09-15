@@ -6,10 +6,10 @@ import { AuthService } from '../../../services/auth.service';
 import { PostService } from '../../../services/post.service';
 
 @Component({
-    selector: 'app-post-item',
-    standalone: true,
-    imports: [CommonModule, RouterModule],
-    template: `
+  selector: 'app-post-item',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  template: `
     <div class="post-item" *ngIf="post">
       <div class="post-header">
         <div class="post-author">
@@ -172,7 +172,7 @@ import { PostService } from '../../../services/post.service';
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     .post-item {
       background-color: white;
       border-radius: 16px;
@@ -628,245 +628,245 @@ import { PostService } from '../../../services/post.service';
   `]
 })
 export class PostItemComponent implements OnDestroy {
-    @Input() post!: Post;
-    @Output() upvoted = new EventEmitter<string>();
-    @Output() downvoted = new EventEmitter<string>();
-    @Output() deleted = new EventEmitter<string>();
-    @Output() edited = new EventEmitter<string>();
+  @Input() post!: Post;
+  @Output() upvoted = new EventEmitter<string>();
+  @Output() downvoted = new EventEmitter<string>();
+  @Output() deleted = new EventEmitter<string>();
+  @Output() edited = new EventEmitter<string>();
 
-    // Track blob URLs for media images
-    mediaBlobUrls: { [key: string]: string } = {};
-    mediaLoadingStates: { [key: string]: boolean } = {};
-    
-    // Share menu state
-    showShareMenu: boolean = false;
-    showCopyToast: boolean = false;
+  // Track blob URLs for media images
+  mediaBlobUrls: { [key: string]: string } = {};
+  mediaLoadingStates: { [key: string]: boolean } = {};
 
-    constructor(
-        private authService: AuthService,
-        private postService: PostService
-    ) { }
+  // Share menu state
+  showShareMenu: boolean = false;
+  showCopyToast: boolean = false;
 
-    /**
-     * Track by function for ngFor optimization
-     */
-    trackByMediaUrl(index: number, mediaUrl: string): string {
-        return mediaUrl;
+  constructor(
+    private authService: AuthService,
+    private postService: PostService
+  ) { }
+
+  /**
+   * Track by function for ngFor optimization
+   */
+  trackByMediaUrl(index: number, mediaUrl: string): string {
+    return mediaUrl;
+  }
+
+  /**
+   * Check if media is currently loading
+   */
+  isMediaLoading(mediaUrl: string): boolean {
+    return this.mediaLoadingStates[mediaUrl] || false;
+  }
+
+  /**
+   * Get style object for media item
+   */
+  getMediaStyle(mediaUrl: string): any {
+    const blobUrl = this.getMediaBlobUrl(mediaUrl);
+    if (blobUrl) {
+      return { 'background-image': `url(${blobUrl})` };
+    }
+    return {};
+  }
+
+  /**
+   * Get blob URL for media, creating it if it doesn't exist
+   */
+  getMediaBlobUrl(mediaUrl: string): string {
+    if (!mediaUrl) return '';
+
+    // Check if we already have a blob URL for this media
+    if (this.mediaBlobUrls[mediaUrl]) {
+      return this.mediaBlobUrls[mediaUrl];
     }
 
-    /**
-     * Check if media is currently loading
-     */
-    isMediaLoading(mediaUrl: string): boolean {
-        return this.mediaLoadingStates[mediaUrl] || false;
+    // Check if we're already loading this media
+    if (this.mediaLoadingStates[mediaUrl]) {
+      return '';
     }
 
-    /**
-     * Get style object for media item
-     */
-    getMediaStyle(mediaUrl: string): any {
-        const blobUrl = this.getMediaBlobUrl(mediaUrl);
+    // Start loading the media
+    this.mediaLoadingStates[mediaUrl] = true;
+
+    this.postService.getMediaBlob(mediaUrl).subscribe({
+      next: (blobUrl) => {
+        this.mediaLoadingStates[mediaUrl] = false;
         if (blobUrl) {
-            return { 'background-image': `url(${blobUrl})` };
+          this.mediaBlobUrls[mediaUrl] = blobUrl;
         }
-        return {};
+      },
+      error: (error) => {
+        this.mediaLoadingStates[mediaUrl] = false;
+        console.error('Failed to load media blob:', error);
+      }
+    });
+
+    // Return empty string while loading
+    return '';
+  }
+
+  /**
+   * Clean up blob URLs to prevent memory leaks
+   */
+  ngOnDestroy(): void {
+    // Revoke all blob URLs to free up memory
+    Object.values(this.mediaBlobUrls).forEach(blobUrl => {
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    });
+    this.mediaBlobUrls = {};
+  }
+
+  getInitials(name: string): string {
+    if (!name) return '?';
+    return name.split(' ')
+      .map(part => part.charAt(0))
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+  }
+
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  canModifyPost(): boolean {
+    if (!this.post) return false;
+
+    // Get the current user
+    let currentUser: any = null;
+    this.authService.currentUser$.subscribe(user => {
+      currentUser = user;
+    });
+
+    // Check if the user is the author or an admin
+    if (!currentUser) return false;
+
+    const isAuthor = currentUser.id === this.post.authorId;
+    const isAdmin = this.authService.isAdmin();
+
+    return isAuthor || isAdmin;
+  }
+
+  onUpvote(): void {
+    this.upvoted.emit(this.post.id);
+  }
+
+  onDownvote(): void {
+    this.downvoted.emit(this.post.id);
+  }
+
+  onEdit(): void {
+    this.edited.emit(this.post.id);
+  }
+
+  onDelete(): void {
+    if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+      this.deleted.emit(this.post.id);
+    }
+  }
+
+  /**
+   * Toggle share menu visibility
+   */
+  toggleShareMenu(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.showShareMenu = !this.showShareMenu;
+  }
+
+  /**
+   * Close share menu when clicking outside
+   */
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    const shareContainer = target.closest('.share-container');
+    if (!shareContainer) {
+      this.showShareMenu = false;
+    }
+  }
+
+  /**
+   * Share post to social media
+   */
+  shareToSocial(platform: string): void {
+    const postUrl = `${window.location.origin}/posts/${this.post.id}`;
+    const postTitle = encodeURIComponent(this.post.title);
+    const postDescription = encodeURIComponent(this.post.content.substring(0, 200) + '...');
+
+    let shareUrl = '';
+
+    switch (platform) {
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
+        break;
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${postTitle}`;
+        break;
+      case 'linkedin':
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`;
+        break;
+      case 'whatsapp':
+        shareUrl = `https://wa.me/?text=${postTitle}%20${encodeURIComponent(postUrl)}`;
+        break;
     }
 
-    /**
-     * Get blob URL for media, creating it if it doesn't exist
-     */
-    getMediaBlobUrl(mediaUrl: string): string {
-        if (!mediaUrl) return '';
-        
-        // Check if we already have a blob URL for this media
-        if (this.mediaBlobUrls[mediaUrl]) {
-            return this.mediaBlobUrls[mediaUrl];
-        }
-
-        // Check if we're already loading this media
-        if (this.mediaLoadingStates[mediaUrl]) {
-            return '';
-        }
-
-        // Start loading the media
-        this.mediaLoadingStates[mediaUrl] = true;
-        
-        this.postService.getMediaBlob(mediaUrl).subscribe({
-            next: (blobUrl) => {
-                this.mediaLoadingStates[mediaUrl] = false;
-                if (blobUrl) {
-                    this.mediaBlobUrls[mediaUrl] = blobUrl;
-                }
-            },
-            error: (error) => {
-                this.mediaLoadingStates[mediaUrl] = false;
-                console.error('Failed to load media blob:', error);
-            }
-        });
-
-        // Return empty string while loading
-        return '';
+    if (shareUrl) {
+      window.open(shareUrl, '_blank', 'width=600,height=400,resizable=yes,scrollbars=yes');
     }
 
-    /**
-     * Clean up blob URLs to prevent memory leaks
-     */
-    ngOnDestroy(): void {
-        // Revoke all blob URLs to free up memory
-        Object.values(this.mediaBlobUrls).forEach(blobUrl => {
-            if (blobUrl) {
-                URL.revokeObjectURL(blobUrl);
-            }
-        });
-        this.mediaBlobUrls = {};
+    this.showShareMenu = false;
+  }
+
+  /**
+   * Copy post link to clipboard
+   */
+  async copyPostLink(): Promise<void> {
+    const postUrl = `${window.location.origin}/posts/${this.post.id}`;
+
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      this.showToast();
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = postUrl;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        this.showToast();
+      } catch (err) {
+        console.error('Failed to copy link:', err);
+        alert('Failed to copy link');
+      }
+      document.body.removeChild(textArea);
     }
 
-    getInitials(name: string): string {
-        if (!name) return '?';
-        return name.split(' ')
-            .map(part => part.charAt(0))
-            .join('')
-            .substring(0, 2)
-            .toUpperCase();
-    }
+    this.showShareMenu = false;
+  }
 
-    formatDate(dateString: string): string {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
-
-    canModifyPost(): boolean {
-        if (!this.post) return false;
-
-        // Get the current user
-        let currentUser: any = null;
-        this.authService.currentUser$.subscribe(user => {
-            currentUser = user;
-        });
-
-        // Check if the user is the author or an admin
-        if (!currentUser) return false;
-
-        const isAuthor = currentUser.id === this.post.authorId;
-        const isAdmin = this.authService.isAdmin();
-
-        return isAuthor || isAdmin;
-    }
-
-    onUpvote(): void {
-        this.upvoted.emit(this.post.id);
-    }
-
-    onDownvote(): void {
-        this.downvoted.emit(this.post.id);
-    }
-
-    onEdit(): void {
-        this.edited.emit(this.post.id);
-    }
-
-    onDelete(): void {
-        if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-            this.deleted.emit(this.post.id);
-        }
-    }
-
-    /**
-     * Toggle share menu visibility
-     */
-    toggleShareMenu(event?: Event): void {
-        if (event) {
-            event.stopPropagation();
-        }
-        this.showShareMenu = !this.showShareMenu;
-    }
-
-    /**
-     * Close share menu when clicking outside
-     */
-    @HostListener('document:click', ['$event'])
-    onDocumentClick(event: Event): void {
-        const target = event.target as HTMLElement;
-        const shareContainer = target.closest('.share-container');
-        if (!shareContainer) {
-            this.showShareMenu = false;
-        }
-    }
-
-    /**
-     * Share post to social media
-     */
-    shareToSocial(platform: string): void {
-        const postUrl = `${window.location.origin}/posts/${this.post.id}`;
-        const postTitle = encodeURIComponent(this.post.title);
-        const postDescription = encodeURIComponent(this.post.content.substring(0, 200) + '...');
-        
-        let shareUrl = '';
-        
-        switch (platform) {
-            case 'facebook':
-                shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
-                break;
-            case 'twitter':
-                shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${postTitle}`;
-                break;
-            case 'linkedin':
-                shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`;
-                break;
-            case 'whatsapp':
-                shareUrl = `https://wa.me/?text=${postTitle}%20${encodeURIComponent(postUrl)}`;
-                break;
-        }
-        
-        if (shareUrl) {
-            window.open(shareUrl, '_blank', 'width=600,height=400,resizable=yes,scrollbars=yes');
-        }
-        
-        this.showShareMenu = false;
-    }
-
-    /**
-     * Copy post link to clipboard
-     */
-    async copyPostLink(): Promise<void> {
-        const postUrl = `${window.location.origin}/posts/${this.post.id}`;
-        
-        try {
-            await navigator.clipboard.writeText(postUrl);
-            this.showToast();
-        } catch (err) {
-            // Fallback for older browsers
-            const textArea = document.createElement('textarea');
-            textArea.value = postUrl;
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                this.showToast();
-            } catch (err) {
-                console.error('Failed to copy link:', err);
-                alert('Failed to copy link');
-            }
-            document.body.removeChild(textArea);
-        }
-        
-        this.showShareMenu = false;
-    }
-
-    /**
-     * Show copy success toast
-     */
-    private showToast(): void {
-        this.showCopyToast = true;
-        setTimeout(() => {
-            this.showCopyToast = false;
-        }, 3000);
-    }
+  /**
+   * Show copy success toast
+   */
+  private showToast(): void {
+    this.showCopyToast = true;
+    setTimeout(() => {
+      this.showCopyToast = false;
+    }, 3000);
+  }
 }

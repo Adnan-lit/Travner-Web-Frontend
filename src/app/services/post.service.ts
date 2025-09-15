@@ -17,12 +17,20 @@ export class PostService {
 
     private getApiBaseUrl(): string {
         // Check if we're in production (deployed) or development (local)
-        if (window.location.hostname === 'travner.vercel.app') {
+        const hostname = window.location.hostname;
+
+        if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app')) {
             // Production: use your deployed backend URL
+            console.log('🌐 Production environment detected - using Railway backend');
             return 'https://travner-web-backend-production.up.railway.app';
-        } else {
+        } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
             // Development: use local backend
+            console.log('🔧 Development environment detected - using local backend');
             return 'http://localhost:8080';
+        } else {
+            // Fallback for other domains
+            console.log('⚠️ Unknown environment, using Railway backend as fallback');
+            return 'https://travner-web-backend-production.up.railway.app';
         }
     }
 
@@ -50,7 +58,7 @@ export class PostService {
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest' // Prevent browser auth popup
         });
-        
+
         return headers;
     }
 
@@ -78,7 +86,7 @@ export class PostService {
         if (!mediaUrls || !Array.isArray(mediaUrls)) {
             return [];
         }
-        
+
         return mediaUrls.map(url => {
             if (url.startsWith('http')) {
                 // Already a full URL
@@ -537,7 +545,7 @@ export class PostService {
      */
     getMediaBlob(mediaUrl: string): Observable<string> {
         const headers = this.getAuthHeaders();
-        
+
         return this.http.get(mediaUrl, {
             headers,
             responseType: 'blob'
