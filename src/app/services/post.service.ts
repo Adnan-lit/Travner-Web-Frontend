@@ -61,6 +61,60 @@ export class PostService {
         return null;
     }
 
+    /**
+     * Convert relative media URLs to full URLs pointing to the backend
+     */
+    private processMediaUrls(mediaUrls: string[] | undefined): string[] {
+        if (!mediaUrls || !Array.isArray(mediaUrls)) {
+            console.log('🚫 No mediaUrls to process:', mediaUrls);
+            return [];
+        }
+
+        console.log('📥 Original mediaUrls:', mediaUrls);
+
+        const processed = mediaUrls.map(url => {
+            let fullUrl: string;
+
+            if (url.startsWith('http')) {
+                // Already a full URL
+                fullUrl = url;
+                console.log(`✅ Already full URL: ${url}`);
+            } else if (url.startsWith('/')) {
+                // Relative URL, convert to full backend URL
+                fullUrl = `${this.API_BASE_URL}${url}`;
+                console.log(`🔗 Converted relative URL: ${url} -> ${fullUrl}`);
+            } else {
+                // Assume it's a relative path without leading slash
+                fullUrl = `${this.API_BASE_URL}/${url}`;
+                console.log(`🔗 Added base URL: ${url} -> ${fullUrl}`);
+            }
+
+            return fullUrl;
+        });
+
+        console.log('📤 Processed mediaUrls:', processed);
+        return processed;
+    }
+
+    /**
+     * Process a single post to fix media URLs and other transformations
+     */
+    private processPost(post: any): Post {
+        const processedPost = {
+            ...post,
+            authorName: post.author?.userName || post.authorName || 'Unknown',
+            mediaUrls: this.processMediaUrls(post.mediaUrls)
+        };
+
+        console.log('🖼️ Processing post media URLs:', {
+            original: post.mediaUrls,
+            processed: processedPost.mediaUrls,
+            postTitle: post.title
+        });
+
+        return processedPost;
+    }
+
     // POSTS API ENDPOINTS
 
     // Get all posts with pagination
@@ -86,7 +140,7 @@ export class PostService {
                     const pagination = response.pagination || {};
 
                     return {
-                        content: posts,
+                        content: posts.map((post: any) => this.processPost(post)),
                         totalElements: pagination.totalElements || posts.length,
                         totalPages: pagination.totalPages || 1,
                         size: pagination.size || size,
@@ -94,11 +148,14 @@ export class PostService {
                     } as PostsResponse;
                 } else if (response && Array.isArray(response.content)) {
                     // Spring Boot page format
-                    return response as PostsResponse;
+                    return {
+                        ...response,
+                        content: response.content.map((post: any) => this.processPost(post))
+                    } as PostsResponse;
                 } else if (response && Array.isArray(response)) {
                     // Simple array format
                     return {
-                        content: response,
+                        content: response.map((post: any) => this.processPost(post)),
                         totalElements: response.length,
                         totalPages: 1,
                         size: size,
@@ -122,10 +179,19 @@ export class PostService {
     // Get a specific post by ID
     getPostById(id: string): Observable<Post> {
         const headers = this.getAuthHeaders();
-        return this.http.get<Post>(`${this.API_BASE_URL}/posts/${id}`, {
+        return this.http.get<any>(`${this.API_BASE_URL}/posts/${id}`, {
             headers,
             withCredentials: false
-        });
+        }).pipe(
+            map((response: any) => {
+                // Handle enhanced response format
+                if (response && response.success && response.data) {
+                    return this.processPost(response.data);
+                } else {
+                    return this.processPost(response);
+                }
+            })
+        );
     }
 
     // Get posts by a specific user
@@ -257,10 +323,10 @@ export class PostService {
             map((response: any) => {
                 // Handle enhanced response format
                 if (response && response.success && response.data) {
-                    return response.data as Post;
+                    return this.processPost(response.data);
                 } else if (response && response.id) {
                     // Direct post object response
-                    return response as Post;
+                    return this.processPost(response);
                 } else {
                     throw new Error('Invalid response format from create post');
                 }
@@ -271,10 +337,19 @@ export class PostService {
     // Update a post
     updatePost(id: string, post: PostUpdate): Observable<Post> {
         const headers = this.getAuthHeaders();
-        return this.http.put<Post>(`${this.API_BASE_URL}/posts/${id}`, post, {
+        return this.http.put<any>(`${this.API_BASE_URL}/posts/${id}`, post, {
             headers,
             withCredentials: false
-        });
+        }).pipe(
+            map((response: any) => {
+                // Handle enhanced response format
+                if (response && response.success && response.data) {
+                    return this.processPost(response.data);
+                } else {
+                    return this.processPost(response);
+                }
+            })
+        );
     }
 
     // Delete a post
