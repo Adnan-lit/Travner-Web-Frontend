@@ -43,23 +43,35 @@ export class PostService {
         const authData = this.getStoredAuthData();
 
         if (!authData) {
-            return new HttpHeaders({
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest' // Prevent browser auth popup
-            });
+            return new HttpHeaders();
         }
 
         // Use Basic Authentication (same as AuthService)
         const credentials = btoa(`${authData.username}:${authData.password}`);
         const headers = new HttpHeaders({
-            'Authorization': `Basic ${credentials}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest' // Prevent browser auth popup
+            'Authorization': `Basic ${credentials}`
         });
 
         return headers;
+    }
+
+    /**
+     * Get headers for JSON requests (POST/PUT) that need Content-Type
+     */
+    private getJsonHeaders(): HttpHeaders {
+        const authData = this.getStoredAuthData();
+
+        if (!authData) {
+            return new HttpHeaders({
+                'Content-Type': 'application/json'
+            });
+        }
+
+        const credentials = btoa(`${authData.username}:${authData.password}`);
+        return new HttpHeaders({
+            'Authorization': `Basic ${credentials}`,
+            'Content-Type': 'application/json'
+        });
     }
 
     /**
@@ -308,7 +320,7 @@ export class PostService {
 
     // Create a new post
     createPost(post: PostCreate): Observable<Post> {
-        const headers = this.getAuthHeaders();
+        const headers = this.getJsonHeaders();
         return this.http.post<any>(`${this.API_BASE_URL}/posts`, post, {
             headers,
             withCredentials: false
@@ -329,7 +341,7 @@ export class PostService {
 
     // Update a post
     updatePost(id: string, post: PostUpdate): Observable<Post> {
-        const headers = this.getAuthHeaders();
+        const headers = this.getJsonHeaders();
         return this.http.put<any>(`${this.API_BASE_URL}/posts/${id}`, post, {
             headers,
             withCredentials: false
@@ -398,7 +410,7 @@ export class PostService {
 
     // Create a comment
     createComment(postId: string, comment: CommentCreate): Observable<Comment> {
-        const headers = this.getAuthHeaders();
+        const headers = this.getJsonHeaders();
         return this.http.post<Comment>(`${this.API_BASE_URL}/posts/${postId}/comments`, comment, {
             headers,
             withCredentials: false
@@ -407,7 +419,7 @@ export class PostService {
 
     // Update a comment
     updateComment(postId: string, commentId: string, comment: CommentUpdate): Observable<Comment> {
-        const headers = this.getAuthHeaders();
+        const headers = this.getJsonHeaders();
         return this.http.put<Comment>(`${this.API_BASE_URL}/posts/${postId}/comments/${commentId}`, comment, {
             headers,
             withCredentials: false
