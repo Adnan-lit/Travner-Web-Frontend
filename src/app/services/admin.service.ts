@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
+import { EnvironmentConfig } from '../config/environment.config';
 
 export interface AdminUser {
     id?: string;
@@ -55,8 +56,11 @@ export class AdminService {
      * Determine the appropriate admin API base URL based on environment
      */
     private getAdminBaseUrl(): string {
-        // Temporarily use direct backend URL while debugging proxy issues
-        return 'http://localhost:8080/admin';
+        // Use same-origin proxy in production to avoid CORS, direct backend in development
+        if (EnvironmentConfig.isProduction()) {
+            return '/api/admin';
+        }
+        return `${EnvironmentConfig.getApiBaseUrl()}/admin`;
     }
 
     /**
@@ -86,11 +90,16 @@ export class AdminService {
         const credentials = btoa(`${username}:${password}`);
 
         return new HttpHeaders({
-            'Authorization': `Basic ${credentials}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'Authorization': `Basic ${credentials}`
         });
+    }
+
+    /**
+     * Headers for JSON requests (POST/PUT) that require Content-Type
+     */
+    private getJsonAdminHeaders(): HttpHeaders {
+        const base = this.getAdminHeaders();
+        return base.set('Content-Type', 'application/json');
     }
 
     /**
@@ -181,7 +190,7 @@ export class AdminService {
         const requestBody: UpdateRolesRequest = { roles };
 
         return this.http.put<AdminResponse>(`${this.ADMIN_BASE_URL}/users/${username}/roles`, requestBody, {
-            headers: this.getAdminHeaders(),
+            headers: this.getJsonAdminHeaders(),
             withCredentials: false
         }).pipe(
             catchError(error => {
@@ -197,7 +206,7 @@ export class AdminService {
         const requestBody: ResetPasswordRequest = { password: newPassword };
 
         return this.http.put<AdminResponse>(`${this.ADMIN_BASE_URL}/users/${username}/password`, requestBody, {
-            headers: this.getAdminHeaders(),
+            headers: this.getJsonAdminHeaders(),
             withCredentials: false
         }).pipe(
             catchError(error => {
@@ -211,7 +220,7 @@ export class AdminService {
      */
     promoteUserToAdmin(username: string): Observable<AdminResponse> {
         return this.http.post<AdminResponse>(`${this.ADMIN_BASE_URL}/users/${username}/promote`, {}, {
-            headers: this.getAdminHeaders(),
+            headers: this.getJsonAdminHeaders(),
             withCredentials: false
         }).pipe(
             catchError(error => {
@@ -257,7 +266,7 @@ export class AdminService {
      */
     createAdminUser(userData: CreateUserRequest): Observable<AdminResponse> {
         return this.http.post<AdminResponse>(`${this.ADMIN_BASE_URL}/users`, userData, {
-            headers: this.getAdminHeaders(),
+            headers: this.getJsonAdminHeaders(),
             withCredentials: false
         }).pipe(
             catchError(error => {

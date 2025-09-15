@@ -11,7 +11,7 @@ export class EnvironmentConfig {
         if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app')) {
             // Production: Vercel deployment using Railway backend
             console.log('🌐 Production environment detected - using Railway backend');
-            return 'https://travner-web-backend-production.up.railway.app';
+            return 'https://travner-backend.up.railway.app';
         } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
             // Development: Local development
             console.log('🔧 Development environment detected - using local backend');
@@ -19,7 +19,7 @@ export class EnvironmentConfig {
         } else {
             // Fallback for other domains or preview deployments
             console.log('⚠️ Unknown environment, using Railway backend as fallback');
-            return 'https://travner-web-backend-production.up.railway.app';
+            return 'https://travner-backend.up.railway.app';
         }
     }
 
