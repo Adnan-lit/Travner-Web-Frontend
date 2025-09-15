@@ -33,15 +33,8 @@ export class PostService {
     private getAuthHeaders(): HttpHeaders {
         // Get stored auth data from localStorage (same as AuthService)
         const authData = this.getStoredAuthData();
-        
-        console.log('🔐 Getting auth headers:', {
-            hasAuthData: !!authData,
-            username: authData?.username,
-            hasPassword: !!authData?.password
-        });
 
         if (!authData) {
-            console.log('❌ No auth data found - this will trigger 401 and browser popup');
             return new HttpHeaders({
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
@@ -58,7 +51,6 @@ export class PostService {
             'X-Requested-With': 'XMLHttpRequest' // Prevent browser auth popup
         });
         
-        console.log('✅ Auth headers created with credentials for:', authData.username);
         return headers;
     }
 
@@ -84,53 +76,30 @@ export class PostService {
      */
     private processMediaUrls(mediaUrls: string[] | undefined): string[] {
         if (!mediaUrls || !Array.isArray(mediaUrls)) {
-            console.log('🚫 No mediaUrls to process:', mediaUrls);
             return [];
         }
-
-        console.log('📥 Original mediaUrls:', mediaUrls);
-
-        const processed = mediaUrls.map(url => {
-            let fullUrl: string;
-
+        
+        return mediaUrls.map(url => {
             if (url.startsWith('http')) {
                 // Already a full URL
-                fullUrl = url;
-                console.log(`✅ Already full URL: ${url}`);
+                return url;
             } else if (url.startsWith('/')) {
                 // Relative URL, convert to full backend URL
-                fullUrl = `${this.API_BASE_URL}${url}`;
-                console.log(`🔗 Converted relative URL: ${url} -> ${fullUrl}`);
+                return `${this.API_BASE_URL}${url}`;
             } else {
                 // Assume it's a relative path without leading slash
-                fullUrl = `${this.API_BASE_URL}/${url}`;
-                console.log(`🔗 Added base URL: ${url} -> ${fullUrl}`);
+                return `${this.API_BASE_URL}/${url}`;
             }
-
-            return fullUrl;
         });
-
-        console.log('📤 Processed mediaUrls:', processed);
-        return processed;
-    }
-
-    /**
+    }    /**
      * Process a single post to fix media URLs and other transformations
      */
     private processPost(post: any): Post {
-        const processedPost = {
+        return {
             ...post,
             authorName: post.author?.userName || post.authorName || 'Unknown',
             mediaUrls: this.processMediaUrls(post.mediaUrls)
         };
-
-        console.log('🖼️ Processing post media URLs:', {
-            original: post.mediaUrls,
-            processed: processedPost.mediaUrls,
-            postTitle: post.title
-        });
-
-        return processedPost;
     }
 
     // POSTS API ENDPOINTS
@@ -149,8 +118,6 @@ export class PostService {
             withCredentials: false
         }).pipe(
             map((response: any) => {
-                console.log('Posts API response:', response);
-
                 // Handle enhanced response format
                 if (response && response.success && response.data) {
                     // Enhanced format with wrapper
@@ -479,13 +446,6 @@ export class PostService {
 
     // Upload media for a post
     uploadMedia(postId: string, files: File[]): Observable<Media[]> {
-        console.log('🚀 Starting media upload for postId:', postId);
-        console.log('📁 Files to upload:', files.map(f => ({
-            name: f.name,
-            size: f.size,
-            type: f.type
-        })));
-
         const formData = new FormData();
 
         // According to the API docs, use 'file' as the parameter name
@@ -578,17 +538,13 @@ export class PostService {
     getMediaBlob(mediaUrl: string): Observable<string> {
         const headers = this.getAuthHeaders();
         
-        console.log('🖼️ Fetching media blob for:', mediaUrl);
-        
         return this.http.get(mediaUrl, {
             headers,
             responseType: 'blob'
         }).pipe(
             map((blob: Blob) => {
                 // Create a blob URL that can be used in img src or background-image
-                const blobUrl = URL.createObjectURL(blob);
-                console.log('✅ Media blob created:', blobUrl);
-                return blobUrl;
+                return URL.createObjectURL(blob);
             }),
             catchError(error => {
                 console.error('❌ Error fetching media blob:', error);
