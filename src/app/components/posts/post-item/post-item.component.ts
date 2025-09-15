@@ -45,7 +45,7 @@ import { AuthService } from '../../../services/auth.service';
           <div 
             class="media-item" 
             *ngFor="let mediaUrl of post.mediaUrls.slice(0, 3)"
-            [ngStyle]="{'background-image': 'url(' + getFullMediaUrl(mediaUrl) + ')'}"
+            [ngStyle]="{'background-image': 'url(' + mediaUrl + ')'}"
           ></div>
           <div class="media-more" *ngIf="post.mediaUrls.length > 3">
             +{{ post.mediaUrls.length - 3 }} more
@@ -348,24 +348,6 @@ export class PostItemComponent {
         const isAdmin = this.authService.isAdmin();
 
         return isAuthor || isAdmin;
-    }
-
-    /**
-     * Convert relative media URLs to full URLs for display
-     */
-    getFullMediaUrl(mediaUrl: string): string {
-        if (!mediaUrl) return '';
-        
-        // If it's already a full URL, return as is
-        if (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://')) {
-            return mediaUrl;
-        }
-        
-        // Convert relative URL to full URL using backend base URL
-        const baseUrl = 'http://localhost:8080';
-        // Ensure the media URL starts with a forward slash
-        const normalizedUrl = mediaUrl.startsWith('/') ? mediaUrl : `/${mediaUrl}`;
-        return `${baseUrl}${normalizedUrl}`;
     }
 
     onUpvote(): void {
