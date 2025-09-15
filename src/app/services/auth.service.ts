@@ -69,8 +69,14 @@ export class AuthService {
      * Determine the appropriate API base URL based on environment
      */
     private getApiBaseUrl(): string {
-        // Temporarily use direct backend URL while debugging proxy issues
-        return 'http://localhost:8080';
+        // Check if we're in production (deployed) or development (local)
+        if (window.location.hostname === 'travner.vercel.app') {
+            // Production: use your deployed backend URL
+            return 'https://travner-web-backend-production.up.railway.app';
+        } else {
+            // Development: use local backend
+            return 'http://localhost:8080';
+        }
     }
 
     /**

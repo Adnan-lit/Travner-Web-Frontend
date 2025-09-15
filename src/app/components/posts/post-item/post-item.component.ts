@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Post } from '../../../models/post.model';
 import { AuthService } from '../../../services/auth.service';
+import { PostService } from '../../../services/post.service';
 
 @Component({
     selector: 'app-post-item',
@@ -44,9 +45,16 @@ import { AuthService } from '../../../services/auth.service';
         <div class="media-preview" *ngIf="post.mediaUrls && post.mediaUrls.length > 0">
           <div 
             class="media-item" 
-            *ngFor="let mediaUrl of post.mediaUrls.slice(0, 3)"
-            [ngStyle]="{'background-image': 'url(' + mediaUrl + ')'}"
-          ></div>
+            *ngFor="let mediaUrl of post.mediaUrls.slice(0, 3); trackBy: trackByMediaUrl"
+          >
+            <div 
+              class="media-image"
+              [ngStyle]="getMediaStyle(mediaUrl)"
+            ></div>
+            <div class="media-loading" *ngIf="isMediaLoading(mediaUrl)">
+              Loading...
+            </div>
+          </div>
           <div class="media-more" *ngIf="post.mediaUrls.length > 3">
             +{{ post.mediaUrls.length - 3 }} more
           </div>
@@ -217,9 +225,26 @@ import { AuthService } from '../../../services/auth.service';
       width: 100px;
       height: 100px;
       border-radius: 4px;
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .media-image {
+      width: 100%;
+      height: 100%;
+      border-radius: 4px;
+    }
+    
+    .media-loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 12px;
+      color: #666;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 4px 8px;
+      border-radius: 4px;
     }
     
     .media-more {
@@ -310,7 +335,79 @@ export class PostItemComponent {
     @Output() deleted = new EventEmitter<string>();
     @Output() edited = new EventEmitter<string>();
 
-    constructor(private authService: AuthService) { }
+    // Track blob URLs for media images
+    mediaBlobUrls: { [key: string]: string } = {};
+    mediaLoadingStates: { [key: string]: boolean } = {};
+
+    constructor(
+        private authService: AuthService,
+        private postService: PostService
+    ) { }
+
+    /**
+     * Track by function for ngFor optimization
+     */
+    trackByMediaUrl(index: number, mediaUrl: string): string {
+        return mediaUrl;
+    }
+
+    /**
+     * Check if media is currently loading
+     */
+    isMediaLoading(mediaUrl: string): boolean {
+        return this.mediaLoadingStates[mediaUrl] || false;
+    }
+
+    /**
+     * Get style object for media item
+     */
+    getMediaStyle(mediaUrl: string): any {
+        const blobUrl = this.getMediaBlobUrl(mediaUrl);
+        return {
+            'background-image': blobUrl ? `url(${blobUrl})` : 'none',
+            'background-size': 'cover',
+            'background-position': 'center',
+            'background-repeat': 'no-repeat',
+            'width': '100%',
+            'height': '100%'
+        };
+    }
+
+    /**
+     * Get blob URL for media, creating it if it doesn't exist
+     */
+    getMediaBlobUrl(mediaUrl: string): string {
+        if (!mediaUrl) return '';
+        
+        // Check if we already have a blob URL for this media
+        if (this.mediaBlobUrls[mediaUrl]) {
+            return this.mediaBlobUrls[mediaUrl];
+        }
+
+        // Check if we're already loading this media
+        if (this.mediaLoadingStates[mediaUrl]) {
+            return '';
+        }
+
+        // Start loading the media
+        this.mediaLoadingStates[mediaUrl] = true;
+        
+        this.postService.getMediaBlob(mediaUrl).subscribe({
+            next: (blobUrl) => {
+                this.mediaLoadingStates[mediaUrl] = false;
+                if (blobUrl) {
+                    this.mediaBlobUrls[mediaUrl] = blobUrl;
+                }
+            },
+            error: (error) => {
+                this.mediaLoadingStates[mediaUrl] = false;
+                console.error('Failed to load media blob:', error);
+            }
+        });
+
+        // Return empty string while loading
+        return '';
+    }
 
     getInitials(name: string): string {
         if (!name) return '?';

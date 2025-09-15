@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { Post, PostCreate, PostUpdate, PostsResponse } from '../models/post.model';
 import { Comment, CommentCreate, CommentUpdate, CommentsResponse } from '../models/comment.model';
@@ -16,8 +16,14 @@ export class PostService {
     constructor(private http: HttpClient) { }
 
     private getApiBaseUrl(): string {
-        // Temporarily use direct backend URL while debugging proxy issues
-        return 'http://localhost:8080';
+        // Check if we're in production (deployed) or development (local)
+        if (window.location.hostname === 'travner.vercel.app') {
+            // Production: use your deployed backend URL
+            return 'https://travner-web-backend-production.up.railway.app';
+        } else {
+            // Development: use local backend
+            return 'http://localhost:8080';
+        }
     }
 
     /**
@@ -27,21 +33,33 @@ export class PostService {
     private getAuthHeaders(): HttpHeaders {
         // Get stored auth data from localStorage (same as AuthService)
         const authData = this.getStoredAuthData();
+        
+        console.log('🔐 Getting auth headers:', {
+            hasAuthData: !!authData,
+            username: authData?.username,
+            hasPassword: !!authData?.password
+        });
 
         if (!authData) {
+            console.log('❌ No auth data found - this will trigger 401 and browser popup');
             return new HttpHeaders({
                 'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest' // Prevent browser auth popup
             });
         }
 
         // Use Basic Authentication (same as AuthService)
         const credentials = btoa(`${authData.username}:${authData.password}`);
-        return new HttpHeaders({
+        const headers = new HttpHeaders({
             'Authorization': `Basic ${credentials}`,
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest' // Prevent browser auth popup
         });
+        
+        console.log('✅ Auth headers created with credentials for:', authData.username);
+        return headers;
     }
 
     /**
@@ -551,5 +569,32 @@ export class PostService {
             headers,
             withCredentials: false
         });
+    }
+
+    /**
+     * Fetch media file with authentication headers and return as blob URL
+     * This solves the issue where background-image requests don't include auth headers
+     */
+    getMediaBlob(mediaUrl: string): Observable<string> {
+        const headers = this.getAuthHeaders();
+        
+        console.log('🖼️ Fetching media blob for:', mediaUrl);
+        
+        return this.http.get(mediaUrl, {
+            headers,
+            responseType: 'blob'
+        }).pipe(
+            map((blob: Blob) => {
+                // Create a blob URL that can be used in img src or background-image
+                const blobUrl = URL.createObjectURL(blob);
+                console.log('✅ Media blob created:', blobUrl);
+                return blobUrl;
+            }),
+            catchError(error => {
+                console.error('❌ Error fetching media blob:', error);
+                // Return empty string for failed loads
+                return of('');
+            })
+        );
     }
 }
