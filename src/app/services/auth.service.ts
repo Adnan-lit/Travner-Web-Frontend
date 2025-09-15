@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { EnvironmentConfig } from '../config/environment.config';
 
 export interface SignupRequest {
     userName: string;
@@ -32,8 +33,8 @@ export interface User {
     providedIn: 'root'
 })
 export class AuthService {
-    // API URL configuration for different environments
-    private readonly API_BASE_URL = this.getApiBaseUrl();
+    // API URL configuration for different environments (proxied via Vercel in prod)
+    private readonly API_BASE_URL = EnvironmentConfig.isProduction() ? '/api' : this.getApiBaseUrl();
 
     private currentUserSubject = new BehaviorSubject<User | null>(null);
     public currentUser$ = this.currentUserSubject.asObservable();
@@ -69,22 +70,7 @@ export class AuthService {
      * Determine the appropriate API base URL based on environment
      */
     private getApiBaseUrl(): string {
-        // Check if we're in production (deployed) or development (local)
-        const hostname = window.location.hostname;
-
-        if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app')) {
-            // Production: use your deployed backend URL
-            console.log('🌐 Production environment detected - using Railway backend');
-            return 'https://travner-web-backend-production.up.railway.app';
-        } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
-            // Development: use local backend
-            console.log('🔧 Development environment detected - using local backend');
-            return 'http://localhost:8080';
-        } else {
-            // Fallback for other domains
-            console.log('⚠️ Unknown environment, using Railway backend as fallback');
-            return 'https://travner-web-backend-production.up.railway.app';
-        }
+        return EnvironmentConfig.getApiBaseUrl();
     }
 
     /**

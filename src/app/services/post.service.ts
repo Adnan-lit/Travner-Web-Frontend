@@ -5,33 +5,20 @@ import { map, catchError } from 'rxjs/operators';
 import { Post, PostCreate, PostUpdate, PostsResponse } from '../models/post.model';
 import { Comment, CommentCreate, CommentUpdate, CommentsResponse } from '../models/comment.model';
 import { Media, MediaType } from '../models/media.model';
+import { EnvironmentConfig } from '../config/environment.config';
 
 @Injectable({
     providedIn: 'root'
 })
 export class PostService {
     // API URL configuration
-    private readonly API_BASE_URL = this.getApiBaseUrl();
+    private readonly API_BASE_URL = EnvironmentConfig.isProduction() ? '/api' : this.getApiBaseUrl();
 
     constructor(private http: HttpClient) { }
 
     private getApiBaseUrl(): string {
-        // Check if we're in production (deployed) or development (local)
-        const hostname = window.location.hostname;
-
-        if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app')) {
-            // Production: use your deployed backend URL
-            console.log('🌐 Production environment detected - using Railway backend');
-            return 'https://travner-web-backend-production.up.railway.app';
-        } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
-            // Development: use local backend
-            console.log('🔧 Development environment detected - using local backend');
-            return 'http://localhost:8080';
-        } else {
-            // Fallback for other domains
-            console.log('⚠️ Unknown environment, using Railway backend as fallback');
-            return 'https://travner-web-backend-production.up.railway.app';
-        }
+        // Development only: call backend directly
+        return EnvironmentConfig.getApiBaseUrl();
     }
 
     /**
