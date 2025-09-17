@@ -15,5 +15,9 @@ export const routes: Routes = [
   { path: 'admin', component: AdminComponent },
   { path: 'posts', component: PostListComponent },
   { path: 'posts/:id', component: PostDetailComponent },
+  {
+    path: 'chat',
+    loadChildren: () => import('./features/chat/chat.module').then(m => m.ChatModule)
+  },
   { path: '**', redirectTo: '' } // Wildcard route for 404 pages
 ];

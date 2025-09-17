@@ -5,13 +5,13 @@ import { FormsModule } from '@angular/forms';
 import { PostService } from '../../services/post.service';
 import { Post, PostsResponse } from '../../models/post.model';
 import { PostItemComponent } from './post-item/post-item.component';
-import { PostFormComponent } from './post-form/post-form.component';
+// import { PostFormComponent } from './post-form/post-form.component';
 import { CursorService } from '../../services/cursor.service';
 
 @Component({
   selector: 'app-post-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, PostItemComponent, PostFormComponent],
+  imports: [CommonModule, RouterModule, FormsModule, PostItemComponent],
   template: `
     <div class="post-list-container">
       <!-- Search and Filter Section -->
@@ -65,7 +65,7 @@ import { CursorService } from '../../services/cursor.service';
       </div>
       
       <!-- Create Post Form -->
-      <app-post-form *ngIf="showCreatePost" (postSubmitted)="onPostCreated($event)"></app-post-form>
+      <!-- <app-post-form *ngIf="showCreatePost" (postSubmitted)="onPostCreated($event)"></app-post-form> -->
       
       <!-- Posts List -->
       <div class="posts-container">

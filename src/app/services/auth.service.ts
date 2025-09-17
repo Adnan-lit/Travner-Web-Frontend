@@ -33,6 +33,10 @@ export interface User {
     providedIn: 'root'
 })
 export class AuthService {
+    // Storage keys for authentication data
+    private static readonly TOKEN_KEY = 'travner_auth';
+    private static readonly REFRESH_TOKEN_KEY = 'travner_refresh';
+
     // API URL configuration for different environments (proxied via Vercel in prod)
     private readonly API_BASE_URL = EnvironmentConfig.isProduction() ? '/api' : this.getApiBaseUrl();
 
@@ -425,6 +429,23 @@ export class AuthService {
      */
     getCurrentUser(): User | null {
         return this.currentUserSubject.value;
+    }
+
+    /**
+     * Get stored authentication token
+     */
+    getToken(): string | null {
+        const storedAuth = localStorage.getItem(AuthService.TOKEN_KEY);
+        if (storedAuth) {
+            try {
+                const authData = JSON.parse(storedAuth);
+                return authData.token || authData.username || null; // Handle both token and username-based auth
+            } catch (error) {
+                console.error('Error parsing stored auth:', error);
+                return null;
+            }
+        }
+        return null;
     }
 
     /**

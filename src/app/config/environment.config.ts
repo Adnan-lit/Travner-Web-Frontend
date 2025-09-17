@@ -24,6 +24,27 @@ export class EnvironmentConfig {
     }
 
     /**
+     * Get the appropriate WebSocket URL based on environment
+     */
+    static getWebSocketUrl(): string {
+        const hostname = window.location.hostname;
+
+        if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app')) {
+            // Production: WebSocket for Railway backend
+            console.log('🌐 Production WebSocket - using Railway backend');
+            return 'https://travner-backend.up.railway.app/ws';
+        } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
+            // Development: Local WebSocket
+            console.log('🔧 Development WebSocket - using local backend');
+            return 'http://localhost:8080/ws';
+        } else {
+            // Fallback for other domains
+            console.log('⚠️ Unknown environment, using Railway WebSocket as fallback');
+            return 'https://travner-backend.up.railway.app/ws';
+        }
+    }
+
+    /**
      * Check if running in production environment
      */
     static isProduction(): boolean {
@@ -57,5 +78,6 @@ export class EnvironmentConfig {
         console.log('  - Origin:', window.location.origin);
         console.log('  - Environment:', this.getEnvironmentName());
         console.log('  - API Base URL:', this.getApiBaseUrl());
+        console.log('  - WebSocket URL:', this.getWebSocketUrl());
     }
 }
