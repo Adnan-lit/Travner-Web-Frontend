@@ -8,18 +8,14 @@ export class EnvironmentConfig {
     static getApiBaseUrl(): string {
         const hostname = window.location.hostname;
 
-        if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app')) {
+        if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app') || hostname !== 'localhost') {
             // Production: Vercel deployment using Railway backend
             console.log('🌐 Production environment detected - using Railway backend');
-            return 'https://travner-backend.up.railway.app';
-        } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
+            return 'https://travner-web-backend-production.up.railway.app';
+        } else {
             // Development: Local development
             console.log('🔧 Development environment detected - using local backend');
             return 'http://localhost:8080';
-        } else {
-            // Fallback for other domains or preview deployments
-            console.log('⚠️ Unknown environment, using Railway backend as fallback');
-            return 'https://travner-backend.up.railway.app';
         }
     }
 
@@ -29,18 +25,14 @@ export class EnvironmentConfig {
     static getWebSocketUrl(): string {
         const hostname = window.location.hostname;
 
-        if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app')) {
+        if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app') || hostname !== 'localhost') {
             // Production: WebSocket for Railway backend
             console.log('🌐 Production WebSocket - using Railway backend');
-            return 'https://travner-backend.up.railway.app/ws';
-        } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
+            return 'https://travner-web-backend-production.up.railway.app/ws';
+        } else {
             // Development: Local WebSocket
             console.log('🔧 Development WebSocket - using local backend');
             return 'http://localhost:8080/ws';
-        } else {
-            // Fallback for other domains
-            console.log('⚠️ Unknown environment, using Railway WebSocket as fallback');
-            return 'https://travner-backend.up.railway.app/ws';
         }
     }
 

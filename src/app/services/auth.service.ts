@@ -104,6 +104,21 @@ export class AuthService {
             password: signupData.password
         };
 
+        console.log('AuthService signup called with:', requestBody);
+        console.log('API URL:', `${this.API_BASE_URL}/public/create-user`);
+        
+        // Log detailed request information for debugging
+        console.log('Request details:', {
+            method: 'POST',
+            url: `${this.API_BASE_URL}/public/create-user`,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: requestBody,
+            withCredentials: false
+        });
+
         const headers = new HttpHeaders({
             'Content-Type': 'application/json',
             'Accept': 'application/json'
@@ -111,10 +126,26 @@ export class AuthService {
 
         return this.http.post<any>(`${this.API_BASE_URL}/public/create-user`, requestBody, {
             headers,
-            withCredentials: false // Signup doesn't need credentials
+            withCredentials: false, // Signup doesn't need credentials
+            observe: 'response' // Get full response for debugging
         })
             .pipe(
+                tap(response => {
+                    console.log('Signup response:', response);
+                }),
                 catchError(error => {
+                    console.error('Signup error:', error);
+                    if (error.error) {
+                        console.error('Error details:', error.error);
+                        // Log the full error response for debugging
+                        console.error('Full error response:', {
+                            status: error.status,
+                            statusText: error.statusText,
+                            url: error.url,
+                            headers: error.headers,
+                            error: error.error
+                        });
+                    }
                     throw error;
                 })
             );
