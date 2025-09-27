@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, OnDestroy, HostListener } from 
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Post } from '../../../models/post.model';
+import { isPostOwner } from '../../../utils/ownership.util';
 import { AuthService } from '../../../services/auth.service';
 import { PostService } from '../../../services/post.service';
 
@@ -20,6 +21,7 @@ import { PostService } from '../../../services/post.service';
           </div>
         </div>
         
+  <div class="ownership-debug" *ngIf="debugMode">UID: {{ currentUserId() || '—' }} | AID: {{ post.authorId || '—' }}</div>
         <div class="post-actions" *ngIf="canModifyPost()">
           <button class="edit-btn" (click)="onEdit()">Edit</button>
           <button class="delete-btn" (click)="onDelete()">Delete</button>
@@ -28,7 +30,7 @@ import { PostService } from '../../../services/post.service';
       
       <div class="post-content">
         <h2 class="post-title">
-          <a [routerLink]="['/posts', post.id]">{{ post.title }}</a>
+          <a [routerLink]="['/community', post.id]">{{ post.title }}</a>
         </h2>
         
         <div class="post-location">
@@ -108,7 +110,7 @@ import { PostService } from '../../../services/post.service';
             </button>
           </div>
           
-          <a [routerLink]="['/posts', post.id]" class="comments-link">
+          <a [routerLink]="['/community', post.id]" class="comments-link">
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
@@ -625,6 +627,7 @@ import { PostService } from '../../../services/post.service';
       visibility: visible;
       transform: translateX(0);
     }
+    .ownership-debug { font-size:10px; opacity:0.6; margin-right:8px; }
   `]
 })
 export class PostItemComponent implements OnDestroy {
@@ -646,6 +649,9 @@ export class PostItemComponent implements OnDestroy {
     private authService: AuthService,
     private postService: PostService
   ) { }
+
+  get debugMode(): boolean { try { return localStorage.getItem('travner_debug') === 'true'; } catch { return false; } }
+  currentUserId(): string | null { return this.authService.getCurrentUser?.()?.id || null; }
 
   /**
    * Track by function for ngFor optimization
@@ -741,23 +747,7 @@ export class PostItemComponent implements OnDestroy {
     });
   }
 
-  canModifyPost(): boolean {
-    if (!this.post) return false;
-
-    // Get the current user
-    let currentUser: any = null;
-    this.authService.currentUser$.subscribe(user => {
-      currentUser = user;
-    });
-
-    // Check if the user is the author or an admin
-    if (!currentUser) return false;
-
-    const isAuthor = currentUser.id === this.post.authorId;
-    const isAdmin = this.authService.isAdmin();
-
-    return isAuthor || isAdmin;
-  }
+  canModifyPost(): boolean { return isPostOwner(this.post, this.authService.getCurrentUser?.(), 'PostItem'); }
 
   onUpvote(): void {
     this.upvoted.emit(this.post.id);
@@ -803,7 +793,7 @@ export class PostItemComponent implements OnDestroy {
    * Share post to social media
    */
   shareToSocial(platform: string): void {
-    const postUrl = `${window.location.origin}/posts/${this.post.id}`;
+    const postUrl = `${window.location.origin}/community/${this.post.id}`;
     const postTitle = encodeURIComponent(this.post.title);
     const postDescription = encodeURIComponent(this.post.content.substring(0, 200) + '...');
 
@@ -835,7 +825,7 @@ export class PostItemComponent implements OnDestroy {
    * Copy post link to clipboard
    */
   async copyPostLink(): Promise<void> {
-    const postUrl = `${window.location.origin}/posts/${this.post.id}`;
+    const postUrl = `${window.location.origin}/community/${this.post.id}`;
 
     try {
       await navigator.clipboard.writeText(postUrl);

@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { PostService } from '../../../services/post.service';
 import { Post } from '../../../models/post.model';
 import { Comment, CommentCreate, CommentsResponse } from '../../../models/comment.model';
@@ -9,20 +9,21 @@ import { Media, MediaType } from '../../../models/media.model';
 import { AuthService } from '../../../services/auth.service';
 import { CursorService } from '../../../services/cursor.service';
 import { CommentComponent } from '../comment/comment.component';
+import { isPostOwner } from '../../../utils/ownership.util';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-post-detail',
-  standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, CommentComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, CommentComponent],
   template: `
     <div class="post-detail-container">
       <!-- Back Button -->
       <div class="back-nav">
-        <button class="back-button" routerLink="/dashboard">
+  <button class="back-button" routerLink="/community">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
-          Back to Posts
+          Back to Community
         </button>
       </div>
 
@@ -750,10 +751,17 @@ export class PostDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private postService: PostService,
     private authService: AuthService,
-    private formBuilder: FormBuilder
+    private formBuilder: FormBuilder,
+    private router: Router,
+    private toast: ToastService
   ) { }
 
   ngOnInit(): void {
+    // Show feedback when redirected from guard
+    const denied = this.route.snapshot.queryParamMap.get('denied');
+    if (denied === 'not-owner') {
+      this.toast.info('You are not allowed to edit that post.');
+    }
     // Get post ID from route
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');
@@ -875,14 +883,7 @@ export class PostDetailComponent implements OnInit {
     });
   }
 
-  canModifyPost(): boolean {
-    if (!this.post || !this.currentUser) return false;
-
-    const isAuthor = this.currentUser.id === this.post.authorId;
-    const isAdmin = this.authService.hasRole('ADMIN');
-
-    return isAuthor || isAdmin;
-  }
+  canModifyPost(): boolean { return isPostOwner(this.post, this.currentUser, 'PostDetail'); }
 
   canModifyComment(comment: Comment): boolean {
     if (!comment || !this.currentUser) return false;
@@ -920,8 +921,8 @@ export class PostDetailComponent implements OnInit {
   }
 
   onEdit(): void {
-    // Navigate to edit post page or show edit form
-    // This would be implemented based on the app's navigation structure
+    if (!this.postId) return;
+    this.router.navigate(['/community', this.postId, 'edit']);
   }
 
   onDelete(): void {
@@ -930,11 +931,12 @@ export class PostDetailComponent implements OnInit {
     if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
       this.postService.deletePost(this.postId).subscribe({
         next: () => {
-          // Navigate back to posts list
-          // This would be implemented based on the app's navigation structure
+          // Navigate back to community list after deletion
+          this.router.navigate(['/community']);
         },
         error: (error) => {
           console.error('Error deleting post:', error);
+          alert('Failed to delete post.');
         }
       });
     }

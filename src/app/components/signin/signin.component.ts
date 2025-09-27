@@ -4,6 +4,7 @@ import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { AuthService, User } from '../../services/auth.service';
+import { ThemeService } from '../../services/theme.service';
 import { CursorService } from '../../services/cursor.service';
 
 @Component({
@@ -20,6 +21,8 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
   successMessage = '';
   private particles: HTMLElement[] = [];
 
+  get theme$() { return this.themeService.theme$; }
+
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
@@ -27,7 +30,8 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
     private el: ElementRef,
     private renderer: Renderer2,
     private authService: AuthService,
-    private cursorService: CursorService
+    private cursorService: CursorService,
+    private themeService: ThemeService
   ) { }
 
   ngOnInit(): void {
@@ -123,6 +127,8 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
   togglePassword(): void {
     this.showPassword = !this.showPassword;
   }
+
+  toggleTheme(): void { this.themeService.toggleTheme(); }
 
   onSubmit(): void {
     if (this.signinForm.valid) {

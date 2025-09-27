@@ -1,53 +1,5 @@
-/* Modern Landing Page Design */
+/* Landing Page Styles - Updated for Consistency */
 
-/* Header/Navigation */
-.header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--neutral-200);
-  z-index: var(--z-fixed);
-  transition: all var(--transition-normal);
-}
-
-.header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: var(--gradient-ocean);
-  opacity: 0.5;
-}
-
-.nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-4) 0;
-}
-
-.nav-brand .brand-text {
-  background: var(--gradient-ocean);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-family: var(--font-secondary);
-  font-size: var(--text-2xl);
-  font-weight: 800;
-  margin: 0;
-  letter-spacing: -0.5px;
-}
-
-.nav-links {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-}
 
 /* Hero Section */
 .hero {
@@ -605,17 +557,6 @@
 }
 
 @media (max-width: 768px) {
-  .nav {
-    padding: var(--space-3) 0;
-  }
-  
-  .nav-brand .brand-text {
-    font-size: var(--text-xl);
-  }
-  
-  .nav-links {
-    gap: var(--space-2);
-  }
   
   .hero {
     padding: calc(var(--space-16) + 80px) 0 var(--space-16);
@@ -692,11 +633,6 @@
 }
 
 @media (max-width: 480px) {
-  .nav {
-    flex-direction: column;
-    gap: var(--space-3);
-    padding: var(--space-3) 0;
-  }
   
   .hero {
     padding: calc(var(--space-12) + 120px) 0 var(--space-12);

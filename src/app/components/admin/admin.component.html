@@ -544,7 +544,7 @@
     <div class="modal-content" *ngIf="diagnosticResults">
       <div class="diagnostic-header">
         <p><strong>Test Status:</strong> {{ diagnosticResults.status }}</p>
-        <p><strong>Timestamp:</strong> {{ diagnosticResults.timestamp | date:'medium' }}</p>
+        <p><strong>Timestamp:</strong> {{ diagnosticResults?.timestamp | date:'medium' }}</p>
       </div>
       
       <div class="diagnostic-steps">
@@ -554,7 +554,7 @@
             <span class="step-status" [innerHTML]="step.status"></span>
           </div>
           <div class="step-data" *ngIf="step.data">
-            <pre>{{ step.data | json }}</pre>
+            <pre>{{ step?.data | json }}</pre>
           </div>
         </div>
       </div>

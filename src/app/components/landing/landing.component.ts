@@ -4,9 +4,12 @@ import { CursorService } from '../../services/cursor.service';
 
 @Component({
   selector: 'app-landing',
-  imports: [RouterModule],
+  standalone: true,
+  imports: [
+    RouterModule
+],
   templateUrl: './landing.component.html',
-  styleUrl: './landing.component.css'
+  styleUrls: ['./landing.component.css']
 })
 export class LandingComponent implements OnInit, OnDestroy, AfterViewInit {
   private particles: HTMLElement[] = [];

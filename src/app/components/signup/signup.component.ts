@@ -4,6 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
+import { ThemeService } from '../../services/theme.service';
 import { CursorService } from '../../services/cursor.service';
 
 @Component({
@@ -20,6 +21,9 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
   errorMessage = '';
   successMessage = '';
   private particles: HTMLElement[] = [];
+  showHints = false;
+
+  get theme$() { return this.themeService.theme$; }
 
   constructor(
     private formBuilder: FormBuilder,
@@ -27,7 +31,8 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
     private el: ElementRef,
     private renderer: Renderer2,
     private authService: AuthService,
-    private cursorService: CursorService
+    private cursorService: CursorService,
+    private themeService: ThemeService
   ) { }
 
   ngOnInit(): void {
@@ -167,26 +172,29 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
     this.showConfirmPassword = !this.showConfirmPassword;
   }
 
+  toggleTheme(): void { this.themeService.toggleTheme(); }
+
   getPasswordStrength(): string {
     const password = this.password?.value || '';
-    let strength = 0;
-
-    if (password.length >= 8) strength++;
-    if (/[a-z]/.test(password)) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/\d/.test(password)) strength++;
-    if (/[^\w\s]/.test(password)) strength++;
-
-    if (strength <= 2) return 'weak';
-    if (strength <= 3) return 'medium';
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^\w\s]/.test(password)) score++;
+    if (score <= 2) return 'weak';
+    if (score <= 3) return 'fair';
+    if (score <= 4) return 'good';
     return 'strong';
   }
 
   getPasswordStrengthText(): string {
-    const strength = this.getPasswordStrength();
-    switch (strength) {
+    const level = this.getPasswordStrength();
+    switch (level) {
       case 'weak': return 'Weak';
-      case 'medium': return 'Medium';
+      case 'fair': return 'Fair';
+      case 'good': return 'Good';
       case 'strong': return 'Strong';
       default: return '';
     }

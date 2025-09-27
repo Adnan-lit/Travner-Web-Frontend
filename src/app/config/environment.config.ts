@@ -11,11 +11,11 @@ export class EnvironmentConfig {
         if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app') || hostname !== 'localhost') {
             // Production: Vercel deployment using Railway backend
             console.log('🌐 Production environment detected - using Railway backend');
-            return 'https://travner-web-backend-production.up.railway.app';
+            return 'https://travner-web-backend-production.up.railway.app/';
         } else {
             // Development: Local development
             console.log('🔧 Development environment detected - using local backend');
-            return 'http://localhost:8080';
+            return 'http://localhost:8080/';
         }
     }
 

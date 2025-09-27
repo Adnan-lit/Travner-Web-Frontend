@@ -1,5 +1,7 @@
 /* Global styles for Travner - Modern Travel Guide Social Platform */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import './app/shared/styles/shared-animations.css';
+@import './app/shared/styles/shared-components.css';
 
 /* Modern Design System - CSS Custom Properties */
 :root {
@@ -143,6 +145,13 @@ body {
   cursor: none;
   margin: 0;
   padding: 0;
+}
+
+/* Fallback pointer class if custom cursor fails or for accessibility tooling */
+.pointer, a, button, [role="button"], input[type="submit"], input[type="button"], .clickable { cursor: pointer; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
 }
 
 html {

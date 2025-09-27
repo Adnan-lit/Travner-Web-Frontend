@@ -7,7 +7,6 @@ import { PostService } from '../../../services/post.service';
 
 @Component({
     selector: 'app-comment',
-    standalone: true,
     imports: [CommonModule, ReactiveFormsModule],
     template: `
     <div class="comment" [class.reply]="isReply" [class.has-replies]="hasReplies">

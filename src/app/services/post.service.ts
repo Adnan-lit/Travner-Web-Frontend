@@ -6,6 +6,7 @@ import { Post, PostCreate, PostUpdate, PostsResponse } from '../models/post.mode
 import { Comment, CommentCreate, CommentUpdate, CommentsResponse } from '../models/comment.model';
 import { Media, MediaType } from '../models/media.model';
 import { EnvironmentConfig } from '../config/environment.config';
+import { AuthService } from './auth.service';
 
 @Injectable({
     providedIn: 'root'
@@ -14,7 +15,7 @@ export class PostService {
     // API URL configuration
     private readonly API_BASE_URL = EnvironmentConfig.isProduction() ? '/api' : this.getApiBaseUrl();
 
-    constructor(private http: HttpClient) { }
+    constructor(private http: HttpClient, private auth: AuthService) { }
 
     private getApiBaseUrl(): string {
         // Development only: call backend directly
@@ -102,11 +103,63 @@ export class PostService {
      * Process a single post to fix media URLs and other transformations
      */
     private processPost(post: any): Post {
-        return {
+        // Attempt to derive a stable author identifier across multiple possible backend field shapes
+        // Backend docs show userName frequently; posts may expose either a nested author object or flat fields.
+        const derivedAuthorId =
+            post.authorId ||
+            post.author_id ||
+            post.author?.id ||
+            post.author?.userId ||
+            post.author?.userID ||
+            post.author?.uuid ||
+            post.author?.user_id ||
+            post.userId ||
+            post.user_id ||
+            post.user?.id ||
+            post.user?.userId ||
+            post.user?.uuid ||
+            // fall back to username as identifier if no numeric/id style field present
+            post.author?.userName ||
+            post.author?.username ||
+            post.userName ||
+            post.username;
+
+        const derivedAuthorName =
+            post.author?.userName ||
+            post.author?.username ||
+            post.authorName ||
+            post.userName ||
+            post.username ||
+            'Unknown';
+
+        const processed: Post = {
             ...post,
-            authorName: post.author?.userName || post.authorName || 'Unknown',
+            authorId: derivedAuthorId != null ? String(derivedAuthorId) : undefined,
+            authorName: derivedAuthorName,
             mediaUrls: this.processMediaUrls(post.mediaUrls)
         };
+        // Debug instrumentation (enabled via localStorage flag)
+        try {
+            if (localStorage.getItem('travner_debug') === 'true') {
+                if (!processed.authorId) {
+                    // Log once per post id to avoid spam
+                    console.warn('[PostService] Missing authorId after processing post:', {
+                        id: processed.id,
+                        rawAuthor: post.author || post.user,
+                        topLevelKeys: Object.keys(post || {}),
+                        derivedAuthorId: processed.authorId,
+                        fallbackFieldsTried: ['authorId', 'author_id', 'author.id', 'author.userId', 'author.userID', 'author.uuid', 'author.user_id', 'userId', 'user_id', 'user.id', 'user.userId', 'user.uuid', 'author.userName', 'author.username', 'userName', 'username']
+                    });
+                } else {
+                    console.debug('[PostService] Processed post ownership mapping:', {
+                        postId: processed.id,
+                        authorId: processed.authorId,
+                        authorName: processed.authorName
+                    });
+                }
+            }
+        } catch { }
+        return processed;
     }
 
     // POSTS API ENDPOINTS
@@ -328,6 +381,11 @@ export class PostService {
 
     // Update a post
     updatePost(id: string, post: PostUpdate): Observable<Post> {
+        // Optional client-side ownership hint (server must enforce)
+        const currentUser = this.auth.getCurrentUser();
+        if (!currentUser) {
+            throw new Error('Not authenticated');
+        }
         const headers = this.getJsonHeaders();
         return this.http.put<any>(`${this.API_BASE_URL}/posts/${id}`, post, {
             headers,
@@ -346,6 +404,10 @@ export class PostService {
 
     // Delete a post
     deletePost(id: string): Observable<void> {
+        const currentUser = this.auth.getCurrentUser();
+        if (!currentUser) {
+            throw new Error('Not authenticated');
+        }
         const headers = this.getAuthHeaders();
         return this.http.delete<void>(`${this.API_BASE_URL}/posts/${id}`, {
             headers,

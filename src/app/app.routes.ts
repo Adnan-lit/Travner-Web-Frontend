@@ -6,18 +6,32 @@ import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { AdminComponent } from './components/admin/admin.component';
 import { PostListComponent } from './components/posts/post-list.component';
 import { PostDetailComponent } from './components/posts/post-detail/post-detail.component';
+import { PostEditComponent } from './components/posts/post-edit/post-edit.component';
+import { PostCreateComponent } from './components/posts/post-create/post-create.component';
+import { authGuard } from './guards/auth.guard';
+import { adminGuard } from './guards/admin.guard';
+import { noAuthGuard } from './guards/no-auth.guard';
+import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
+import { postOwnerGuard } from './guards/post-owner.guard';
 
 export const routes: Routes = [
-  { path: '', component: LandingComponent },
-  { path: 'signin', component: SigninComponent },
-  { path: 'signup', component: SignupComponent },
-  { path: 'dashboard', component: DashboardComponent },
-  { path: 'admin', component: AdminComponent },
-  { path: 'posts', component: PostListComponent },
-  { path: 'posts/:id', component: PostDetailComponent },
   {
-    path: 'chat',
-    loadChildren: () => import('./features/chat/chat.module').then(m => m.ChatModule)
+    path: '',
+    component: MainLayoutComponent,
+    children: [
+      { path: '', component: LandingComponent },
+      { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
+      { path: 'admin', component: AdminComponent, canActivate: [adminGuard] },
+      { path: 'community', component: PostListComponent },
+      { path: 'community/new', component: PostCreateComponent, canActivate: [authGuard] },
+      { path: 'community/:id', component: PostDetailComponent },
+      { path: 'community/:id/edit', component: PostEditComponent, canActivate: [authGuard, postOwnerGuard] },
+      { path: 'posts', redirectTo: 'community', pathMatch: 'full' },
+      { path: 'posts/:id', redirectTo: 'community/:id', pathMatch: 'full' },
+      // Chat module removed - features directory no longer exists
+    ]
   },
+  { path: 'signin', component: SigninComponent, canActivate: [noAuthGuard] },
+  { path: 'signup', component: SignupComponent, canActivate: [noAuthGuard] },
   { path: '**', redirectTo: '' } // Wildcard route for 404 pages
 ];

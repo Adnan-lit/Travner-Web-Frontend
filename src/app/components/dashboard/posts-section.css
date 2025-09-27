@@ -1,23 +1,27 @@
-/* Travel Posts Section Styles */
+/* Travel Posts Section Styles - Updated for Consistency */
 .travel-posts-section {
-  margin-top: 40px;
-  margin-bottom: 40px;
+  margin-top: var(--space-10);
+  margin-bottom: var(--space-10);
 }
 
 .section-title {
-  font-size: 24px;
-  margin-bottom: 10px;
-  color: var(--text-primary);
+  font-size: var(--text-2xl);
+  margin-bottom: var(--space-3);
+  color: white;
+  font-weight: 700;
+  font-family: var(--font-secondary);
 }
 
 .section-description {
-  color: var(--text-secondary);
-  margin-bottom: 20px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: var(--space-5);
+  font-size: var(--text-lg);
+  line-height: 1.6;
 }
 
 /* Ensure our post list fits well in the dashboard */
 app-post-list {
   display: block;
   width: 100%;
-  margin-top: 20px;
+  margin-top: var(--space-5);
 }

@@ -18,9 +18,10 @@ interface UserFilter {
 
 @Component({
     selector: 'app-admin',
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule],
     templateUrl: './admin.component.html',
-    styleUrl: './admin.component.css'
+    styleUrls: ['./admin.component.css'],
+    standalone: true,
+    imports: [CommonModule, RouterModule, ReactiveFormsModule]
 })
 export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
     // Data properties

@@ -1,67 +1,69 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { PostService } from '../../services/post.service';
 import { Post, PostsResponse } from '../../models/post.model';
 import { PostItemComponent } from './post-item/post-item.component';
+import { AuthService } from '../../services/auth.service';
+import { Router } from '@angular/router';
 // import { PostFormComponent } from './post-form/post-form.component';
 import { CursorService } from '../../services/cursor.service';
 
 @Component({
   selector: 'app-post-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, PostItemComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, PostItemComponent],
   template: `
     <div class="post-list-container">
       <!-- Search and Filter Section -->
       <div class="search-filter-section">
-        <div class="search-container">
-          <input 
-            type="text" 
-            [(ngModel)]="searchQuery" 
-            placeholder="Search posts..." 
-            (keyup.enter)="searchPosts()"
-            class="search-input"
-          >
-          <button (click)="searchPosts()" class="search-btn">Search</button>
-        </div>
-        
-        <div class="filter-container">
-          <select [(ngModel)]="filterType" (change)="applyFilter()" class="filter-select">
-            <option value="all">All Posts</option>
-            <option value="location">Filter by Location</option>
-            <option value="tag">Filter by Tag</option>
-          </select>
+        <form [formGroup]="searchForm" (ngSubmit)="onSearchSubmit()">
+          <div class="search-container">
+            <input
+              type="text"
+              formControlName="searchQuery"
+              placeholder="Search community..."
+              (keyup.enter)="onSearchSubmit()"
+              class="search-input"
+            >
+            <button type="submit" class="search-btn">Search</button>
+          </div>
           
-          <input 
-            *ngIf="filterType === 'location'"
-            type="text" 
-            [(ngModel)]="filterLocation" 
-            placeholder="Enter location" 
-            (keyup.enter)="applyFilter()"
-            class="filter-input"
-          >
-          
-          <input 
-            *ngIf="filterType === 'tag'"
-            type="text" 
-            [(ngModel)]="filterTag" 
-            placeholder="Enter tag" 
-            (keyup.enter)="applyFilter()"
-            class="filter-input"
-          >
-          
-          <button (click)="applyFilter()" class="filter-btn">Apply Filter</button>
-          <button (click)="resetFilters()" class="reset-btn">Reset</button>
-        </div>
+          <div class="filter-container">
+            <select formControlName="filterType" (change)="onFilterTypeChange()" class="filter-select">
+              <option value="all">All Community</option>
+              <option value="location">Filter by Location</option>
+              <option value="tag">Filter by Tag</option>
+            </select>
+            
+            <input
+              *ngIf="filterType === 'location'"
+              type="text"
+              formControlName="filterLocation"
+              placeholder="Enter location"
+              (keyup.enter)="onSearchSubmit()"
+              class="filter-input"
+            >
+            
+            <input
+              *ngIf="filterType === 'tag'"
+              type="text"
+              formControlName="filterTag"
+              placeholder="Enter tag"
+              (keyup.enter)="onSearchSubmit()"
+              class="filter-input"
+            >
+            
+            <button type="submit" class="filter-btn">Apply Filter</button>
+            <button type="button" (click)="resetFilters()" class="reset-btn">Reset</button>
+          </div>
+        </form>
       </div>
       
       <!-- Create New Post Button -->
-      <div class="create-post-section">
-        <button (click)="toggleCreatePost()" class="create-post-btn">
-          {{ showCreatePost ? 'Cancel' : 'Share Your Journey' }}
-        </button>
+      <div class="create-post-section" *ngIf="isAuthenticated">
+        <button (click)="goToCreate()" class="create-post-btn">New Post</button>
       </div>
       
       <!-- Create Post Form -->
@@ -76,6 +78,7 @@ import { CursorService } from '../../services/cursor.service';
             (upvoted)="onUpvote($event)"
             (downvoted)="onDownvote($event)"
             (deleted)="onDelete($event)"
+            (edited)="onEdit($event)"
           ></app-post-item>
           
           <!-- Pagination Controls -->
@@ -101,7 +104,7 @@ import { CursorService } from '../../services/cursor.service';
         <!-- No Posts Template -->
         <ng-template #noPosts>
           <div class="no-posts">
-            <p>No travel posts available. Be the first to share your journey!</p>
+            <p>No community stories yet. Be the first to share your journey!</p>
           </div>
         </ng-template>
       </div>
@@ -279,17 +282,47 @@ export class PostListComponent implements OnInit, OnDestroy, AfterViewInit {
   filterTag = '';
 
   showCreatePost = false;
+  isAuthenticated = false;
+
+  searchForm!: any;
 
   constructor(
     private postService: PostService,
     private el: ElementRef,
     private renderer: Renderer2,
-    private cursorService: CursorService
+    private cursorService: CursorService,
+    private authService: AuthService,
+    private router: Router,
+    private fb: FormBuilder
   ) { }
 
   ngOnInit(): void {
+    this.searchForm = this.fb.group({
+      searchQuery: [''],
+      filterType: ['all'],
+      filterLocation: [''],
+      filterTag: ['']
+    });
+    
     this.loadPosts();
+    this.authService.isAuthenticated$.subscribe(v => this.isAuthenticated = v);
     this.cursorService.initializeCursor(this.renderer, this.el);
+  }
+
+  onSearchSubmit(): void {
+    if (this.searchQuery) {
+      this.searchPosts();
+    } else {
+      this.applyFilter();
+    }
+  }
+
+  onFilterTypeChange(): void {
+    this.filterType = this.searchForm.value.filterType;
+    this.searchForm.patchValue({
+      filterLocation: '',
+      filterTag: ''
+    });
   }
 
   ngAfterViewInit(): void {
@@ -308,6 +341,11 @@ export class PostListComponent implements OnInit, OnDestroy, AfterViewInit {
           this.posts = response.content;
           this.totalPages = response.totalPages;
           this.totalElements = response.totalElements;
+          try {
+            if (localStorage.getItem('travner_debug') === 'true') {
+              console.log('[PostList] Ownership debug snapshot:', this.posts.map(p => ({ id: p.id, authorId: p.authorId, authorName: p.authorName })));
+            }
+          } catch { }
         } else {
           console.warn('Received unexpected response format:', response);
           this.posts = [];
@@ -412,9 +450,9 @@ export class PostListComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  toggleCreatePost(): void {
-    this.showCreatePost = !this.showCreatePost;
-  }
+  toggleCreatePost(): void { this.showCreatePost = !this.showCreatePost; }
+
+  goToCreate(): void { this.router.navigate(['/community', 'new']); }
 
   onPostCreated(newPost: Post): void {
     this.showCreatePost = false;
@@ -452,6 +490,10 @@ export class PostListComponent implements OnInit, OnDestroy, AfterViewInit {
         console.error('Error deleting post:', error);
       }
     });
+  }
+
+  onEdit(postId: string): void {
+    this.router.navigate(['/community', postId, 'edit']);
   }
 
   private updatePostInList(updatedPost: Post): void {

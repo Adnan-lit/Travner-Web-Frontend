@@ -8,9 +8,10 @@ import { PostListComponent } from '../posts/post-list.component';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, RouterModule, PostListComponent],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+  styleUrls: ['./dashboard.component.css'],
+  standalone: true,
+  imports: [CommonModule, RouterModule, PostListComponent]
 })
 export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   currentUser: User | null = null;
