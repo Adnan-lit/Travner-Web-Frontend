@@ -176,6 +176,7 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
           // Log debugging information for developers
           console.log('🔍 Debugging Information:');
           console.log(`  - Frontend Origin: ${window.location.origin}`);
+          console.log(`  - Backend URL: ${this.authService['API_BASE_URL']}`);
           console.log(`  - Error Status: ${error.status}`);
           console.log(`  - Error Message: ${error.message}`);
         }
@@ -192,10 +193,34 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
   signInWithGoogle(): void {
     console.log('Sign in with Google');
     // Implement Google OAuth logic here
+    // Placeholder for future OAuth implementation
+    this.showSuccessMessage('Google Sign-In integration coming soon!');
   }
 
   signInWithFacebook(): void {
     console.log('Sign in with Facebook');
     // Implement Facebook OAuth logic here
+    // Placeholder for future OAuth implementation
+    this.showSuccessMessage('Facebook Sign-In integration coming soon!');
+  }
+
+  forgotPassword(event: Event): void {
+    event.preventDefault();
+    const username = this.username?.value;
+    if (!username) {
+      this.errorMessage = 'Please enter your username first';
+      return;
+    }
+    
+    // Placeholder for forgot password functionality
+    console.log('Forgot password requested for:', username);
+    this.showSuccessMessage('Password reset functionality coming soon!');
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.successMessage = message;
+    setTimeout(() => {
+      this.successMessage = '';
+    }, 3000);
   }
 }

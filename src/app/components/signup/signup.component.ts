@@ -246,6 +246,13 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
           } else {
             this.errorMessage = error.error?.message || 'Network error. Please check your connection and try again.';
           }
+
+          // Log debugging information for developers
+          console.log('🔍 Debugging Information:');
+          console.log(`  - Frontend Origin: ${window.location.origin}`);
+          console.log(`  - Backend URL: ${this.authService['API_BASE_URL']}`);
+          console.log(`  - Error Status: ${error.status}`);
+          console.log(`  - Error Message: ${error.message}`);
         }
       });
     } else {
@@ -258,12 +265,30 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   signUpWithGoogle(): void {
-    console.log('Sign up with Google');
-    // Implement Google OAuth logic here
+    this.isLoading = true;
+    this.errorMessage = '';
+    
+    // Placeholder for Google OAuth implementation
+    console.log('Google OAuth integration would go here');
+    
+    // Simulate OAuth flow
+    setTimeout(() => {
+      this.isLoading = false;
+      this.successMessage = 'Google OAuth integration would redirect to Google here';
+    }, 1500);
   }
 
   signUpWithFacebook(): void {
-    console.log('Sign up with Facebook');
-    // Implement Facebook OAuth logic here
+    this.isLoading = true;
+    this.errorMessage = '';
+    
+    // Placeholder for Facebook OAuth implementation
+    console.log('Facebook OAuth integration would go here');
+    
+    // Simulate OAuth flow
+    setTimeout(() => {
+      this.isLoading = false;
+      this.successMessage = 'Facebook OAuth integration would redirect to Facebook here';
+    }, 1500);
   }
 }

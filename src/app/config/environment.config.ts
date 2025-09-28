@@ -8,14 +8,18 @@ export class EnvironmentConfig {
     static getApiBaseUrl(): string {
         const hostname = window.location.hostname;
 
-        if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app') || hostname !== 'localhost') {
+        if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app')) {
             // Production: Vercel deployment using Railway backend
             console.log('🌐 Production environment detected - using Railway backend');
-            return 'https://travner-web-backend-production.up.railway.app/';
+            return 'https://travner-web-backend-production.up.railway.app'; // no trailing slash
+        } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
+            // Development: prefer Angular proxy to avoid CORS: use relative '/api'
+            console.log('🔧 Development environment detected - using proxy /api base');
+            return '/api';
         } else {
-            // Development: Local development
-            console.log('🔧 Development environment detected - using local backend');
-            return 'http://localhost:8080/';
+            // Other environments (like Railway deployment) - use Railway backend
+            console.log('🌐 Other environment detected - using Railway backend');
+            return 'https://travner-web-backend-production.up.railway.app'; // no trailing slash
         }
     }
 
@@ -25,14 +29,16 @@ export class EnvironmentConfig {
     static getWebSocketUrl(): string {
         const hostname = window.location.hostname;
 
-        if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app') || hostname !== 'localhost') {
-            // Production: WebSocket for Railway backend
+        if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app')) {
             console.log('🌐 Production WebSocket - using Railway backend');
             return 'https://travner-web-backend-production.up.railway.app/ws';
-        } else {
-            // Development: Local WebSocket
+        } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
+            // Use direct localhost for WS (proxy typically not used for ws by default)
             console.log('🔧 Development WebSocket - using local backend');
             return 'http://localhost:8080/ws';
+        } else {
+            console.log('🌐 Other environment WebSocket - using Railway backend');
+            return 'https://travner-web-backend-production.up.railway.app/ws';
         }
     }
 

@@ -38,7 +38,18 @@ export class AuthService {
     private static readonly REFRESH_TOKEN_KEY = 'travner_refresh';
 
     // API URL configuration for different environments (proxied via Vercel in prod)
-    private readonly API_BASE_URL = EnvironmentConfig.isProduction() ? '/api' : this.getApiBaseUrl();
+    private readonly API_BASE_URL = this.normalizeBaseUrl(
+        EnvironmentConfig.getApiBaseUrl()
+    );
+    /**
+     * Ensure base URL has no trailing slash (except a lone "/api") to prevent double slashes
+     */
+    private normalizeBaseUrl(url: string): string {
+        if (!url) return '';
+        // Keep exactly '/api' as-is (development proxy usage)
+        if (url === '/api') return url;
+        return url.replace(/\/+$/, '');
+    }
 
     private currentUserSubject = new BehaviorSubject<User | null>(null);
     public currentUser$ = this.currentUserSubject.asObservable();
@@ -105,12 +116,13 @@ export class AuthService {
         };
 
         console.log('AuthService signup called with:', requestBody);
-        console.log('API URL:', `${this.API_BASE_URL}/public/create-user`);
-        
+        const signupUrl = `${this.API_BASE_URL}/public/create-user`.replace(/([^:])\/\//g, '$1/');
+        console.log('API URL:', signupUrl);
+
         // Log detailed request information for debugging
         console.log('Request details:', {
             method: 'POST',
-            url: `${this.API_BASE_URL}/public/create-user`,
+            url: signupUrl,
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
@@ -124,7 +136,7 @@ export class AuthService {
             'Accept': 'application/json'
         });
 
-        return this.http.post<any>(`${this.API_BASE_URL}/public/create-user`, requestBody, {
+        return this.http.post<any>(signupUrl, requestBody, {
             headers,
             withCredentials: false, // Signup doesn't need credentials
             observe: 'response' // Get full response for debugging
@@ -160,7 +172,10 @@ export class AuthService {
             'Authorization': `Basic ${credentials}`
         });
 
-        return this.http.get<any>(`${this.API_BASE_URL}/user`, {
+        // Build endpoint safely (avoid double slashes)
+        const endpoint = `${this.API_BASE_URL}/user`.replace(/([^:])\/\//g, '$1/');
+
+        return this.http.get<any>(endpoint, {
             headers
         })
             .pipe(
