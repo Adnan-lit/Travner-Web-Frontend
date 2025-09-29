@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
-import { ChatMessage, ChatRoom, ChatUser } from '../../../models/chat.models';
+import { ChatMessage } from '../../../models/chat.models';
+import { EnvironmentConfig } from '../../../config/environment.config';
 
 @Injectable({
   providedIn: 'root'
@@ -21,23 +22,29 @@ export class WebsocketService {
   }
 
   private createWebSocketConnection(): WebSocketSubject<any> {
-    // Replace with your actual WebSocket server URL
-    const wsUrl = 'ws://localhost:8080/ws';
+    const wsUrl = EnvironmentConfig.getWebSocketUrl();
 
-    return webSocket({
-      url: wsUrl,
-      openObserver: {
-        next: () => {
-          console.log('WebSocket connection established');
-          this.connectionStatusSubject.next(true);
-        }
-      },
-      closeObserver: {
-        next: () => {
-          console.log('WebSocket connection closed');
-          this.connectionStatusSubject.next(false);
+    // Attempt to include Basic Auth via query param (if backend supports) since typical browsers block custom headers in WS ctor
+    let finalUrl = wsUrl;
+    try {
+      const authJson = localStorage.getItem('travner_auth');
+      if (authJson) {
+        const { username, password } = JSON.parse(authJson);
+        if (username && password) {
+          const token = btoa(`${username}:${password}`);
+          // Append as query parameter (backend should extract if needed)
+          const sep = wsUrl.includes('?') ? '&' : '?';
+          finalUrl = `${wsUrl}${sep}auth=${encodeURIComponent(token)}`;
         }
       }
+    } catch (e) {
+      console.warn('Failed to attach auth to WebSocket URL', e);
+    }
+
+    return webSocket({
+      url: finalUrl,
+      openObserver: { next: () => { console.log('WebSocket connection established', { url: finalUrl }); this.connectionStatusSubject.next(true); } },
+      closeObserver: { next: () => { console.log('WebSocket connection closed'); this.connectionStatusSubject.next(false); } }
     });
   }
 
@@ -64,14 +71,11 @@ export class WebsocketService {
    * Send a chat message
    */
   sendMessage(message: ChatMessage): void {
-    if (this.socket$ && !this.socket$.closed) {
-      this.socket$.next({
-        type: 'chat',
-        data: message
-      });
-    } else {
-      console.error('WebSocket is not connected');
+    if (!this.socket$ || this.socket$.closed) {
+      console.error('WebSocket is not connected. Attempting reconnection...');
+      this.socket$ = this.createWebSocketConnection();
     }
+    this.socket$.next({ type: 'chat', data: message });
   }
 
   /**

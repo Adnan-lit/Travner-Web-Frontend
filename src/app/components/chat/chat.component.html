@@ -1,0 +1,80 @@
+<div class="chat-layout">
+  <aside class="sidebar" aria-label="Conversations list">
+    <header>
+      <h2>Chat</h2>
+      <button
+        (click)="refresh()"
+        [disabled]="loadingConversations"
+        title="Refresh conversations"
+      >
+        ↻
+      </button>
+    </header>
+    <div class="conversations" *ngIf="!loadingConversations; else loadingConvs">
+      <div
+        class="conversation"
+        *ngFor="let conv of conversations; trackBy: trackConv"
+        [class.active]="conv.id === selectedConversation?.id"
+        (click)="openConversation(conv.id)"
+      >
+        <div class="title">{{ conv.title || "Direct Chat" }}</div>
+        <div class="meta">
+          <span *ngIf="conv.unreadCount">{{ conv.unreadCount }} unread</span>
+        </div>
+      </div>
+      <div *ngIf="!conversations.length" class="empty">
+        No conversations yet.
+      </div>
+    </div>
+    <ng-template #loadingConvs>
+      <div class="loading">Loading conversations...</div>
+    </ng-template>
+    <div class="error" *ngIf="error">{{ error }}</div>
+  </aside>
+
+  <section
+    class="messages-pane"
+    *ngIf="selectedConversation; else selectPrompt"
+  >
+    <div class="backend-offline" *ngIf="!(backendReachable$ | async)">
+      <strong>Backend unreachable.</strong> Showing empty chat data. We’ll keep
+      retrying in the background.
+    </div>
+    <header class="messages-header">
+      <!-- selectedConversation is guaranteed non-null within this *ngIf scope -->
+      <h3>{{ selectedConversation.title || "Conversation" }}</h3>
+      <div class="spacer"></div>
+      <button
+        (click)="loadMoreMessages()"
+        [disabled]="!hasMoreMessages || messagesLoading"
+      >
+        Load older
+      </button>
+    </header>
+    <div class="messages" [class.loading]="messagesLoading">
+      <div
+        class="message"
+        *ngFor="let m of messages; trackBy: trackMsg"
+        [class.temp]="m.id.startsWith('temp-')"
+      >
+        <div class="sender">{{ m.senderName }}</div>
+        <div class="bubble">{{ m.content }}</div>
+        <div class="time">{{ m.createdAt | date : "shortTime" }}</div>
+      </div>
+    </div>
+    <form class="composer" (ngSubmit)="send()" autocomplete="off">
+      <input
+        name="message"
+        [(ngModel)]="newMessage"
+        placeholder="Type a message"
+        (keydown.enter)="$event.preventDefault(); send()"
+      />
+      <button type="submit" [disabled]="!newMessage.trim() || sending">
+        Send
+      </button>
+    </form>
+  </section>
+  <ng-template #selectPrompt>
+    <div class="select-prompt">Select a conversation to start chatting.</div>
+  </ng-template>
+</div>

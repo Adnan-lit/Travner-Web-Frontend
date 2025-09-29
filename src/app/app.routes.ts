@@ -13,6 +13,7 @@ import { adminGuard } from './guards/admin.guard';
 import { noAuthGuard } from './guards/no-auth.guard';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 import { postOwnerGuard } from './guards/post-owner.guard';
+import { ChatComponent } from './components/chat/chat.component';
 
 export const routes: Routes = [
   {
@@ -28,7 +29,8 @@ export const routes: Routes = [
       { path: 'community/:id/edit', component: PostEditComponent, canActivate: [authGuard, postOwnerGuard] },
       { path: 'posts', redirectTo: 'community', pathMatch: 'full' },
       { path: 'posts/:id', redirectTo: 'community/:id', pathMatch: 'full' },
-      // Chat module removed - features directory no longer exists
+      { path: 'chat', component: ChatComponent, canActivate: [authGuard] },
+      { path: 'chat/:id', component: ChatComponent, canActivate: [authGuard] },
     ]
   },
   { path: 'signin', component: SigninComponent, canActivate: [noAuthGuard] },

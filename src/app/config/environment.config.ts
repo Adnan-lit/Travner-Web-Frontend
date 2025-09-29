@@ -33,9 +33,9 @@ export class EnvironmentConfig {
             console.log('🌐 Production WebSocket - using Railway backend');
             return 'https://travner-web-backend-production.up.railway.app/ws';
         } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
-            // Use direct localhost for WS (proxy typically not used for ws by default)
-            console.log('🔧 Development WebSocket - using local backend');
-            return 'http://localhost:8080/ws';
+            // Use relative path; proxy.conf.json now defines /ws pointing to backend enabling same-origin ws
+            console.log('🔧 Development WebSocket - using relative /ws via proxy');
+            return '/ws';
         } else {
             console.log('🌐 Other environment WebSocket - using Railway backend');
             return 'https://travner-web-backend-production.up.railway.app/ws';

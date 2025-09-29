@@ -143,7 +143,11 @@ export class AuthService {
         })
             .pipe(
                 tap(response => {
-                    console.log('Signup response:', response);
+                    console.log('Signup raw HTTP response:', response);
+                    const body = response.body;
+                    if (body && body.success && body.data) {
+                        console.log('Signup parsed data wrapper:', body.data);
+                    }
                 }),
                 catchError(error => {
                     console.error('Signup error:', error);
@@ -175,11 +179,13 @@ export class AuthService {
         // Build endpoint safely (avoid double slashes)
         const endpoint = `${this.API_BASE_URL}/user`.replace(/([^:])\/\//g, '$1/');
 
-        return this.http.get<any>(endpoint, {
-            headers
-        })
+        return this.http.get<any>(endpoint, { headers })
             .pipe(
                 map(response => {
+                    // Backend wrapper: { success, message, data: { ...user } }
+                    if (response && response.success && response.data) {
+                        response = response.data;
+                    }
                     // Handle different response formats
                     let user: User;
                     if (response.userName || response.username) {

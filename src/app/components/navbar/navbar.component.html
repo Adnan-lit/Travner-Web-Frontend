@@ -32,6 +32,13 @@
           >Community</a
         >
         <a
+          routerLink="/chat"
+          routerLinkActive="active"
+          (click)="closeMobileMenu()"
+          *ngIf="isAuthenticated"
+          >Chat</a
+        >
+        <a
           routerLink="/admin"
           routerLinkActive="active"
           (click)="closeMobileMenu()"
@@ -132,6 +139,7 @@
         <div class="menu" *ngIf="showUserMenu" (mouseleave)="closeUserMenu()">
           <button (click)="go('/dashboard'); closeUserMenu()">Dashboard</button>
           <button (click)="go('/community'); closeUserMenu()">Community</button>
+          <button (click)="go('/chat'); closeUserMenu()">Chat</button>
           <button *ngIf="isAdmin()" (click)="go('/admin'); closeUserMenu()">
             Admin Panel
           </button>
@@ -175,6 +183,13 @@
         >Community</a
       >
       <a
+        routerLink="/chat"
+        routerLinkActive="active"
+        (click)="closeMobileMenu()"
+        *ngIf="isAuthenticated"
+        >Chat</a
+      >
+      <a
         routerLink="/admin"
         routerLinkActive="active"
         (click)="closeMobileMenu()"
@@ -202,6 +217,7 @@
       </div>
       <button (click)="go('/dashboard'); closeMobileMenu()">Dashboard</button>
       <button (click)="go('/community'); closeMobileMenu()">Community</button>
+      <button (click)="go('/chat'); closeMobileMenu()">Chat</button>
       <button *ngIf="isAdmin()" (click)="go('/admin'); closeMobileMenu()">
         Admin Panel
       </button>
