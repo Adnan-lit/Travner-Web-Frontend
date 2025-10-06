@@ -10,15 +10,12 @@ export class EnvironmentConfig {
 
         if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app')) {
             // Production: Vercel deployment using Railway backend
-            console.log('🌐 Production environment detected - using Railway backend');
             return 'https://travner-web-backend-production.up.railway.app';
         } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
             // Development: use empty string for proxy to backend on port 8080
-            console.log('🔧 Development environment detected - using proxy to backend:8080');
             return '';
         } else {
             // Other environments - use Railway backend
-            console.log('🌐 Other environment detected - using Railway backend');
             return 'https://travner-web-backend-production.up.railway.app';
         }
     }

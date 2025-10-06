@@ -1,13 +1,88 @@
 .chat-layout { display: flex; height: calc(100vh - 70px); background: var(--surface, #111); color: var(--text, #eee); }
 .sidebar { width: 260px; border-right: 1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; }
 .sidebar header { display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1rem; border-bottom:1px solid rgba(255,255,255,0.08); }
+
+/* Backend Status Indicator */
+.backend-status {
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  background: rgba(34, 197, 94, 0.1);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.3s ease;
+}
+
+.backend-status.unreachable {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.backend-status .status-icon {
+  font-size: 0.8rem;
+}
+
+.backend-status .status-text {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
 .conversations { overflow-y:auto; flex:1; }
 .conversation { padding:0.6rem 0.9rem; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); }
 .conversation:hover { background: rgba(255,255,255,0.05); }
 .conversation.active { background: rgba(255,255,255,0.1); }
 .conversation .title { font-weight:600; font-size:0.9rem; }
 .conversation .meta { font-size:0.7rem; opacity:0.7; }
-.empty, .loading, .error { padding:1rem; font-size:0.8rem; opacity:0.8; }
+.empty, .loading { padding:1rem; font-size:0.8rem; opacity:0.8; }
+
+/* Error Message Styling */
+.error-message {
+  margin: 1rem;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.error-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.error-content {
+  flex: 1;
+}
+
+.error-content strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #ef4444;
+  font-size: 0.9rem;
+}
+
+.error-content p {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  opacity: 0.9;
+}
+
+.retry-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.retry-btn:hover {
+  background: #dc2626;
+}
 .messages-pane { flex:1; display:flex; flex-direction:column; }
 .messages-header { display:flex; align-items:center; padding:0.6rem 1rem; border-bottom:1px solid rgba(255,255,255,0.08); }
 .messages-header h3 { margin:0; font-size:1rem; }

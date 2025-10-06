@@ -1,63 +1,116 @@
-# TravnerWebFrontend
+# Travner Web Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.1.8.
+A modern Angular application for the Travner platform, featuring community posts, marketplace, user authentication, and real-time chat functionality.
 
-## Development server
+## 🚀 Features
 
-To start a local development server, run:
+- **Authentication & User Management**: Secure login/signup with JWT tokens
+- **Community Posts**: Create, view, and interact with community content
+- **Marketplace**: Browse and manage marketplace items
+- **Real-time Chat**: WebSocket-based messaging system with HTTP polling fallback
+- **Responsive Design**: Mobile-first responsive UI
+- **Admin Panel**: Administrative features for user and content management
 
+## 🛠️ Technology Stack
+
+- **Frontend**: Angular 18+ with standalone components
+- **UI Framework**: Modern CSS with responsive design
+- **State Management**: RxJS observables and services
+- **Real-time Communication**: WebSocket (STOMP) with HTTP polling fallback
+- **Build Tool**: Angular CLI with production optimizations
+- **Deployment**: Vercel with Railway backend integration
+
+## 📦 Installation & Setup
+
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- Angular CLI
+
+### Development Setup
 ```bash
-ng serve
+# Clone the repository
+git clone <repository-url>
+cd travner-web-frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+The application will be available at `http://localhost:4200`
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
+### Production Build
 ```bash
-ng generate component component-name
+# Build for production
+npm run build
+
+# The build artifacts will be stored in the `dist/` directory
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## 🌐 Environment Configuration
 
-```bash
-ng generate --help
-```
+The application automatically detects the environment and configures API endpoints:
 
-## Building
+- **Development**: Uses proxy configuration to `localhost:8080`
+- **Production (Vercel)**: Connects to Railway backend
+- **Other environments**: Falls back to Railway backend
 
-To build the project run:
+## 🔧 Available Scripts
 
-```bash
-ng build
-```
+- `npm start` - Start development server
+- `npm run build` - Build for production
+- `npm run test` - Run unit tests
+- `npm run lint` - Run linting
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## 📱 Features Overview
 
-## Running unit tests
+### Authentication
+- JWT-based authentication
+- Secure route guards
+- Automatic token refresh
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+### Community Posts
+- Create and view posts
+- Image upload support
+- Comments and interactions
 
-```bash
-ng test
-```
+### Marketplace
+- Product listings
+- Cart functionality
+- User marketplace management
 
-## Running end-to-end tests
+### Chat System
+- Real-time messaging via WebSocket
+- HTTP polling fallback when WebSocket unavailable
+- Conversation management
+- Typing indicators and presence (when WebSocket available)
 
-For end-to-end (e2e) testing, run:
+## 🚀 Deployment
 
-```bash
-ng e2e
-```
+### Vercel (Recommended)
+1. Connect your repository to Vercel
+2. Set environment variables if needed
+3. Deploy automatically on push to main branch
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+### Manual Deployment
+1. Run `npm run build`
+2. Upload the `dist/` folder to your web server
+3. Configure web server for SPA routing
 
-## Additional Resources
+## 🔒 Security
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- JWT token authentication
+- CORS protection
+- Input validation
+- Secure API communication
 
-## API Documentation
+## 📞 Support
 
-For detailed API reference, see [API_REFERENCE.md](API_REFERENCE.md).
+For support and questions, please refer to the project documentation or contact the development team.
+
+## 📄 License
+
+[Add your license information here]

@@ -36,7 +36,10 @@
     <div class="conversations-container">
       <div
         class="conversation"
-        *ngFor="let conv of filteredConversations$ | async; trackBy: trackConversation"
+        *ngFor="
+          let conv of filteredConversations$ | async;
+          trackBy: trackConversation
+        "
         [class.active]="(activeConversation$ | async)?.id === conv.id"
         (click)="selectConversation(conv)"
       >
@@ -64,7 +67,10 @@
 
   <!-- Main Chat Area -->
   <main class="chat-main">
-    <div *ngIf="!(activeConversation$ | async)" class="no-conversation-selected">
+    <div
+      *ngIf="!(activeConversation$ | async)"
+      class="no-conversation-selected"
+    >
       <div class="welcome-message">
         <h3>Welcome to Chat</h3>
         <p>Select a conversation from the sidebar or start a new one</p>
@@ -74,14 +80,20 @@
       </div>
     </div>
 
-    <div *ngIf="activeConversation$ | async as activeConversation" class="chat-active">
+    <div
+      *ngIf="activeConversation$ | async as activeConversation"
+      class="chat-active"
+    >
       <!-- Chat Header -->
       <header class="chat-header">
         <div class="chat-title">
           <h3>{{ getConversationTitle(activeConversation) }}</h3>
           <div class="chat-meta">
-            <span class="connection-status" [class.connected]="isConnected$ | async">
-              {{ (isConnected$ | async) ? 'Connected' : 'Connecting...' }}
+            <span
+              class="connection-status"
+              [class.connected]="isConnected$ | async"
+            >
+              {{ (isConnected$ | async) ? "Connected" : "Connecting..." }}
             </span>
           </div>
         </div>
@@ -92,12 +104,14 @@
         <div
           class="message"
           *ngFor="let message of messages$ | async; trackBy: trackMessage"
-          [class.own-message]="(isMyMessage(message) | async)"
+          [class.own-message]="isMyMessage(message) | async"
           [class.other-message]="!(isMyMessage(message) | async)"
         >
           <div class="message-header">
             <span class="sender-name">{{ message.senderName }}</span>
-            <span class="timestamp">{{ formatTimestamp(message.timestamp) }}</span>
+            <span class="timestamp">{{
+              formatTimestamp(message.timestamp)
+            }}</span>
           </div>
           <div class="message-content">{{ message.content }}</div>
         </div>
@@ -135,7 +149,11 @@
 </div>
 
 <!-- New Chat Modal -->
-<div *ngIf="showNewChatModal" class="modal-overlay" (click)="closeNewChatModal()">
+<div
+  *ngIf="showNewChatModal"
+  class="modal-overlay"
+  (click)="closeNewChatModal()"
+>
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Start New Conversation</h3>

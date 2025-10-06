@@ -1,50 +1,57 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { Observable, of, throwError, BehaviorSubject, combineLatest } from 'rxjs';
+import { map, catchError, tap } from 'rxjs/operators';
 import { EnvironmentConfig } from '../config/environment.config';
 import { BackendStatusService } from './backend-status.service';
 
-// Conversation summary per revised API docs (DIRECT only for now)
-export interface ChatConversationSummary {
+// Updated interfaces to match your fresh implementation
+export interface Conversation {
     id: string;
-    type: 'DIRECT';
-    title?: string | null; // Often null for DIRECT
-    memberCount?: number;  // Provided by backend
-    lastMessage?: ChatMessage | {
-        content?: string;
-        senderName?: string;
-        createdAt?: string;
-    } | null;
-    unreadCount?: number;  // Server-calculated per user
-    createdAt?: string;
-    lastMessageAt?: string; // Provided separately in some responses
-    archived?: boolean;     // Always false currently
+    type: 'DIRECT' | 'GROUP';
+    title?: string;
+    members: ConversationMember[];
+    ownerId?: string;
+    adminIds: string[];
+    createdAt: string;
+    lastMessageAt: string;
+    unreadCount: number;
+    archived: boolean;
 }
 
-export interface ChatConversation extends ChatConversationSummary {
-    members?: Array<{
-        userId: string;
-        userName: string;
-        role: string; // MEMBER
-        lastReadAt?: string;
-        muted?: boolean;
-        joinedAt?: string;
-    }>;
+export interface ConversationMember {
+    userId: string;
+    userName: string;
+    firstName?: string;
+    lastName?: string;
+    role: 'OWNER' | 'ADMIN' | 'MEMBER';
+    lastReadAt: string;
+    muted: boolean;
+    joinedAt: string;
 }
 
-export interface ChatMessage {
+export interface Message {
     id: string;
     conversationId: string;
+    content: string;
     senderId: string;
     senderName: string;
-    content: string;
-    kind: 'TEXT' | 'IMAGE' | 'FILE' | 'SYSTEM' | string;
+    timestamp: string;
+    messageType: 'TEXT' | 'IMAGE' | 'FILE' | 'SYSTEM';
+    edited: boolean;
+    editedAt?: string;
+}
+
+// Legacy interfaces for backward compatibility
+export interface ChatConversationSummary extends Conversation { }
+export interface ChatConversation extends Conversation { }
+export interface ChatMessage extends Message {
+    kind: string;
     createdAt: string;
     attachments?: Array<{
         id?: string;
-        filename?: string; // server returns filename
-        url?: string;      // server returns id currently
+        filename?: string;
+        url?: string;
         contentType?: string;
         size?: number;
         caption?: string;
@@ -62,12 +69,26 @@ export interface PagedResponse<T> {
     number: number;
 }
 
+export interface SendMessageRequest {
+    conversationId: string;
+    content: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ChatService {
     // Base URL (may be overridden via localStorage 'travner_backend_override')
     private readonly API_BASE_URL = this.computeBaseUrl();
     // Root for chat endpoints (/api/chat/**). We attempt to normalize so there is exactly one '/api' segment.
     private readonly CHAT_ROOT = this.computeChatRoot(this.API_BASE_URL);
+
+    // State management for reactive chat
+    private conversationsSubject = new BehaviorSubject<Conversation[]>([]);
+    private messagesSubject = new BehaviorSubject<Message[]>([]);
+    private activeConversationSubject = new BehaviorSubject<Conversation | null>(null);
+
+    public conversations$ = this.conversationsSubject.asObservable();
+    public messages$ = this.messagesSubject.asObservable();
+    public activeConversation$ = this.activeConversationSubject.asObservable();
 
     constructor(private http: HttpClient, private backendStatus: BackendStatusService) {
         if (localStorage.getItem('travner_debug') === 'true') {
@@ -147,30 +168,32 @@ export class ChatService {
     getConversations(page = 0, size = 20): Observable<PagedResponse<ChatConversationSummary>> {
         const params = new HttpParams().set('page', page).set('size', size);
         const url = `${this.CHAT_ROOT}/conversations`;
-        return this.http.get(url, { params, responseType: 'text', observe: 'response' }).pipe(
+        return this.http.get(url, { params, observe: 'response' }).pipe(
             map(resp => {
-                const raw = resp.body ?? '';
+                const raw = resp.body;
                 const status = resp.status;
-                const lowered = raw.trim().toLowerCase();
+
+                // If response is already an object (normal case), use it directly
+                if (typeof raw === 'object' && raw !== null) {
+                    this.backendStatus.reportSuccess('chat.conversations');
+                    return this.unwrapPaged<ChatConversationSummary>(raw);
+                }
+
+                // If response is a string, try to parse it
+                const rawString = String(raw || '');
+                const lowered = rawString.trim().toLowerCase();
+
                 if (lowered.startsWith('<!doctype html') || lowered.startsWith('<html')) {
-                    console.warn('[ChatService] HTML received instead of JSON for conversations.', { url, status, length: raw.length });
                     this.backendStatus.reportHtmlFallback('chat.conversations');
-                    // Provide diagnostic hint if status is 200 (likely Angular index) or 404/301 (proxy path mismatch)
-                    if (localStorage.getItem('travner_debug') === 'true') {
-                        console.log('[ChatService][Diagnostics] Possible causes:', [
-                            '1) Backend not running or wrong port (check proxy target).',
-                            '2) Backend mapping not including /api (try setting travner_backend_override to direct host).',
-                            '3) Auth required and server returning HTML login page.'
-                        ]);
-                    }
                     return { content: [], totalElements: 0, totalPages: 0, size, number: page };
                 }
+
                 try {
-                    const parsed = JSON.parse(raw);
+                    const parsed = JSON.parse(rawString);
                     this.backendStatus.reportSuccess('chat.conversations');
                     return this.unwrapPaged<ChatConversationSummary>(parsed);
                 } catch (e) {
-                    console.warn('[ChatService] Failed to parse conversations JSON', e, { status, snippet: raw.slice(0, 120) });
+                    console.warn('[ChatService] Failed to parse conversations JSON', e, { status, snippet: rawString.slice(0, 120) });
                     this.backendStatus.reportHtmlFallback('chat.conversations.parse');
                     return { content: [], totalElements: 0, totalPages: 0, size, number: page };
                 }
@@ -260,5 +283,163 @@ export class ChatService {
                 if (typeof unwrapped?.data?.unreadCount === 'number') return unwrapped.data.unreadCount;
                 return 0;
             }));
+    }
+
+    // New reactive methods for the updated chat component
+    getConversations$(): Observable<Conversation[]> {
+        return this.conversationsSubject.asObservable();
+    }
+
+    getMessages$(): Observable<Message[]> {
+        return this.messagesSubject.asObservable();
+    }
+
+    getActiveConversation$(): Observable<Conversation | null> {
+        return this.activeConversationSubject.asObservable();
+    }
+
+    loadConversationsReactive(): void {
+        this.getConversations()
+            .pipe(
+                map(response => {
+                    // Transform PagedResponse<ChatConversationSummary> to Conversation[]
+                    if (response?.content) {
+                        return response.content.map(summary => this.transformToConversation(summary));
+                    }
+                    return [];
+                }),
+                tap(conversations => this.conversationsSubject.next(conversations))
+            )
+            .subscribe({
+                error: (error) => {
+                    console.error('Error loading conversations:', error);
+                    this.conversationsSubject.next([]);
+                }
+            });
+    }
+
+    loadMessagesReactive(conversationId: string): void {
+        this.getMessages(conversationId)
+            .pipe(
+                map(response => {
+                    // Transform PagedResponse<ChatMessage> to Message[]
+                    if (response?.content) {
+                        return response.content.map(chatMsg => this.transformToMessage(chatMsg));
+                    }
+                    return [];
+                }),
+                tap(messages => this.messagesSubject.next(messages))
+            )
+            .subscribe({
+                error: (error) => {
+                    console.error('Error loading messages:', error);
+                    this.messagesSubject.next([]);
+                }
+            });
+    }
+
+    setActiveConversation(conversation: Conversation | null): void {
+        this.activeConversationSubject.next(conversation);
+        if (conversation) {
+            this.loadMessagesReactive(conversation.id);
+        } else {
+            this.messagesSubject.next([]);
+        }
+    }
+
+    createConversationReactive(participants: string[]): Observable<Conversation> {
+        // Use the existing POST method to create conversation
+        const body = { participants };
+        return this.http.post<any>(`${this.CHAT_ROOT}/conversations`, body)
+            .pipe(
+                map(response => this.unwrap<any>(response, {})),
+                map(newConversation => this.transformToConversation(newConversation)),
+                tap(newConversation => {
+                    const currentConversations = this.conversationsSubject.value;
+                    this.conversationsSubject.next([newConversation, ...currentConversations]);
+                    this.setActiveConversation(newConversation);
+                })
+            );
+    }
+
+    sendMessageReactive(request: SendMessageRequest): Observable<Message> {
+        return this.sendMessage({
+            conversationId: request.conversationId,
+            content: request.content
+        })
+            .pipe(
+                map(response => this.transformToMessage(response)),
+                tap(newMessage => {
+                    const currentMessages = this.messagesSubject.value;
+                    this.messagesSubject.next([...currentMessages, newMessage]);
+
+                    // Update last message in conversations
+                    const currentConversations = this.conversationsSubject.value;
+                    const updatedConversations = currentConversations.map(conv => {
+                        if (conv.id === request.conversationId) {
+                            return {
+                                ...conv,
+                                lastMessageAt: newMessage.timestamp
+                            };
+                        }
+                        return conv;
+                    });
+                    this.conversationsSubject.next(updatedConversations);
+                })
+            );
+    }
+
+    addMessageToState(message: Message): void {
+        const currentMessages = this.messagesSubject.value;
+        this.messagesSubject.next([...currentMessages, message]);
+
+        // Update conversation's last message
+        const currentConversations = this.conversationsSubject.value;
+        const updatedConversations = currentConversations.map(conv => {
+            if (conv.id === message.conversationId) {
+                return {
+                    ...conv,
+                    lastMessageAt: message.timestamp
+                };
+            }
+            return conv;
+        });
+        this.conversationsSubject.next(updatedConversations);
+    }
+
+    clearState(): void {
+        this.conversationsSubject.next([]);
+        this.messagesSubject.next([]);
+        this.activeConversationSubject.next(null);
+    }
+
+    // Transform methods to convert backend DTOs to frontend interfaces
+    private transformToConversation(summary: any): Conversation {
+        return {
+            id: summary.id,
+            type: summary.type || 'DIRECT',
+            title: summary.title || summary.name,
+            members: summary.participants || [],
+            ownerId: summary.ownerId,
+            adminIds: summary.adminIds || [],
+            createdAt: summary.createdAt,
+            lastMessageAt: summary.lastMessageTimestamp || summary.updatedAt,
+            unreadCount: summary.unreadCount || 0,
+            archived: summary.archived || false
+        };
+    }
+
+    private transformToMessage(chatMsg: any): Message {
+        return {
+            id: chatMsg.id,
+            conversationId: chatMsg.conversationId,
+            content: chatMsg.content,
+            senderId: chatMsg.senderId,
+            senderName: chatMsg.senderUsername || chatMsg.senderName || 'Unknown',
+            timestamp: chatMsg.timestamp,
+            messageType: chatMsg.messageType || 'TEXT',
+            edited: chatMsg.edited || false,
+            editedAt: chatMsg.editedAt
+        };
     }
 }

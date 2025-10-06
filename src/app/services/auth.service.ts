@@ -4,7 +4,6 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { EnvironmentConfig } from '../config/environment.config';
-import { AuthDebugService } from '../utils/auth-debug.service';
 import { ApiResponse } from '../models/api-response.model';
 
 export interface SignupRequest {
@@ -192,9 +191,6 @@ export class AuthService {
         // Build endpoint safely (avoid double slashes)
         const endpoint = `${this.API_BASE_URL}/user`.replace(/([^:])\/\//g, '$1/');
 
-        // Debug the request
-        AuthDebugService.debugRequestDetails(endpoint, headers, 'GET');
-
         return this.http.get(endpoint, {
             headers,
             responseType: 'text',
@@ -202,9 +198,6 @@ export class AuthService {
         })
             .pipe(
                 map(httpResponse => {
-                    // Debug the response
-                    AuthDebugService.debugHttpResponse(httpResponse, endpoint);
-
                     let response: any;
 
                     // Try to parse the response body
@@ -250,7 +243,7 @@ export class AuthService {
                     } else {
                         // Fallback for non-standard response format
                         console.warn('Non-standard response format, attempting to parse as user data:', response);
-                        
+
                         if (response && (response['userName'] || response['username'])) {
                             // Response is already in the right format or similar
                             return {
@@ -317,7 +310,7 @@ export class AuthService {
                         console.error('🚨 404 Error:', errorMessage);
                         console.error('💡 Make sure the backend server is running and the endpoint exists');
                         console.error('💡 Current API base URL:', this.API_BASE_URL);
-                        
+
                         const notFoundError = new Error(errorMessage);
                         (notFoundError as any).status = 404;
                         throw notFoundError;

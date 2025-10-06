@@ -40,3 +40,13 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Development files (remove in production)
+*.md
+!README.md
+*-test.html
+*-debug.*
+*test*.ts
+!*.spec.ts
+docs/
+reference/
