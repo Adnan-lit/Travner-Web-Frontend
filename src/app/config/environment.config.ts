@@ -11,15 +11,15 @@ export class EnvironmentConfig {
         if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app')) {
             // Production: Vercel deployment using Railway backend
             console.log('🌐 Production environment detected - using Railway backend');
-            return 'https://travner-web-backend-production.up.railway.app'; // no trailing slash
+            return 'https://travner-web-backend-production.up.railway.app';
         } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
-            // Development: prefer Angular proxy to avoid CORS: use relative '/api'
-            console.log('🔧 Development environment detected - using proxy /api base');
-            return '/api';
+            // Development: use empty string for proxy to backend on port 8080
+            console.log('🔧 Development environment detected - using proxy to backend:8080');
+            return '';
         } else {
-            // Other environments (like Railway deployment) - use Railway backend
+            // Other environments - use Railway backend
             console.log('🌐 Other environment detected - using Railway backend');
-            return 'https://travner-web-backend-production.up.railway.app'; // no trailing slash
+            return 'https://travner-web-backend-production.up.railway.app';
         }
     }
 
@@ -30,15 +30,12 @@ export class EnvironmentConfig {
         const hostname = window.location.hostname;
 
         if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app')) {
-            console.log('🌐 Production WebSocket - using Railway backend');
-            return 'https://travner-web-backend-production.up.railway.app/ws';
+            return 'wss://travner-web-backend-production.up.railway.app/ws';
         } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
-            // Use relative path; proxy.conf.json now defines /ws pointing to backend enabling same-origin ws
-            console.log('🔧 Development WebSocket - using relative /ws via proxy');
-            return '/ws';
+            // Development: use WebSocket to backend on port 8080
+            return 'ws://localhost:8080/ws';
         } else {
-            console.log('🌐 Other environment WebSocket - using Railway backend');
-            return 'https://travner-web-backend-production.up.railway.app/ws';
+            return 'wss://travner-web-backend-production.up.railway.app/ws';
         }
     }
 

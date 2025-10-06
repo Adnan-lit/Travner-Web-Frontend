@@ -14,6 +14,16 @@ import { noAuthGuard } from './guards/no-auth.guard';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 import { postOwnerGuard } from './guards/post-owner.guard';
 import { ChatComponent } from './components/chat/chat.component';
+import { ProductListComponent } from './components/marketplace/product-list/product-list.component';
+
+// Marketplace components
+import { ProductDetailComponent } from './components/marketplace/product-detail/product-detail.component';
+import { CartComponent } from './components/marketplace/cart/cart.component';
+import { CheckoutComponent } from './components/marketplace/checkout/checkout.component';
+import { OrderListComponent } from './components/marketplace/order-list/order-list.component';
+import { OrderDetailComponent } from './components/marketplace/order-detail/order-detail.component';
+import { ProductManagementComponent } from './components/marketplace/admin/product-management/product-management.component';
+import { OrderManagementComponent } from './components/marketplace/admin/order-management/order-management.component';
 
 export const routes: Routes = [
   {
@@ -31,6 +41,19 @@ export const routes: Routes = [
       { path: 'posts/:id', redirectTo: 'community/:id', pathMatch: 'full' },
       { path: 'chat', component: ChatComponent, canActivate: [authGuard] },
       { path: 'chat/:id', component: ChatComponent, canActivate: [authGuard] },
+
+      // Marketplace Routes
+      { path: 'marketplace', component: ProductListComponent },
+      { path: 'marketplace/products', redirectTo: 'marketplace', pathMatch: 'full' },
+      { path: 'marketplace/products/:id', component: ProductDetailComponent },
+      { path: 'marketplace/cart', component: CartComponent, canActivate: [authGuard] },
+      { path: 'marketplace/checkout', component: CheckoutComponent, canActivate: [authGuard] },
+      { path: 'marketplace/orders', component: OrderListComponent, canActivate: [authGuard] },
+      { path: 'marketplace/orders/:id', component: OrderDetailComponent, canActivate: [authGuard] },
+
+      // Admin Marketplace Routes
+      { path: 'admin/marketplace/products', component: ProductManagementComponent, canActivate: [adminGuard] },
+      { path: 'admin/marketplace/orders', component: OrderManagementComponent, canActivate: [adminGuard] },
     ]
   },
   { path: 'signin', component: SigninComponent, canActivate: [noAuthGuard] },

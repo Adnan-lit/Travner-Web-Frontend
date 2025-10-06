@@ -1,0 +1,179 @@
+<div class="product-list-container">
+  <!-- Cart Summary Widget -->
+  <app-cart-summary></app-cart-summary>
+
+  <!-- Search and Filters Section -->
+  <div class="search-filters-section">
+    <div class="search-container">
+      <form [formGroup]="searchForm" (ngSubmit)="onSearch()">
+        <div class="search-input-group">
+          <input
+            type="text"
+            formControlName="query"
+            placeholder="Search products..."
+            class="search-input"
+          />
+          <button type="submit" class="search-button">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+
+        <div class="filters-container">
+          <div class="category-filter">
+            <label for="category-select">Category:</label>
+            <select
+              id="category-select"
+              formControlName="category"
+              (change)="onCategorySelect()"
+              class="category-select"
+            >
+              <option value="">All Categories</option>
+              <option *ngFor="let category of categories" [value]="category">
+                {{ category.charAt(0).toUpperCase() + category.slice(1) }}
+              </option>
+            </select>
+          </div>
+
+          <button
+            *ngIf="currentQuery || currentCategory"
+            (click)="clearFilters()"
+            class="clear-filters-button"
+          >
+            <i class="fas fa-times"></i> Clear Filters
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading products...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-container">
+    <i class="fas fa-exclamation-triangle"></i>
+    <p>{{ error }}</p>
+    <button (click)="loadProducts()" class="retry-button">Try Again</button>
+  </div>
+
+  <!-- Products Grid -->
+  <div *ngIf="!loading && !error" class="products-grid">
+    <div *ngIf="products$ | async as products">
+      <div
+        *ngIf="products && products.content && products.content.length > 0"
+        class="grid"
+      >
+        <div
+          *ngFor="let product of products.content"
+          class="product-card"
+          [ngClass]="getStockClass(product.stock)"
+        >
+          <div class="product-image-container">
+            <img
+              [src]="getProductImage(product)"
+              [alt]="product.title"
+              class="product-image"
+              (error)="handleImageError($event)"
+            />
+            <div *ngIf="product.stock === 0" class="out-of-stock-overlay">
+              <span>Out of Stock</span>
+            </div>
+          </div>
+
+          <div class="product-info">
+            <h3 class="product-title">{{ product.title }}</h3>
+            <p class="product-description">
+              {{
+                product.description.length > 100
+                  ? product.description.substring(0, 100) + "..."
+                  : product.description
+              }}
+            </p>
+
+            <div class="product-meta">
+              <span class="product-category">{{ product.category }}</span>
+              <span
+                class="product-stock"
+                [class]="getStockClass(product.stock)"
+              >
+                {{ getStockStatus(product.stock) }}
+              </span>
+            </div>
+
+            <div class="product-footer">
+              <span class="product-price">{{
+                formatPrice(product.price)
+              }}</span>
+              <div class="product-actions">
+                <button
+                  *ngIf="product.stock > 0"
+                  (click)="viewProductDetails(product.id)"
+                  class="view-details-button"
+                >
+                  View Details
+                </button>
+                <button
+                  *ngIf="product.stock > 0"
+                  (click)="addToCart(product)"
+                  class="add-to-cart-button"
+                  [disabled]="isAddingToCart"
+                >
+                  <i class="fas fa-shopping-cart"></i>
+                  <span *ngIf="!isAddingToCart">Add to Cart</span>
+                  <span *ngIf="isAddingToCart">Adding...</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No Products State -->
+      <ng-template #noProducts>
+        <div class="no-products">
+          <i class="fas fa-box-open"></i>
+          <h3>No products found</h3>
+          <p *ngIf="currentQuery || currentCategory">
+            Try adjusting your search or filters.
+          </p>
+          <p *ngIf="!currentQuery && !currentCategory">
+            Check back later for new products.
+          </p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="!loading && !error" class="pagination">
+    <div *ngIf="products$ | async as products">
+      <div *ngIf="products?.totalPages && products.totalPages > 1">
+        <button
+          *ngIf="currentPage > 0"
+          (click)="onPageChange(currentPage - 1)"
+          class="pagination-button"
+          [disabled]="loading"
+        >
+          <i class="fas fa-chevron-left"></i> Previous
+        </button>
+
+        <div class="pagination-info">
+          Page {{ currentPage + 1 }} of {{ totalPages }}
+          <span *ngIf="totalElements > 0">({{ totalElements }} products)</span>
+        </div>
+
+        <button
+          *ngIf="currentPage < totalPages - 1"
+          (click)="onPageChange(currentPage + 1)"
+          class="pagination-button"
+          [disabled]="loading"
+        >
+          Next <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

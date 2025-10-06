@@ -4,15 +4,21 @@ export interface Post {
     content: string;
     location: string;
     tags: string[];
-    authorId: string;
-    authorName: string;
+    author: {
+        id: {
+            timestamp: number;
+            date: string;
+        };
+        userName: string;
+        firstName: string;
+        lastName: string;
+    };
     createdAt: string;
     updatedAt: string;
     upvotes: number;
     downvotes: number;
+    commentCount: number;
     mediaUrls?: string[];
-    hasUserUpvoted?: boolean;
-    hasUserDownvoted?: boolean;
     published?: boolean;
 }
 
@@ -21,6 +27,7 @@ export interface PostCreate {
     content: string;
     location: string;
     tags: string[];
+    mediaIds?: string[];
     published?: boolean;
 }
 

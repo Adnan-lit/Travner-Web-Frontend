@@ -1,19 +1,25 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Injectable, OnDestroy } from '@angular/core';
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { AuthService, User } from './auth.service';
 
 @Injectable({
     providedIn: 'root'
 })
-export class UserProfileService {
+export class UserProfileService implements OnDestroy {
     private userProfileSubject = new BehaviorSubject<User | null>(null);
     public userProfile$ = this.userProfileSubject.asObservable();
+    private authSubscription?: Subscription;
 
     constructor(private authService: AuthService) {
         // Subscribe to authentication changes
-        this.authService.currentUser$.subscribe(user => {
+        this.authSubscription = this.authService.currentUser$.subscribe(user => {
             this.userProfileSubject.next(user);
         });
+    }
+
+    ngOnDestroy(): void {
+        this.authSubscription?.unsubscribe();
+        this.userProfileSubject.complete();
     }
 
     /**
@@ -36,7 +42,9 @@ export class UserProfileService {
     getFullName(): string {
         const user = this.getCurrentProfile();
         if (user) {
-            return `${user.firstName} ${user.lastName}`;
+            const firstName = user.firstName || '';
+            const lastName = user.lastName || '';
+            return `${firstName} ${lastName}`.trim();
         }
         return '';
     }
@@ -47,7 +55,9 @@ export class UserProfileService {
     getInitials(): string {
         const user = this.getCurrentProfile();
         if (user) {
-            return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+            const firstName = user.firstName || '';
+            const lastName = user.lastName || '';
+            return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
         }
         return '';
     }

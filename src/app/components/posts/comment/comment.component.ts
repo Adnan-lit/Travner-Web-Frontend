@@ -366,7 +366,17 @@ export class CommentComponent {
         const currentUser = this.authService.getCurrentUser();
         if (!currentUser) return false;
 
-        return currentUser.id === this.comment.authorId || this.authService.isAdmin();
+        // Handle complex ID structure from API
+        let currentUserId: string | number | null = null;
+        if (currentUser.id != null) {
+            if (typeof currentUser.id === 'object' && 'timestamp' in currentUser.id) {
+                currentUserId = currentUser.id.timestamp;
+            } else {
+                currentUserId = currentUser.id;
+            }
+        }
+
+        return String(currentUserId) === String(this.comment.authorId) || this.authService.isAdmin();
     }
 
     // Comment actions

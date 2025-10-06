@@ -47,9 +47,9 @@ import { ToastService } from '../../../services/toast.service';
           
           <div class="post-meta">
             <div class="author-info">
-              <div class="author-avatar">{{ getInitials(post.authorName) }}</div>
+              <div class="author-avatar">{{ getInitials(post.author.firstName + ' ' + post.author.lastName) }}</div>
               <div>
-                <div class="author-name">{{ post.authorName }}</div>
+                <div class="author-name">{{ post.author.firstName }} {{ post.author.lastName }}</div>
                 <div class="post-date">{{ formatDate(post.createdAt) }}</div>
               </div>
             </div>
@@ -93,11 +93,11 @@ import { ToastService } from '../../../services/toast.service';
           
           <!-- Vote Actions -->
           <div class="vote-actions">
-            <button 
-              class="vote-btn upvote" 
-              [class.active]="post.hasUserUpvoted" 
+            <button
+              class="vote-btn upvote"
+              [class.active]="false"
               (click)="onUpvote()"
-              [disabled]="post.hasUserUpvoted"
+              [disabled]="false"
             >
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
@@ -105,11 +105,11 @@ import { ToastService } from '../../../services/toast.service';
               <span>{{ post.upvotes }}</span>
             </button>
             
-            <button 
-              class="vote-btn downvote" 
-              [class.active]="post.hasUserDownvoted" 
+            <button
+              class="vote-btn downvote"
+              [class.active]="false"
               (click)="onDownvote()"
-              [disabled]="post.hasUserDownvoted"
+              [disabled]="false"
             >
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -883,12 +883,43 @@ export class PostDetailComponent implements OnInit {
     });
   }
 
-  canModifyPost(): boolean { return isPostOwner(this.post, this.currentUser, 'PostDetail'); }
+  canModifyPost(): boolean {
+    if (!this.post || !this.currentUser) return false;
+
+    // Handle potential JSON string for current user
+    let user = this.currentUser;
+    if (typeof user === 'string') {
+      try {
+        const parsed = JSON.parse(user);
+        user = parsed.data || parsed;
+      } catch (e) {
+        console.error('Failed to parse current user in post detail:', e);
+        user = null;
+      }
+    }
+
+    // Create a PostOwner-compatible object from the Post
+    const postOwner = {
+      authorId: this.post.author?.id,
+      authorName: this.post.author?.userName // Use username instead of concatenated names
+    };
+    return isPostOwner(postOwner, user, 'PostDetail');
+  }
 
   canModifyComment(comment: Comment): boolean {
     if (!comment || !this.currentUser) return false;
 
-    const isAuthor = this.currentUser.id === comment.authorId;
+    // Handle complex ID structure from API
+    let currentUserId: string | number | null = null;
+    if (this.currentUser.id != null) {
+      if (typeof this.currentUser.id === 'object' && 'timestamp' in this.currentUser.id) {
+        currentUserId = this.currentUser.id.timestamp;
+      } else {
+        currentUserId = this.currentUser.id;
+      }
+    }
+
+    const isAuthor = currentUserId === comment.authorId;
     const isAdmin = this.authService.hasRole('ADMIN');
 
     return isAuthor || isAdmin;

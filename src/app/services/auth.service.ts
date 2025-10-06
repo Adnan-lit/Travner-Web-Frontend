@@ -4,6 +4,8 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { EnvironmentConfig } from '../config/environment.config';
+import { AuthDebugService } from '../utils/auth-debug.service';
+import { ApiResponse } from '../models/api-response.model';
 
 export interface SignupRequest {
     userName: string;
@@ -21,12 +23,22 @@ export interface SignupResponse {
 }
 
 export interface User {
-    id?: string;
+    id?: {
+        timestamp: number;
+        date: string;
+    };
     userName: string;
-    firstName: string;
-    lastName: string;
-    email: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    password?: string;
     roles?: string[];
+    bio?: string | null;
+    profileImageUrl?: string | null;
+    location?: string | null;
+    createdAt?: string;
+    lastLoginAt?: string;
+    active?: boolean;
 }
 
 @Injectable({
@@ -169,6 +181,7 @@ export class AuthService {
 
     /**
      * Sign in user with username and password
+     * Updated to use standardized ApiResponse wrapper
      */
     signin(username: string, password: string): Observable<User> {
         const credentials = btoa(`${username}:${password}`); // Base64 encode for basic auth
@@ -179,31 +192,79 @@ export class AuthService {
         // Build endpoint safely (avoid double slashes)
         const endpoint = `${this.API_BASE_URL}/user`.replace(/([^:])\/\//g, '$1/');
 
-        return this.http.get<any>(endpoint, { headers })
+        // Debug the request
+        AuthDebugService.debugRequestDetails(endpoint, headers, 'GET');
+
+        return this.http.get(endpoint, {
+            headers,
+            responseType: 'text',
+            observe: 'response'
+        })
             .pipe(
-                map(response => {
-                    // Backend wrapper: { success, message, data: { ...user } }
-                    if (response && response.success && response.data) {
-                        response = response.data;
-                    }
-                    // Handle different response formats
-                    let user: User;
-                    if (response.userName || response.username) {
-                        // Response is already in the right format or similar
-                        user = {
-                            id: response.id,
-                            userName: response.userName || response.username,
-                            firstName: response.firstName || response.firstname,
-                            lastName: response.lastName || response.lastname,
-                            email: response.email,
-                            roles: response.roles || []
-                        };
-                    } else {
-                        // Fallback - use the response as is and hope it has the right structure
-                        user = response as User;
+                map(httpResponse => {
+                    // Debug the response
+                    AuthDebugService.debugHttpResponse(httpResponse, endpoint);
+
+                    let response: any;
+
+                    // Try to parse the response body
+                    try {
+                        if (httpResponse.body && typeof httpResponse.body === 'string') {
+                            // Check if it's empty or just whitespace
+                            const trimmed = (httpResponse.body as string).trim();
+                            if (!trimmed) {
+                                throw new Error('Empty response from server');
+                            }
+
+                            // Check if response looks like an error message (plain text)
+                            if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+                                throw new Error(`Server returned non-JSON response: ${trimmed}`);
+                            }
+
+                            // Try to parse as JSON
+                            response = JSON.parse(trimmed);
+                            console.log('Parsed JSON response:', response);
+                        } else {
+                            response = httpResponse.body;
+                        }
+                    } catch (parseError: any) {
+                        console.error('JSON Parse Error:', parseError);
+                        console.error('Raw response that failed to parse:', httpResponse.body);
+
+                        // If it's not a JSON parsing error, throw the original message
+                        if (parseError.message && parseError.message.includes('Server returned non-JSON response')) {
+                            throw parseError;
+                        }
+
+                        const errorMessage = parseError.message || 'Unknown parsing error';
+                        throw new Error(`Server returned invalid JSON: ${errorMessage}`);
                     }
 
-                    return user;
+                    // Handle standardized API response format
+                    if (response && response.success && response.data) {
+                        // Use the data from the standardized response
+                        return response.data;
+                    } else if (response && response.success === false) {
+                        // Handle API error response
+                        throw new Error(response.message || 'Authentication failed');
+                    } else {
+                        // Fallback for non-standard response format
+                        console.warn('Non-standard response format, attempting to parse as user data:', response);
+                        
+                        if (response && (response['userName'] || response['username'])) {
+                            // Response is already in the right format or similar
+                            return {
+                                id: response['id'],
+                                userName: response['userName'] || response['username'],
+                                firstName: response['firstName'] || response['firstname'],
+                                lastName: response['lastName'] || response['lastname'],
+                                email: response['email'],
+                                roles: response['roles'] || []
+                            } as User;
+                        } else {
+                            throw new Error('No valid user data in response');
+                        }
+                    }
                 }),
                 tap(user => {
                     // Store authentication data
@@ -226,6 +287,13 @@ export class AuthService {
                         const authError = new Error('Invalid username or password');
                         (authError as any).status = 401;
                         throw authError;
+                    } else if (error.status === 200 && error.message?.includes('parsing')) {
+                        // HTTP 200 but parsing failed - likely a response format issue
+                        console.error('🚨 Parsing Error: Server returned HTTP 200 but response could not be parsed');
+                        console.error('Raw error:', error);
+                        const parseError = new Error('Server response could not be parsed. Please check the backend response format.');
+                        (parseError as any).status = 200;
+                        throw parseError;
                     } else if (error.status === 0) {
                         // CORS or network error
                         let errorMessage = 'Network connection failed.';
@@ -235,11 +303,24 @@ export class AuthService {
                             console.error('🚨 Network Issue: Cannot reach backend at:', this.API_BASE_URL);
                         } else {
                             errorMessage = 'Network connection failed. Please check your connection and try again.';
+                            console.error('🚨 Network Issue: Cannot reach backend at:', this.API_BASE_URL);
+                            console.error('💡 Make sure the backend server is running on http://localhost:8080');
+                            console.error('💡 Or run the frontend with: npm start (which uses proxy configuration)');
                         }
 
                         const networkError = new Error(errorMessage);
                         (networkError as any).status = 0;
                         throw networkError;
+                    } else if (error.status === 404) {
+                        // API endpoint not found
+                        const errorMessage = `API endpoint not found. The server returned 404 for: ${error.url}`;
+                        console.error('🚨 404 Error:', errorMessage);
+                        console.error('💡 Make sure the backend server is running and the endpoint exists');
+                        console.error('💡 Current API base URL:', this.API_BASE_URL);
+                        
+                        const notFoundError = new Error(errorMessage);
+                        (notFoundError as any).status = 404;
+                        throw notFoundError;
                     } else {
                         // For other errors, throw as-is
                         throw error;

@@ -1,0 +1,127 @@
+<div class="order-list-container">
+  <h1 class="page-title">My Orders</h1>
+  
+  <!-- Filters -->
+  <div class="filters">
+    <div class="filter-group">
+      <label for="statusFilter">Status:</label>
+      <select 
+        id="statusFilter" 
+        [(ngModel)]="statusFilter" 
+        (change)="onStatusFilterChange()"
+        class="form-control">
+        <option value="ALL">All Orders</option>
+        <option value="PLACED">Placed</option>
+        <option value="PAID">Paid</option>
+        <option value="FULFILLED">Fulfilled</option>
+        <option value="CANCELED">Canceled</option>
+      </select>
+    </div>
+  </div>
+  
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading your orders...</p>
+  </div>
+  
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error && !loading">
+    <p class="error-message">{{error}}</p>
+    <button class="btn btn-secondary" (click)="loadOrders()">Try Again</button>
+  </div>
+  
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && !error && orders.length === 0">
+    <div class="empty-icon">
+      <i class="fas fa-box-open"></i>
+    </div>
+    <h2>No orders found</h2>
+    <p>You haven't placed any orders yet.</p>
+    <button class="btn btn-primary" (click)="router.navigate(['/marketplace'])">Start Shopping</button>
+  </div>
+  
+  <!-- Orders List -->
+  <div class="orders-list" *ngIf="!loading && !error && orders.length > 0">
+    <div class="order-card" *ngFor="let order of orders">
+      <div class="order-header">
+        <div class="order-info">
+          <h3>Order #{{order.id.substring(0, 8)}}</h3>
+          <p class="order-date">{{formatDate(order.createdAt)}}</p>
+        </div>
+        <div class="order-status" [class]="getStatusClass(order.status)">
+          {{getStatusText(order.status)}}
+        </div>
+      </div>
+      
+      <div class="order-items">
+        <div class="order-item" *ngFor="let item of order.items">
+          <div class="item-details">
+            <h4>{{item.titleSnapshot}}</h4>
+            <p>{{item.quantity}} x {{formatPrice(item.unitPrice)}}</p>
+          </div>
+          <div class="item-total">
+            {{formatPrice(item.unitPrice * item.quantity)}}
+          </div>
+        </div>
+      </div>
+      
+      <div class="order-summary">
+        <div class="summary-row">
+          <span>Total:</span>
+          <span class="total-amount">{{formatPrice(order.amountTotal)}}</span>
+        </div>
+      </div>
+      
+      <div class="order-actions">
+        <button 
+          class="btn btn-secondary" 
+          (click)="viewOrderDetails(order.id)">
+          View Details
+        </button>
+        
+        <button 
+          class="btn btn-outline" 
+          (click)="cancelOrder(order)" 
+          *ngIf="order.status === 'PLACED'">
+          Cancel Order
+        </button>
+      </div>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button 
+        class="pagination-btn" 
+        (click)="onPageChange(0)" 
+        [disabled]="currentPage === 0">
+        First
+      </button>
+      
+      <button 
+        class="pagination-btn" 
+        (click)="onPageChange(currentPage - 1)" 
+        [disabled]="currentPage === 0">
+        Previous
+      </button>
+      
+      <span class="pagination-info">
+        Page {{currentPage + 1}} of {{totalPages}}
+      </span>
+      
+      <button 
+        class="pagination-btn" 
+        (click)="onPageChange(currentPage + 1)" 
+        [disabled]="currentPage === totalPages - 1">
+        Next
+      </button>
+      
+      <button 
+        class="pagination-btn" 
+        (click)="onPageChange(totalPages - 1)" 
+        [disabled]="currentPage === totalPages - 1">
+        Last
+      </button>
+    </div>
+  </div>
+</div>

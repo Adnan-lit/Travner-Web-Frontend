@@ -1,13 +1,14 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, Renderer2 } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, Renderer2, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { HttpClientModule } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 
 import { AdminService, AdminUser, SystemStats, CreateUserRequest } from '../../services/admin.service';
 import { AuthService } from '../../services/auth.service';
 import { CursorService } from '../../services/cursor.service';
+import { AdminMarketplaceComponent } from './admin-marketplace.component';
+import { Logger } from '../../utils/logger.util';
 
 interface UserFilter {
     search: string;
@@ -16,12 +17,24 @@ interface UserFilter {
     sortOrder: 'asc' | 'desc';
 }
 
+interface DiagnosticStep {
+    step: string;
+    status: string;
+    data: any;
+}
+
+interface DiagnosticResults {
+    timestamp: string;
+    status: string;
+    steps: DiagnosticStep[];
+}
+
 @Component({
     selector: 'app-admin',
     templateUrl: './admin.component.html',
     styleUrls: ['./admin.component.css'],
     standalone: true,
-    imports: [CommonModule, RouterModule, ReactiveFormsModule]
+    imports: [CommonModule, RouterModule, ReactiveFormsModule, AdminMarketplaceComponent]
 })
 export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
     // Data properties
@@ -43,6 +56,9 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // UI state
     activeTab = 'overview';
+
+    // Marketplace management component
+    marketplaceComponent: any;
     showCreateUserModal = false;
     showEditRolesModal = false;
     showResetPasswordModal = false;
@@ -60,7 +76,7 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
     availableRoles = ['USER', 'ADMIN'];
 
     // Diagnostic properties
-    diagnosticResults: any = null;
+    diagnosticResults: DiagnosticResults | null = null;
     showDiagnosticResults = false;
 
     // Subscriptions
@@ -168,7 +184,16 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
         } else if (tab === 'users') {
             // Always reload users to ensure fresh data
             this.loadUsers();
+        } else if (tab === 'marketplace') {
+            // Load marketplace management component
+            this.loadMarketplaceManagement();
         }
+    }
+
+    private loadMarketplaceManagement(): void {
+        // The marketplace component is now loaded directly in the template
+        // No additional loading logic needed here
+        console.log('Marketplace tab selected - marketplace component loaded');
     }
 
     private isStatsStale(): boolean {
@@ -519,6 +544,31 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
         this.subscriptions.push(subscription);
     }
 
+    /**
+     * Toggle user status (active/inactive)
+     */
+    // TODO: Implement user status toggle when updateUserStatus method is added to AdminService
+    // toggleUserStatus(user: AdminUser): void {
+    //     this.isLoading = true;
+    //     this.clearMessages();
+    //
+    //     const newStatus = !user.active;
+    //
+    //     const subscription = this.adminService.updateUserStatus(user.userName, newStatus).subscribe({
+    //         next: (response) => {
+    //             this.successMessage = `User ${newStatus ? 'activated' : 'deactivated'} successfully`;
+    //             this.loadUsers();
+    //             this.isLoading = false;
+    //         },
+    //         error: (error) => {
+    //             this.errorMessage = error.message;
+    //             this.isLoading = false;
+    //         }
+    //     });
+    //
+    //     this.subscriptions.push(subscription);
+    // }
+
     // Utility methods
     isUserAdmin(user: AdminUser): boolean {
         return user.roles.includes('ADMIN');
@@ -527,11 +577,6 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
     getCurrentUser(): string {
         const currentUser = this.authService.getCurrentUser();
         return currentUser ? currentUser.userName : '';
-    }
-
-    clearMessages(): void {
-        this.errorMessage = '';
-        this.successMessage = '';
     }
 
     // Force refresh users method for debugging
@@ -635,41 +680,45 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
         const subscription = this.adminService.getAllUsers().subscribe({
             next: (users) => {
                 console.log('🎯 Diagnostic API test - Success:', users);
-                this.diagnosticResults.steps[apiTestIndex] = {
-                    step: 'API Call Test',
-                    status: '✅ Success',
-                    data: {
-                        usersCount: users.length,
-                        firstUser: users[0] || null,
-                        allUsers: users
-                    }
-                };
-                this.diagnosticResults.status = 'Completed Successfully';
+                if (this.diagnosticResults) {
+                    this.diagnosticResults.steps[apiTestIndex] = {
+                        step: 'API Call Test',
+                        status: '✅ Success',
+                        data: {
+                            usersCount: users?.length || 0,
+                            firstUser: users?.[0] || null,
+                            allUsers: users
+                        }
+                    };
+                    this.diagnosticResults.status = 'Completed Successfully';
 
-                // Also test the component's loadUsers method
-                this.diagnosticResults.steps.push({
-                    step: 'Component State After API',
-                    status: '📊 Info',
-                    data: {
-                        componentUsersLength: this.users.length,
-                        filteredUsersLength: this.filteredUsers.length,
-                        isLoading: this.isLoading,
-                        activeTab: this.activeTab
-                    }
-                });
+                    // Also test the component's loadUsers method
+                    this.diagnosticResults.steps.push({
+                        step: 'Component State After API',
+                        status: '📊 Info',
+                        data: {
+                            componentUsersLength: this.users?.length || 0,
+                            filteredUsersLength: this.filteredUsers?.length || 0,
+                            isLoading: this.isLoading,
+                            activeTab: this.activeTab
+                        }
+                    });
+                }
             },
             error: (error) => {
                 console.error('🎯 Diagnostic API test - Error:', error);
-                this.diagnosticResults.steps[apiTestIndex] = {
-                    step: 'API Call Test',
-                    status: '❌ Failed',
-                    data: {
-                        errorMessage: error.message,
-                        errorStatus: error.status,
-                        fullError: error
-                    }
-                };
-                this.diagnosticResults.status = 'Failed';
+                if (this.diagnosticResults) {
+                    this.diagnosticResults.steps[apiTestIndex] = {
+                        step: 'API Call Test',
+                        status: '❌ Failed',
+                        data: {
+                            errorMessage: error?.message || 'Unknown error',
+                            errorStatus: error?.status,
+                            fullError: error
+                        }
+                    };
+                    this.diagnosticResults.status = 'Failed';
+                }
             }
         });
 
@@ -679,5 +728,10 @@ export class AdminComponent implements OnInit, OnDestroy, AfterViewInit {
     closeDiagnosticResults(): void {
         this.showDiagnosticResults = false;
         this.diagnosticResults = null;
+    }
+
+    clearMessages(): void {
+        this.errorMessage = '';
+        this.successMessage = '';
     }
 }

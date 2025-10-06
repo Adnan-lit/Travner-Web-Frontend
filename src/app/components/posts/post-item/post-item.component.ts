@@ -14,14 +14,17 @@ import { PostService } from '../../../services/post.service';
     <div class="post-item" *ngIf="post">
       <div class="post-header">
         <div class="post-author">
-          <div class="author-avatar">{{ getInitials(post.authorName) }}</div>
+          <div class="author-avatar">{{ getInitials(post.author.firstName + ' ' + post.author.lastName) }}</div>
           <div class="author-info">
-            <span class="author-name">{{ post.authorName }}</span>
+            <span class="author-name">{{ post.author.firstName }} {{ post.author.lastName }}</span>
             <span class="post-date">{{ formatDate(post.createdAt) }}</span>
           </div>
         </div>
         
-  <div class="ownership-debug" *ngIf="debugMode">UID: {{ currentUserId() || '—' }} | AID: {{ post.authorId || '—' }}</div>
+  <div class="ownership-debug" *ngIf="debugMode">
+    UID: {{ currentUserId() || '—' }} | AID: {{ post.author.id.timestamp || post.author.id || '—' }}
+    <button style="margin-left: 10px; font-size: 12px;" (click)="debugOwnership()">🔍 Debug</button>
+  </div>
         <div class="post-actions" *ngIf="canModifyPost()">
           <button class="edit-btn" (click)="onEdit()">Edit</button>
           <button class="delete-btn" (click)="onDelete()">Delete</button>
@@ -85,11 +88,11 @@ import { PostService } from '../../../services/post.service';
       <div class="post-footer">
         <div class="post-stats">
           <div class="vote-actions">
-            <button 
-              class="vote-btn upvote" 
-              [class.active]="post.hasUserUpvoted" 
+            <button
+              class="vote-btn upvote"
+              [class.active]="false"
               (click)="onUpvote()"
-              [disabled]="post.hasUserUpvoted"
+              [disabled]="false"
             >
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
@@ -97,11 +100,11 @@ import { PostService } from '../../../services/post.service';
               <span>{{ post.upvotes }}</span>
             </button>
             
-            <button 
-              class="vote-btn downvote" 
-              [class.active]="post.hasUserDownvoted" 
+            <button
+              class="vote-btn downvote"
+              [class.active]="false"
               (click)="onDownvote()"
-              [disabled]="post.hasUserDownvoted"
+              [disabled]="false"
             >
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -651,7 +654,15 @@ export class PostItemComponent implements OnDestroy {
   ) { }
 
   get debugMode(): boolean { try { return localStorage.getItem('travner_debug') === 'true'; } catch { return false; } }
-  currentUserId(): string | null { return this.authService.getCurrentUser?.()?.id || null; }
+  currentUserId(): string | null {
+    const user = this.authService.getCurrentUser?.();
+    if (!user || !user.id) return null;
+
+    if (typeof user.id === 'object' && 'timestamp' in user.id) {
+      return String(user.id.timestamp);
+    }
+    return String(user.id);
+  }
 
   /**
    * Track by function for ngFor optimization
@@ -671,8 +682,12 @@ export class PostItemComponent implements OnDestroy {
    * Get style object for media item
    */
   getMediaStyle(mediaUrl: string): any {
+    if (!mediaUrl) {
+      return {};
+    }
+
     const blobUrl = this.getMediaBlobUrl(mediaUrl);
-    if (blobUrl) {
+    if (blobUrl && blobUrl.startsWith('blob:')) {
       return { 'background-image': `url(${blobUrl})` };
     }
     return {};
@@ -747,7 +762,27 @@ export class PostItemComponent implements OnDestroy {
     });
   }
 
-  canModifyPost(): boolean { return isPostOwner(this.post, this.authService.getCurrentUser?.(), 'PostItem'); }
+  canModifyPost(): boolean {
+    // Create a PostOwner-compatible object from the Post
+    const postOwner = {
+      authorId: this.post.author?.id,
+      authorName: this.post.author?.userName // Use username instead of concatenated names
+    };
+
+    // Get current user and handle potential JSON string
+    let currentUser = this.authService.getCurrentUser();
+    if (typeof currentUser === 'string') {
+      try {
+        const parsed = JSON.parse(currentUser);
+        currentUser = parsed.data || parsed; // Handle API response format
+      } catch (e) {
+        console.error('Failed to parse current user:', e);
+        currentUser = null;
+      }
+    }
+
+    return isPostOwner(postOwner, currentUser, 'PostItem');
+  }
 
   onUpvote(): void {
     this.upvoted.emit(this.post.id);
@@ -858,5 +893,37 @@ export class PostItemComponent implements OnDestroy {
     setTimeout(() => {
       this.showCopyToast = false;
     }, 3000);
+  }
+
+  /**
+   * Debug ownership information (available in browser console)
+   */
+  debugOwnership(): void {
+    let currentUser = this.authService.getCurrentUser();
+
+    // Handle potential JSON string
+    if (typeof currentUser === 'string') {
+      try {
+        const parsed = JSON.parse(currentUser);
+        currentUser = parsed.data || parsed; // Handle API response format
+      } catch (e) {
+        console.error('Failed to parse current user:', e);
+        currentUser = null;
+      }
+    }
+
+    const postOwner = {
+      authorId: this.post.author?.id,
+      authorName: this.post.author?.userName
+    };
+
+    console.log('🔍 Ownership Debug Information:', {
+      postId: this.post.id,
+      postOwner,
+      currentUser,
+      rawCurrentUser: this.authService.getCurrentUser(), // Show raw data too
+      canModify: this.canModifyPost(),
+      enableDebugMode: 'Run: localStorage.setItem("travner_debug", "true"); then refresh'
+    });
   }
 }

@@ -1,0 +1,683 @@
+<div class="admin-container">
+  <!-- Header -->
+  <header class="admin-header fade-in">
+    <div class="header-content">
+      <div class="header-title">
+        <h1>Admin Marketplace Dashboard</h1>
+        <p>Manage products and marketplace settings</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-warning" (click)="runDiagnosticTest()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+          </svg>
+          🔧 Test API
+        </button>
+        <button class="btn btn-info" (click)="loadProducts()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+          🔄 Refresh Products
+        </button>
+        <button class="btn btn-primary" (click)="openCreateProductModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <line x1="19" y1="8" x2="24" y2="13"></line>
+            <line x1="21.5" y1="10.5" x2="21.5" y2="10.5"></line>
+          </svg>
+          Create Product
+        </button>
+        <a routerLink="/admin" class="btn btn-secondary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9,22 9,12 15,12 15,22"></polyline>
+          </svg>
+          Back to Admin
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="admin-nav fade-in">
+    <div class="nav-tabs">
+      <button 
+        class="nav-tab" 
+        [class.active]="activeTab === 'products'"
+        (click)="setActiveTab('products')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="9" y1="9" x2="15" y2="9"></line>
+          <line x1="9" y1="15" x2="15" y2="15"></line>
+        </svg>
+        Products
+      </button>
+      <button 
+        class="nav-tab" 
+        [class.active]="activeTab === 'stats'"
+        (click)="setActiveTab('stats')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        Statistics
+      </button>
+    </div>
+  </nav>
+
+  <!-- Messages -->
+  <div class="messages-container" *ngIf="successMessage || errorMessage">
+    <div class="message success-message" *ngIf="successMessage">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <polyline points="20,6 9,17 4,12"></polyline>
+      </svg>
+      {{ successMessage }}
+    </div>
+    <div class="message error-message" *ngIf="errorMessage">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="15" y1="9" x2="9" y2="15"></line>
+        <line x1="9" y1="9" x2="15" y2="15"></line>
+      </svg>
+      {{ errorMessage }}
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <!-- Products Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'products'">
+      <!-- Product Controls -->
+      <div class="product-controls fade-in">
+        <div class="search-container">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+          <input 
+            type="text" 
+            id="productSearch"
+            placeholder="Search products..." 
+            [value]="productFilter.search"
+            (input)="onSearchChange($event)"
+            class="search-input">
+        </div>
+        
+        <div class="filter-container">
+          <select 
+            id="categoryFilter"
+            [value]="productFilter.category"
+            (change)="onCategoryFilterChange($event)"
+            class="filter-select">
+            <option value="">All Categories</option>
+            <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+          </select>
+          
+          <select 
+            id="activeFilter"
+            [value]="productFilter.active"
+            (change)="onActiveFilterChange($event)"
+            class="filter-select">
+            <option [value]="null">All Status</option>
+            <option [value]="true">Active</option>
+            <option [value]="false">Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Products Table -->
+      <div class="table-container fade-in">
+        <div class="table-wrapper">
+          <table class="products-table">
+            <thead>
+              <tr>
+                <th (click)="onSortChange('title')" class="sortable">
+                  Title
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="6,9 12,15 18,9"></polyline>
+                  </svg>
+                </th>
+                <th (click)="onSortChange('category')" class="sortable">
+                  Category
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="6,9 12,15 18,9"></polyline>
+                  </svg>
+                </th>
+                <th (click)="onSortChange('price')" class="sortable">
+                  Price
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="6,9 12,15 18,9"></polyline>
+                  </svg>
+                </th>
+                <th (click)="onSortChange('stock')" class="sortable">
+                  Stock
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="6,9 12,15 18,9"></polyline>
+                  </svg>
+                </th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let product of filteredProducts" class="product-row">
+                <td class="product-info">
+                  <div class="product-title">
+                    {{ product.title }}
+                  </div>
+                  <div class="product-description">
+                    {{ product.description.length > 100 ? (product.description.substring(0, 100) + '...') : product.description }}
+                  </div>
+                </td>
+                <td>
+                  <span class="category-badge">{{ product.category }}</span>
+                </td>
+                <td>
+                  <span class="price">{{ product.price | currency:'BDT':'symbol' }}</span>
+                </td>
+                <td>
+                  <span 
+                    class="stock-badge"
+                    [class.in-stock]="product.stock > 10"
+                    [class.low-stock]="product.stock > 0 && product.stock <= 10"
+                    [class.out-of-stock]="product.stock === 0">
+                    {{ product.stock }}
+                  </span>
+                </td>
+                <td>
+                  <span 
+                    class="status-badge"
+                    [class.active]="product.active"
+                    [class.inactive]="!product.active">
+                    {{ product.active ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <button 
+                      class="btn btn-sm btn-outline"
+                      (click)="openEditProductModal(product)"
+                      title="Edit Product">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                    </button>
+                    <button 
+                      *ngIf="product.active"
+                      class="btn btn-sm btn-warning"
+                      (click)="toggleProductStatus(product)"
+                      title="Deactivate Product">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                      </svg>
+                    </button>
+                    <button 
+                      *ngIf="!product.active"
+                      class="btn btn-sm btn-success"
+                      (click)="toggleProductStatus(product)"
+                      title="Activate Product">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="20,6 9,17 4,12"></polyline>
+                      </svg>
+                    </button>
+                    <button 
+                      class="btn btn-sm btn-danger"
+                      (click)="openDeleteConfirmModal(product)"
+                      title="Delete Product">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="3,6 5,6 21,6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-state" *ngIf="!isLoading && filteredProducts.length === 0">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="9" x2="15" y2="9"></line>
+            <line x1="9" y1="15" x2="15" y2="15"></line>
+          </svg>
+          <h3>No products found</h3>
+          <p>Try adjusting your search or filter criteria</p>
+        </div>
+      </div>
+
+      <!-- Loading state for products -->
+      <div class="loading-container" *ngIf="isLoading">
+        <div class="loading-spinner"></div>
+        <p>Loading products...</p>
+      </div>
+    </div>
+
+    <!-- Statistics Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'stats'">
+      <div class="stats-grid fade-in">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="9" x2="15" y2="9"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <h3>Total Products</h3>
+            <div class="stat-value">{{ marketplaceStats?.totalProducts || 0 }}</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon active">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <h3>Active Products</h3>
+            <div class="stat-value">{{ marketplaceStats?.activeProducts || 0 }}</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon inactive">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <h3>Inactive Products</h3>
+            <div class="stat-value">{{ marketplaceStats?.inactiveProducts || 0 }}</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon value">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <h3>Total Inventory Value</h3>
+            <div class="stat-value">{{ marketplaceStats?.totalValue | currency:'BDT':'symbol' }}</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon low-stock">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <h3>Low Stock Products</h3>
+            <div class="stat-value">{{ marketplaceStats?.lowStockProducts || 0 }}</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon out-of-stock">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <h3>Out of Stock Products</h3>
+            <div class="stat-value">{{ marketplaceStats?.outOfStockProducts || 0 }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading state for stats -->
+      <div class="loading-container" *ngIf="isStatsLoading">
+        <div class="loading-spinner"></div>
+        <p>Loading marketplace statistics...</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Create Product Modal -->
+<div class="modal-overlay" *ngIf="showCreateProductModal" (click)="closeCreateProductModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Create New Product</h2>
+      <button class="modal-close" (click)="closeCreateProductModal()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <form [formGroup]="createProductForm" (ngSubmit)="onCreateProduct()" class="modal-form">
+      <div class="form-group">
+        <label for="title">Title</label>
+        <input 
+          type="text" 
+          id="title"
+          formControlName="title"
+          [class.error]="isFieldInvalid(createProductForm, 'title')"
+          placeholder="Enter product title">
+        <div class="field-error" *ngIf="isFieldInvalid(createProductForm, 'title')">
+          {{ getFieldError(createProductForm, 'title') }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea 
+          id="description"
+          formControlName="description"
+          [class.error]="isFieldInvalid(createProductForm, 'description')"
+          placeholder="Enter product description"
+          rows="4"></textarea>
+        <div class="field-error" *ngIf="isFieldInvalid(createProductForm, 'description')">
+          {{ getFieldError(createProductForm, 'description') }}
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="price">Price</label>
+          <input 
+            type="number" 
+            id="price"
+            formControlName="price"
+            [class.error]="isFieldInvalid(createProductForm, 'price')"
+            placeholder="0.00"
+            step="0.01"
+            min="0">
+          <div class="field-error" *ngIf="isFieldInvalid(createProductForm, 'price')">
+            {{ getFieldError(createProductForm, 'price') }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="currency">Currency</label>
+          <select 
+            id="currency"
+            formControlName="currency"
+            [class.error]="isFieldInvalid(createProductForm, 'currency')">
+            <option value="BDT">BDT</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="JPY">JPY</option>
+          </select>
+          <div class="field-error" *ngIf="isFieldInvalid(createProductForm, 'currency')">
+            {{ getFieldError(createProductForm, 'currency') }}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="stock">Stock Quantity</label>
+          <input 
+            type="number" 
+            id="stock"
+            formControlName="stock"
+            [class.error]="isFieldInvalid(createProductForm, 'stock')"
+            placeholder="0"
+            min="0">
+          <div class="field-error" *ngIf="isFieldInvalid(createProductForm, 'stock')">
+            {{ getFieldError(createProductForm, 'stock') }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="category">Category</label>
+          <input 
+            type="text" 
+            id="category"
+            formControlName="category"
+            [class.error]="isFieldInvalid(createProductForm, 'category')"
+            placeholder="Enter category">
+          <div class="field-error" *ngIf="isFieldInvalid(createProductForm, 'category')">
+            {{ getFieldError(createProductForm, 'category') }}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="imageUrls">Image URLs (comma separated)</label>
+        <input 
+          type="text" 
+          id="imageUrls"
+          formControlName="imageUrls"
+          placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg">
+      </div>
+
+      <div class="form-group">
+        <label>
+          <input 
+            type="checkbox" 
+            id="active"
+            formControlName="active">
+          Active
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeCreateProductModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="!createProductForm.valid || isLoading">
+          <span *ngIf="!isLoading">Create Product</span>
+          <span *ngIf="isLoading">Creating...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div class="modal-overlay" *ngIf="showEditProductModal" (click)="closeEditProductModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Edit Product</h2>
+      <button class="modal-close" (click)="closeEditProductModal()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <form [formGroup]="editProductForm" (ngSubmit)="onUpdateProduct()" class="modal-form">
+      <div class="form-group">
+        <label for="edit-title">Title</label>
+        <input 
+          type="text" 
+          id="edit-title"
+          formControlName="title"
+          [class.error]="isFieldInvalid(editProductForm, 'title')"
+          placeholder="Enter product title">
+        <div class="field-error" *ngIf="isFieldInvalid(editProductForm, 'title')">
+          {{ getFieldError(editProductForm, 'title') }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="edit-description">Description</label>
+        <textarea 
+          id="edit-description"
+          formControlName="description"
+          [class.error]="isFieldInvalid(editProductForm, 'description')"
+          placeholder="Enter product description"
+          rows="4"></textarea>
+        <div class="field-error" *ngIf="isFieldInvalid(editProductForm, 'description')">
+          {{ getFieldError(editProductForm, 'description') }}
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="edit-price">Price</label>
+          <input 
+            type="number" 
+            id="edit-price"
+            formControlName="price"
+            [class.error]="isFieldInvalid(editProductForm, 'price')"
+            placeholder="0.00"
+            step="0.01"
+            min="0">
+          <div class="field-error" *ngIf="isFieldInvalid(editProductForm, 'price')">
+            {{ getFieldError(editProductForm, 'price') }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-currency">Currency</label>
+          <select 
+            id="edit-currency"
+            formControlName="currency"
+            [class.error]="isFieldInvalid(editProductForm, 'currency')">
+            <option value="BDT">BDT</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="JPY">JPY</option>
+          </select>
+          <div class="field-error" *ngIf="isFieldInvalid(editProductForm, 'currency')">
+            {{ getFieldError(editProductForm, 'currency') }}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="edit-stock">Stock Quantity</label>
+          <input 
+            type="number" 
+            id="edit-stock"
+            formControlName="stock"
+            [class.error]="isFieldInvalid(editProductForm, 'stock')"
+            placeholder="0"
+            min="0">
+          <div class="field-error" *ngIf="isFieldInvalid(editProductForm, 'stock')">
+            {{ getFieldError(editProductForm, 'stock') }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-category">Category</label>
+          <input 
+            type="text" 
+            id="edit-category"
+            formControlName="category"
+            [class.error]="isFieldInvalid(editProductForm, 'category')"
+            placeholder="Enter category">
+          <div class="field-error" *ngIf="isFieldInvalid(editProductForm, 'category')">
+            {{ getFieldError(editProductForm, 'category') }}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>
+          <input 
+            type="checkbox" 
+            id="edit-active"
+            formControlName="active">
+          Active
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeEditProductModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="!editProductForm.valid || isLoading">
+          <span *ngIf="!isLoading">Update Product</span>
+          <span *ngIf="isLoading">Updating...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showDeleteConfirmModal" (click)="closeDeleteConfirmModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Confirm Delete</h2>
+      <button class="modal-close" (click)="closeDeleteConfirmModal()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-content">
+      <div class="delete-warning" *ngIf="selectedProduct">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+        <h3>Delete Product</h3>
+        <p>Are you sure you want to delete product <strong>{{ selectedProduct.title }}</strong>?</p>
+        <p class="warning-text">This action cannot be undone.</p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeDeleteConfirmModal()">Cancel</button>
+        <button type="button" class="btn btn-danger" (click)="onDeleteProduct()" [disabled]="isLoading">
+          <span *ngIf="!isLoading">Delete Product</span>
+          <span *ngIf="isLoading">Deleting...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Diagnostic Results Modal -->
+<div class="modal-overlay" *ngIf="showDiagnosticResults" (click)="closeDiagnosticResults()">
+  <div class="modal-container diagnostic-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>🔧 Frontend Diagnostic Results</h2>
+      <button class="modal-close" (click)="closeDiagnosticResults()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-content" *ngIf="diagnosticResults">
+      <div class="diagnostic-header">
+        <p><strong>Test Status:</strong> {{ diagnosticResults.status }}</p>
+        <p><strong>Timestamp:</strong> {{ diagnosticResults?.timestamp | date:'medium' }}</p>
+      </div>
+      
+      <div class="diagnostic-steps">
+        <div class="diagnostic-step" *ngFor="let step of diagnosticResults.steps">
+          <div class="step-header">
+            <h4>{{ step.step }}</h4>
+            <span class="step-status" [innerHTML]="step.status"></span>
+          </div>
+          <div class="step-data" *ngIf="step.data">
+            <pre>{{ step?.data | json }}</pre>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" (click)="closeDiagnosticResults()">Close</button>
+        <button type="button" class="btn btn-secondary" (click)="runDiagnosticTest()">Run Again</button>
+      </div>
+    </div>
+  </div>
+</div>

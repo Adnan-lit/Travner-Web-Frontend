@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Injectable, OnDestroy } from '@angular/core';
+import { Observable, Subject, Subscription } from 'rxjs';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { ChatMessage } from '../../../models/chat.models';
 import { EnvironmentConfig } from '../../../config/environment.config';
@@ -7,14 +7,19 @@ import { EnvironmentConfig } from '../../../config/environment.config';
 @Injectable({
   providedIn: 'root'
 })
-export class WebsocketService {
-  private socket$: WebSocketSubject<any>;
+export class WebsocketService implements OnDestroy {
+  private socket$?: WebSocketSubject<any>;
   private messagesSubject = new Subject<ChatMessage>();
   private connectionStatusSubject = new Subject<boolean>();
+  private socketSubscription?: Subscription;
 
   constructor() {
+    this.connect();
+  }
+
+  private connect(): void {
     this.socket$ = this.createWebSocketConnection();
-    this.socket$.subscribe({
+    this.socketSubscription = this.socket$.subscribe({
       next: (message) => this.handleMessage(message),
       error: (err) => this.handleError(err),
       complete: () => this.handleComplete()
@@ -73,9 +78,9 @@ export class WebsocketService {
   sendMessage(message: ChatMessage): void {
     if (!this.socket$ || this.socket$.closed) {
       console.error('WebSocket is not connected. Attempting reconnection...');
-      this.socket$ = this.createWebSocketConnection();
+      this.connect();
     }
-    this.socket$.next({ type: 'chat', data: message });
+    this.socket$?.next({ type: 'chat', data: message });
   }
 
   /**
@@ -96,8 +101,15 @@ export class WebsocketService {
    * Disconnect the WebSocket connection
    */
   disconnect(): void {
+    this.socketSubscription?.unsubscribe();
     if (this.socket$) {
       this.socket$.complete();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.disconnect();
+    this.messagesSubject.complete();
+    this.connectionStatusSubject.complete();
   }
 }

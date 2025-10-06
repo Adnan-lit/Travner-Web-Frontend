@@ -1,0 +1,204 @@
+<div class="checkout-container">
+  <h1 class="page-title">Checkout</h1>
+  
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading your cart...</p>
+  </div>
+  
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error && !loading">
+    <p class="error-message">{{error}}</p>
+    <button class="btn btn-secondary" (click)="loadCart()">Try Again</button>
+  </div>
+  
+  <!-- Checkout Content -->
+  <div class="checkout-content" *ngIf="!loading && !error && cart && cart.items.length > 0">
+    <form [formGroup]="checkoutForm" (ngSubmit)="onSubmit()" class="checkout-form">
+      <div class="form-section">
+        <h2>Shipping Information</h2>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fullName">Full Name *</label>
+            <input 
+              type="text" 
+              id="fullName" 
+              formControlName="fullName" 
+              class="form-control"
+              [class.error]="checkoutForm.get('fullName')?.invalid && checkoutForm.get('fullName')?.touched">
+            <div class="error-message" *ngIf="checkoutForm.get('fullName')?.invalid && checkoutForm.get('fullName')?.touched">
+              Full name is required (min 2 characters)
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input 
+              type="email" 
+              id="email" 
+              formControlName="email" 
+              class="form-control"
+              [class.error]="checkoutForm.get('email')?.invalid && checkoutForm.get('email')?.touched">
+            <div class="error-message" *ngIf="checkoutForm.get('email')?.invalid && checkoutForm.get('email')?.touched">
+              Valid email is required
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="phone">Phone Number *</label>
+            <input 
+              type="tel" 
+              id="phone" 
+              formControlName="phone" 
+              class="form-control"
+              [class.error]="checkoutForm.get('phone')?.invalid && checkoutForm.get('phone')?.touched">
+            <div class="error-message" *ngIf="checkoutForm.get('phone')?.invalid && checkoutForm.get('phone')?.touched">
+              Phone number is required (min 10 digits)
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="addressLine1">Address Line 1 *</label>
+            <input 
+              type="text" 
+              id="addressLine1" 
+              formControlName="addressLine1" 
+              class="form-control"
+              [class.error]="checkoutForm.get('addressLine1')?.invalid && checkoutForm.get('addressLine1')?.touched">
+            <div class="error-message" *ngIf="checkoutForm.get('addressLine1')?.invalid && checkoutForm.get('addressLine1')?.touched">
+              Address is required (min 5 characters)
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="addressLine2">Address Line 2 (Optional)</label>
+            <input 
+              type="text" 
+              id="addressLine2" 
+              formControlName="addressLine2" 
+              class="form-control">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="city">City *</label>
+            <input 
+              type="text" 
+              id="city" 
+              formControlName="city" 
+              class="form-control"
+              [class.error]="checkoutForm.get('city')?.invalid && checkoutForm.get('city')?.touched">
+            <div class="error-message" *ngIf="checkoutForm.get('city')?.invalid && checkoutForm.get('city')?.touched">
+              City is required
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="state">State/Province *</label>
+            <input 
+              type="text" 
+              id="state" 
+              formControlName="state" 
+              class="form-control"
+              [class.error]="checkoutForm.get('state')?.invalid && checkoutForm.get('state')?.touched">
+            <div class="error-message" *ngIf="checkoutForm.get('state')?.invalid && checkoutForm.get('state')?.touched">
+              State is required
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="postalCode">Postal Code *</label>
+            <input 
+              type="text" 
+              id="postalCode" 
+              formControlName="postalCode" 
+              class="form-control"
+              [class.error]="checkoutForm.get('postalCode')?.invalid && checkoutForm.get('postalCode')?.touched">
+            <div class="error-message" *ngIf="checkoutForm.get('postalCode')?.invalid && checkoutForm.get('postalCode')?.touched">
+              Postal code is required
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="country">Country *</label>
+            <select 
+              id="country" 
+              formControlName="country" 
+              class="form-control"
+              [class.error]="checkoutForm.get('country')?.invalid && checkoutForm.get('country')?.touched">
+              <option value="BD">Bangladesh</option>
+              <option value="US">United States</option>
+              <option value="CA">Canada</option>
+              <option value="UK">United Kingdom</option>
+              <option value="AU">Australia</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-section">
+        <h2>Order Summary</h2>
+        
+        <div class="order-items">
+          <div class="order-item" *ngFor="let item of cart.items">
+            <div class="item-details">
+              <h3>{{item.titleSnapshot}}</h3>
+              <p>{{item.quantity}} x {{formatPrice(item.unitPrice)}}</p>
+            </div>
+            <div class="item-total">
+              {{formatPrice(getItemTotal(item.unitPrice, item.quantity))}}
+            </div>
+          </div>
+        </div>
+        
+        <div class="order-summary">
+          <div class="summary-row">
+            <span>Subtotal:</span>
+            <span>{{formatPrice(cart.subtotal)}}</span>
+          </div>
+          
+          <div class="summary-row">
+            <span>Shipping:</span>
+            <span>Free</span>
+          </div>
+          
+          <div class="summary-row total-row">
+            <span>Total:</span>
+            <span class="total">{{formatPrice(cart.subtotal)}}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-actions">
+        <button 
+          type="button" 
+          class="btn btn-secondary" 
+          (click)="cancelCheckout()"
+          [disabled]="submitting">
+          Cancel
+        </button>
+        
+        <button 
+          type="submit" 
+          class="btn btn-primary" 
+          [disabled]="checkoutForm.invalid || submitting">
+          <span *ngIf="!submitting">Place Order</span>
+          <span *ngIf="submitting">Processing...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,142 @@
+<div class="cart-container">
+  <h1 class="page-title">Your Shopping Cart</h1>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading your cart...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error && !loading">
+    <p class="error-message">{{ error }}</p>
+    <button class="btn btn-secondary" (click)="loadCart()">Try Again</button>
+  </div>
+
+  <!-- Empty Cart -->
+  <div
+    class="empty-cart"
+    *ngIf="!loading && !error && cart && cart.items.length === 0"
+  >
+    <div class="empty-cart-icon">
+      <i class="fas fa-shopping-cart"></i>
+    </div>
+    <h2>Your cart is empty</h2>
+    <p>Looks like you haven't added anything to your cart yet.</p>
+    <button class="btn btn-primary" (click)="continueShopping()">
+      Continue Shopping
+    </button>
+  </div>
+
+  <!-- Cart Content -->
+  <div
+    class="cart-content"
+    *ngIf="!loading && !error && cart && cart.items.length > 0"
+  >
+    <div class="cart-items">
+      <div class="cart-item" *ngFor="let item of cart.items">
+        <div class="item-image">
+          <img
+            [src]="getCartItemImage()"
+            alt="{{ item.titleSnapshot }}"
+            (error)="handleImageError($event)"
+          />
+        </div>
+
+        <div class="item-details">
+          <h3 class="item-title">{{ item.titleSnapshot }}</h3>
+          <p class="item-price">{{ formatPrice(item.unitPrice) }}</p>
+        </div>
+
+        <div class="item-quantity">
+          <label for="quantity-{{ item.lineId }}">Quantity:</label>
+          <div class="quantity-controls">
+            <button
+              class="quantity-btn"
+              (click)="updateQuantity(item, item.quantity - 1)"
+              [disabled]="
+                updatingItemIds.has(item.lineId) || item.quantity <= 1
+              "
+            >
+              -
+            </button>
+            <input
+              type="number"
+              id="quantity-{{ item.lineId }}"
+              [value]="item.quantity"
+              min="1"
+              max="10"
+              class="quantity-input"
+              (change)="onQuantityChange(item, $event)"
+            />
+            <button
+              class="quantity-btn"
+              (click)="updateQuantity(item, item.quantity + 1)"
+              [disabled]="
+                updatingItemIds.has(item.lineId) || item.quantity >= 10
+              "
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        <div class="item-total">
+          <span class="total-label">Total:</span>
+          <span class="total-amount">{{
+            formatPrice(getItemTotal(item))
+          }}</span>
+        </div>
+
+        <div class="item-actions">
+          <button
+            class="btn btn-danger remove-btn"
+            (click)="removeItem(item.lineId)"
+            [disabled]="updatingItemIds.has(item.lineId)"
+          >
+            <span *ngIf="!updatingItemIds.has(item.lineId)">Remove</span>
+            <span *ngIf="updatingItemIds.has(item.lineId)">Removing...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cart-summary">
+      <div class="summary-content">
+        <h2>Order Summary</h2>
+
+        <div class="summary-row">
+          <span>Subtotal:</span>
+          <span class="subtotal">{{ formatPrice(cart.subtotal) }}</span>
+        </div>
+
+        <div class="summary-row">
+          <span>Shipping:</span>
+          <span>Free</span>
+        </div>
+
+        <div class="summary-row total-row">
+          <span>Total:</span>
+          <span class="total">{{ formatPrice(cart.subtotal) }}</span>
+        </div>
+
+        <div class="summary-actions">
+          <button class="btn btn-secondary" (click)="continueShopping()">
+            Continue Shopping
+          </button>
+          <button class="btn btn-primary" (click)="proceedToCheckout()">
+            Proceed to Checkout
+          </button>
+        </div>
+
+        <button
+          class="btn btn-outline clear-cart-btn"
+          (click)="clearCart()"
+          *ngIf="cart && cart.items.length > 0"
+        >
+          Clear Cart
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

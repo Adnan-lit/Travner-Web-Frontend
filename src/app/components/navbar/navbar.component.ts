@@ -2,8 +2,10 @@ import { Component, OnInit, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { ThemeService } from '@services/theme.service';
+import { ThemeService } from '../../services/theme.service';
+import { MarketplaceService } from '../../services/marketplace.service';
 import { filter } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
 
 @Component({
   selector: 'app-navbar',
@@ -27,8 +29,10 @@ export class NavbarComponent implements OnInit {
   protected router = inject(Router);
   private authService = inject(AuthService);
   private themeService: ThemeService = inject(ThemeService);
+  private marketplaceService = inject(MarketplaceService);
 
   theme$ = this.themeService.theme$;
+  cartItemCount = 0;
 
   constructor() { }
 
@@ -37,7 +41,20 @@ export class NavbarComponent implements OnInit {
     this.authService.currentUser$.subscribe(user => {
       this.isAuthenticated = !!user;
       this.currentUser = user;
+
+      // Only load cart count if user is authenticated AND on marketplace page
+      if (this.isAuthenticated && this.isMarketplacePage()) {
+        this.loadCartCount();
+      } else {
+        this.cartItemCount = 0;
+      }
     });
+
+    // Subscribe to cart item count changes
+    this.marketplaceService.cartItemCount$.subscribe(count => {
+      this.cartItemCount = count;
+    });
+
     // Set initial state synchronously to avoid first-frame flicker
     this.isLandingRoute = this.router.url === '/' || this.router.url === '';
     if (this.isLandingRoute) {
@@ -66,6 +83,13 @@ export class NavbarComponent implements OnInit {
       } else if (landing) {
         // Still landing: ensure scroll state recalculated (e.g., manual route reuse)
         this.onScroll();
+      }
+
+      // Load cart count when entering marketplace pages
+      if (this.isAuthenticated && this.isMarketplacePage()) {
+        this.loadCartCount();
+      } else {
+        this.cartItemCount = 0;
       }
     });
   }
@@ -102,6 +126,11 @@ export class NavbarComponent implements OnInit {
     return this.currentUser?.role === 'ADMIN';
   }
 
+  isMarketplacePage(): boolean {
+    const url = this.router.url;
+    return url.startsWith('/marketplace');
+  }
+
   get initials(): string {
     if (!this.currentUser) return '';
     const name = this.currentUser.firstName || this.currentUser.userName || '';
@@ -136,5 +165,23 @@ export class NavbarComponent implements OnInit {
   // Convenience navigation methods for template (avoid direct router.navigate usage in HTML)
   go(path: string): void {
     this.router.navigate([path]);
+  }
+
+  // Load cart item count
+  loadCartCount(): void {
+    if (!this.isAuthenticated) {
+      this.cartItemCount = 0;
+      return;
+    }
+
+    this.marketplaceService.getCart().subscribe({
+      next: (cart) => {
+        this.cartItemCount = cart.items.reduce((total, item) => total + item.quantity, 0);
+      },
+      error: (err) => {
+        console.warn('Failed to load cart count:', err);
+        this.cartItemCount = 0;
+      }
+    });
   }
 }

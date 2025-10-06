@@ -303,7 +303,7 @@ export class PostListComponent implements OnInit, OnDestroy, AfterViewInit {
       filterLocation: [''],
       filterTag: ['']
     });
-    
+
     this.loadPosts();
     this.authService.isAuthenticated$.subscribe(v => this.isAuthenticated = v);
     this.cursorService.initializeCursor(this.renderer, this.el);
@@ -343,7 +343,11 @@ export class PostListComponent implements OnInit, OnDestroy, AfterViewInit {
           this.totalElements = response.totalElements;
           try {
             if (localStorage.getItem('travner_debug') === 'true') {
-              console.log('[PostList] Ownership debug snapshot:', this.posts.map(p => ({ id: p.id, authorId: p.authorId, authorName: p.authorName })));
+              console.log('[PostList] Ownership debug snapshot:', this.posts.map(p => ({
+                id: p.id,
+                authorId: p.author?.id,
+                authorName: p.author?.userName // Use username instead of concatenated names
+              })));
             }
           } catch { }
         } else {
@@ -358,6 +362,8 @@ export class PostListComponent implements OnInit, OnDestroy, AfterViewInit {
         this.posts = [];
         this.totalPages = 0;
         this.totalElements = 0;
+        // Show user-friendly error message
+        alert('Failed to load community posts. Please try again later.');
       }
     });
   }

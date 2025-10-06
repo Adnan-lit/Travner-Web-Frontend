@@ -1,0 +1,326 @@
+<div class="product-management-container">
+  <h1 class="page-title">Product Management</h1>
+
+  <!-- Action Bar -->
+  <div class="action-bar">
+    <button class="btn btn-primary" (click)="openCreateForm()">
+      <i class="fas fa-plus"></i> Add New Product
+    </button>
+
+    <div class="filters">
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        [ngModelOptions]="{ standalone: true }"
+        (keyup.enter)="onSearch()"
+        placeholder="Search products..."
+        class="form-control search-input"
+      />
+
+      <select
+        [(ngModel)]="categoryFilter"
+        [ngModelOptions]="{ standalone: true }"
+        (change)="onCategoryFilterChange()"
+        class="form-control category-filter"
+      >
+        <option value="">All Categories</option>
+        <option *ngFor="let category of categories" [value]="category">
+          {{ category | titlecase }}
+        </option>
+      </select>
+
+      <button class="btn btn-secondary" (click)="clearFilters()">
+        Clear Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading products...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error && !loading">
+    <p class="error-message">{{ error }}</p>
+    <button class="btn btn-secondary" (click)="loadProducts()">
+      Try Again
+    </button>
+  </div>
+
+  <!-- Product Form (Create/Edit) -->
+  <div class="product-form" *ngIf="showCreateForm || showEditForm">
+    <h2>{{ showEditForm ? "Edit Product" : "Add New Product" }}</h2>
+
+    <form
+      [formGroup]="productForm"
+      (ngSubmit)="onSubmit()"
+      class="product-form-content"
+    >
+      <div class="form-row">
+        <div class="form-group">
+          <label for="title">Product Title *</label>
+          <input
+            type="text"
+            id="title"
+            formControlName="title"
+            class="form-control"
+            [class.error]="
+              productForm.get('title')?.invalid &&
+              productForm.get('title')?.touched
+            "
+          />
+          <div
+            class="error-message"
+            *ngIf="
+              productForm.get('title')?.invalid &&
+              productForm.get('title')?.touched
+            "
+          >
+            Title is required (min 3 characters)
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="description">Description *</label>
+          <textarea
+            id="description"
+            formControlName="description"
+            rows="4"
+            class="form-control"
+            [class.error]="
+              productForm.get('description')?.invalid &&
+              productForm.get('description')?.touched
+            "
+          >
+          </textarea>
+          <div
+            class="error-message"
+            *ngIf="
+              productForm.get('description')?.invalid &&
+              productForm.get('description')?.touched
+            "
+          >
+            Description is required (min 10 characters)
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="price">Price (BDT) *</label>
+          <input
+            type="number"
+            id="price"
+            formControlName="price"
+            step="0.01"
+            min="0"
+            class="form-control"
+            [class.error]="
+              productForm.get('price')?.invalid &&
+              productForm.get('price')?.touched
+            "
+          />
+          <div
+            class="error-message"
+            *ngIf="
+              productForm.get('price')?.invalid &&
+              productForm.get('price')?.touched
+            "
+          >
+            Valid price is required (minimum 0)
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="stock">Stock Quantity *</label>
+          <input
+            type="number"
+            id="stock"
+            formControlName="stock"
+            min="0"
+            class="form-control"
+            [class.error]="
+              productForm.get('stock')?.invalid &&
+              productForm.get('stock')?.touched
+            "
+          />
+          <div
+            class="error-message"
+            *ngIf="
+              productForm.get('stock')?.invalid &&
+              productForm.get('stock')?.touched
+            "
+          >
+            Stock quantity is required (minimum 0)
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="category">Category *</label>
+          <select
+            id="category"
+            formControlName="category"
+            class="form-control"
+            [class.error]="
+              productForm.get('category')?.invalid &&
+              productForm.get('category')?.touched
+            "
+          >
+            <option value="">Select a category</option>
+            <option *ngFor="let category of categories" [value]="category">
+              {{ category | titlecase }}
+            </option>
+          </select>
+          <div
+            class="error-message"
+            *ngIf="
+              productForm.get('category')?.invalid &&
+              productForm.get('category')?.touched
+            "
+          >
+            Category is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="imageUrls">Image URLs (comma separated)</label>
+          <input
+            type="text"
+            id="imageUrls"
+            formControlName="imageUrls"
+            class="form-control"
+            placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+          />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" formControlName="active" />
+            Active Product
+          </label>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeForm()">
+          Cancel
+        </button>
+
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="productForm.invalid"
+        >
+          {{ showEditForm ? "Update Product" : "Create Product" }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Products List -->
+  <div
+    class="products-list"
+    *ngIf="!loading && !error && !showCreateForm && !showEditForm"
+  >
+    <div class="list-header">
+      <h2>Products ({{ totalElements }})</h2>
+    </div>
+
+    <div class="products-grid">
+      <div class="product-card" *ngFor="let product of products">
+        <div class="product-image">
+          <img
+            [src]="
+              product.imageUrls && product.imageUrls.length > 0
+                ? product.imageUrls[0]
+                : getAdminPlaceholder()
+            "
+            alt="{{ product.title }}"
+            (error)="handleImageError($event)"
+          />
+        </div>
+
+        <div class="product-info">
+          <h3 class="product-title">{{ product.title }}</h3>
+          <p class="product-category">{{ product.category | titlecase }}</p>
+          <p class="product-price">{{ formatPrice(product.price) }}</p>
+          <p class="product-stock" [class]="getStockClass(product.stock)">
+            {{ getStockStatus(product.stock) }}
+          </p>
+        </div>
+
+        <div class="product-actions">
+          <button
+            class="btn btn-sm btn-secondary"
+            (click)="openEditForm(product)"
+          >
+            Edit
+          </button>
+
+          <button
+            class="btn btn-sm btn-outline"
+            (click)="toggleProductStatus(product)"
+            [class.btn-danger]="product.active"
+            [class.btn-success]="!product.active"
+          >
+            {{ product.active ? "Deactivate" : "Activate" }}
+          </button>
+
+          <button
+            class="btn btn-sm btn-danger"
+            (click)="deleteProduct(product)"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button
+        class="pagination-btn"
+        (click)="onPageChange(0)"
+        [disabled]="currentPage === 0"
+      >
+        First
+      </button>
+
+      <button
+        class="pagination-btn"
+        (click)="onPageChange(currentPage - 1)"
+        [disabled]="currentPage === 0"
+      >
+        Previous
+      </button>
+
+      <span class="pagination-info">
+        Page {{ currentPage + 1 }} of {{ totalPages }}
+      </span>
+
+      <button
+        class="pagination-btn"
+        (click)="onPageChange(currentPage + 1)"
+        [disabled]="currentPage === totalPages - 1"
+      >
+        Next
+      </button>
+
+      <button
+        class="pagination-btn"
+        (click)="onPageChange(totalPages - 1)"
+        [disabled]="currentPage === totalPages - 1"
+      >
+        Last
+      </button>
+    </div>
+  </div>
+</div>

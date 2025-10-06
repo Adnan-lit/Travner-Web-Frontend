@@ -1,0 +1,93 @@
+<div class="order-detail-container">
+  <h1 class="page-title">Order Details</h1>
+  
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading order details...</p>
+  </div>
+  
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error && !loading">
+    <p class="error-message">{{error}}</p>
+    <button class="btn btn-secondary" (click)="ngOnInit()">Try Again</button>
+  </div>
+  
+  <!-- Order Details -->
+  <div class="order-details" *ngIf="!loading && !error && order">
+    <div class="order-header">
+      <div class="order-info">
+        <h2>Order #{{order.id.substring(0, 8)}}</h2>
+        <p class="order-date">Placed on {{formatDate(order.createdAt)}}</p>
+      </div>
+      <div class="order-status" [class]="getStatusClass(order.status)">
+        {{getStatusText(order.status)}}
+      </div>
+    </div>
+    
+    <div class="order-content">
+      <div class="order-section">
+        <h3>Items</h3>
+        <div class="order-items">
+          <div class="order-item" *ngFor="let item of order.items">
+            <div class="item-details">
+              <h4>{{item.titleSnapshot}}</h4>
+              <p>{{item.quantity}} x {{formatPrice(item.unitPrice)}}</p>
+            </div>
+            <div class="item-total">
+              {{formatPrice(item.unitPrice * item.quantity)}}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="order-section">
+        <h3>Order Summary</h3>
+        <div class="order-summary">
+          <div class="summary-row">
+            <span>Subtotal:</span>
+            <span>{{formatPrice(order.amountTotal)}}</span>
+          </div>
+          
+          <div class="summary-row">
+            <span>Shipping:</span>
+            <span>Free</span>
+          </div>
+          
+          <div class="summary-row total-row">
+            <span>Total:</span>
+            <span class="total">{{formatPrice(order.amountTotal)}}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="order-section">
+        <h3>Shipping Information</h3>
+        <div class="shipping-info">
+          <p><strong>{{order.customerInfo.fullName}}</strong></p>
+          <p>{{order.customerInfo.addressLine1}}</p>
+          <p *ngIf="order.customerInfo.addressLine2">{{order.customerInfo.addressLine2}}</p>
+          <p>{{order.customerInfo.city}}, {{order.customerInfo.state}} {{order.customerInfo.postalCode}}</p>
+          <p>{{order.customerInfo.country}}</p>
+          <p>Email: {{order.customerInfo.email}}</p>
+          <p>Phone: {{order.customerInfo.phone}}</p>
+        </div>
+      </div>
+      
+      <div class="order-actions">
+        <button 
+          class="btn btn-outline" 
+          (click)="cancelOrder()" 
+          *ngIf="order.status === 'PLACED'">
+          Cancel Order
+        </button>
+        
+        <button 
+          class="btn btn-secondary" 
+          (click)="router.navigate(['/marketplace/orders'])">
+          Back to Orders
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

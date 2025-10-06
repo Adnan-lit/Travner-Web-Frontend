@@ -23,7 +23,25 @@ export const postOwnerGuard: CanActivateFn = (route, state) => {
 
     return posts.getPostById(id).pipe(
         map(post => {
-            const allow = isPostOwner(post, current, 'postOwnerGuard');
+            // Handle potential JSON string for current user
+            let user: any = current;
+            if (typeof user === 'string') {
+                try {
+                    const parsed = JSON.parse(user);
+                    user = parsed.data || parsed;
+                } catch (e) {
+                    console.error('Failed to parse current user in guard:', e);
+                    user = null;
+                }
+            }
+
+            // Create a PostOwner-compatible object from the Post
+            const postOwner = {
+                authorId: post.author?.id,
+                authorName: post.author?.userName // Use username instead of concatenated names
+            };
+
+            const allow = isPostOwner(postOwner, user, 'postOwnerGuard');
             return allow ? true : router.createUrlTree(['/community', id], { queryParams: { denied: 'not-owner' } });
         }),
         catchError(err => {

@@ -109,21 +109,7 @@ export class ChatService {
 
     private normalize(url: string) { return url.replace(/\/$/, ''); }
 
-    private authHeaders(): HttpHeaders {
-        const raw = localStorage.getItem('travner_auth');
-        if (!raw) return new HttpHeaders();
-        try {
-            const parsed = JSON.parse(raw);
-            if (parsed.authToken) {
-                return new HttpHeaders({ 'Authorization': `Basic ${parsed.authToken}` });
-            }
-            if (parsed.username && parsed.password) {
-                const token = btoa(`${parsed.username}:${parsed.password}`);
-                return new HttpHeaders({ 'Authorization': `Basic ${token}` });
-            }
-        } catch { }
-        return new HttpHeaders();
-    }
+    // Interceptor injects Authorization; no per-call headers needed
 
     private unwrap<T>(resp: any, fallbackEmpty: T): T {
         if (resp && resp.success && resp.data) return resp.data as T;
@@ -161,7 +147,7 @@ export class ChatService {
     getConversations(page = 0, size = 20): Observable<PagedResponse<ChatConversationSummary>> {
         const params = new HttpParams().set('page', page).set('size', size);
         const url = `${this.CHAT_ROOT}/conversations`;
-        return this.http.get(url, { headers: this.authHeaders(), params, responseType: 'text', observe: 'response' }).pipe(
+        return this.http.get(url, { params, responseType: 'text', observe: 'response' }).pipe(
             map(resp => {
                 const raw = resp.body ?? '';
                 const status = resp.status;
@@ -198,17 +184,17 @@ export class ChatService {
     }
 
     getConversation(id: string): Observable<ChatConversation> {
-        return this.http.get<any>(`${this.CHAT_ROOT}/conversations/${id}`, { headers: this.authHeaders() })
+        return this.http.get<any>(`${this.CHAT_ROOT}/conversations/${id}`)
             .pipe(map(r => this.unwrap<ChatConversation>(r, {} as any)));
     }
 
     getOrCreateDirect(otherUserId: string): Observable<ChatConversation> {
-        return this.http.get<any>(`${this.CHAT_ROOT}/conversations/direct/${otherUserId}`, { headers: this.authHeaders() })
+        return this.http.get<any>(`${this.CHAT_ROOT}/conversations/direct/${otherUserId}`)
             .pipe(map(r => this.unwrap<ChatConversation>(r, {} as any)));
     }
 
     createDirect(memberId: string): Observable<ChatConversation> {
-        return this.http.post<any>(`${this.CHAT_ROOT}/conversations`, { type: 'DIRECT', memberIds: [memberId] }, { headers: this.authHeaders() })
+        return this.http.post<any>(`${this.CHAT_ROOT}/conversations`, { type: 'DIRECT', memberIds: [memberId] })
             .pipe(map(r => this.unwrap<ChatConversation>(r, {} as any)));
     }
 
@@ -216,7 +202,7 @@ export class ChatService {
     getMessages(conversationId: string, page = 0, size = 50): Observable<PagedResponse<ChatMessage>> {
         const params = new HttpParams().set('page', page).set('size', size);
         const url = `${this.CHAT_ROOT}/conversations/${conversationId}/messages`;
-        return this.http.get(url, { headers: this.authHeaders(), params, responseType: 'text' }).pipe(
+        return this.http.get(url, { params, responseType: 'text' }).pipe(
             map(raw => {
                 const lowered = raw.trim().toLowerCase();
                 if (lowered.startsWith('<!doctype html') || lowered.startsWith('<html')) {
@@ -243,29 +229,29 @@ export class ChatService {
     }
 
     sendMessage(payload: { conversationId: string; content: string; kind?: string; attachments?: any[]; replyToMessageId?: string }): Observable<ChatMessage> {
-        return this.http.post<any>(`${this.CHAT_ROOT}/messages`, payload, { headers: this.authHeaders() })
+        return this.http.post<any>(`${this.CHAT_ROOT}/messages`, payload)
             .pipe(map(r => this.unwrap<ChatMessage>(r, {} as any)));
     }
 
     editMessage(messageId: string, content: string): Observable<ChatMessage> {
         // Current backend expects query param ?content=... (JSON body planned for future)
         const url = `${this.CHAT_ROOT}/messages/${encodeURIComponent(messageId)}?content=${encodeURIComponent(content)}`;
-        return this.http.put<any>(url, null, { headers: this.authHeaders() })
+        return this.http.put<any>(url, null)
             .pipe(map(r => this.unwrap<ChatMessage>(r, {} as any)));
     }
 
     deleteMessage(messageId: string): Observable<void> {
-        return this.http.delete<any>(`${this.CHAT_ROOT}/messages/${messageId}`, { headers: this.authHeaders() })
+        return this.http.delete<any>(`${this.CHAT_ROOT}/messages/${messageId}`)
             .pipe(map(() => void 0));
     }
 
     markRead(conversationId: string, lastReadMessageId: string): Observable<any> {
-        return this.http.post<any>(`${this.CHAT_ROOT}/messages/read`, { conversationId, lastReadMessageId }, { headers: this.authHeaders() })
+        return this.http.post<any>(`${this.CHAT_ROOT}/messages/read`, { conversationId, lastReadMessageId })
             .pipe(map(r => this.unwrap<any>(r, {})));
     }
 
     getUnreadCount(conversationId: string): Observable<number> {
-        return this.http.get<any>(`${this.CHAT_ROOT}/conversations/${encodeURIComponent(conversationId)}/unread-count`, { headers: this.authHeaders() })
+        return this.http.get<any>(`${this.CHAT_ROOT}/conversations/${encodeURIComponent(conversationId)}/unread-count`)
             .pipe(map(r => {
                 const unwrapped = this.unwrap<any>(r, 0);
                 if (typeof unwrapped === 'number') return unwrapped; // Current implementation returns primitive in data

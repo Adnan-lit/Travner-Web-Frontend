@@ -1,0 +1,127 @@
+<div class="product-detail-container" *ngIf="!loading && !error">
+  <!-- Cart Summary Widget -->
+  <app-cart-summary></app-cart-summary>
+
+  <div class="product-detail-content" *ngIf="product">
+    <!-- Product Images -->
+    <div class="product-images">
+      <div class="main-image">
+        <img
+          [src]="product.imageUrls[selectedImageIndex] || getPlaceholderImage()"
+          alt="{{ product.title }}"
+          (error)="handleImageError($event)"
+        />
+      </div>
+
+      <div
+        class="thumbnail-images"
+        *ngIf="product.imageUrls && product.imageUrls.length > 1"
+      >
+        <div
+          class="thumbnail"
+          *ngFor="let image of product.imageUrls; let i = index"
+          [class.active]="i === selectedImageIndex"
+          (click)="selectImage(i)"
+        >
+          <img
+            [src]="image"
+            alt="{{ product.title }} thumbnail"
+            (error)="handleImageError($event)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Product Info -->
+    <div class="product-info">
+      <h1 class="product-title">{{ product.title }}</h1>
+
+      <div class="product-price">
+        {{ formatPrice(product.price) }}
+      </div>
+
+      <div class="product-stock" [class]="getStockClass(product.stock)">
+        {{ getStockStatus(product.stock) }}
+      </div>
+
+      <div class="product-description">
+        <h3>Description</h3>
+        <p>{{ product.description }}</p>
+      </div>
+
+      <div class="product-category">
+        <span class="category-label">Category:</span>
+        <span class="category-value">{{ product.category }}</span>
+      </div>
+
+      <!-- Quantity Selector -->
+      <div class="quantity-selector" *ngIf="product.stock > 0">
+        <label for="quantity">Quantity:</label>
+        <div class="quantity-controls">
+          <button
+            class="quantity-btn"
+            (click)="decreaseQuantity()"
+            [disabled]="quantity <= 1"
+          >
+            -
+          </button>
+          <input
+            type="number"
+            id="quantity"
+            [(ngModel)]="quantity"
+            min="1"
+            [max]="product.stock"
+            class="quantity-input"
+          />
+          <button
+            class="quantity-btn"
+            (click)="increaseQuantity()"
+            [disabled]="quantity >= product.stock || quantity >= 10"
+          >
+            +
+          </button>
+        </div>
+        <span class="max-quantity" *ngIf="product.stock < 10">
+          Max: {{ product.stock }}
+        </span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button
+          class="btn btn-primary add-to-cart-btn"
+          (click)="addToCart()"
+          [disabled]="product.stock === 0"
+          *ngIf="product.stock > 0"
+        >
+          Add to Cart
+        </button>
+
+        <button
+          class="btn btn-secondary buy-now-btn"
+          (click)="buyNow()"
+          [disabled]="product.stock === 0"
+          *ngIf="product.stock > 0"
+        >
+          Buy Now
+        </button>
+
+        <button class="btn btn-disabled" disabled *ngIf="product.stock === 0">
+          Out of Stock
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading product details...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error && !loading">
+    <p class="error-message">{{ error }}</p>
+    <button class="btn btn-secondary" (click)="ngOnInit()">Try Again</button>
+  </div>
+</div>

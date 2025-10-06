@@ -1,13 +1,16 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
+import { Observable, of, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { Post, PostCreate, PostUpdate, PostsResponse } from '../models/post.model';
 import { Comment, CommentCreate, CommentUpdate, CommentsResponse } from '../models/comment.model';
 import { Media, MediaType } from '../models/media.model';
 import { EnvironmentConfig } from '../config/environment.config';
-import { AuthService } from './auth.service';
+import { CentralizedAuthService } from './centralized-auth.service';
 import { BackendStatusService } from './backend-status.service';
+import { ApiResponseHandler } from '../utils/api-response-handler';
+import { PaginationHandler } from '../utils/pagination-handler';
+import { ErrorHandler, ApiError } from '../utils/error-handler';
 
 @Injectable({
     providedIn: 'root'
@@ -16,7 +19,7 @@ export class PostService {
     // API base URL (EnvironmentConfig now returns '/api' in dev for proxy, full absolute in prod)
     private readonly API_BASE_URL = this.normalizeBaseUrl(EnvironmentConfig.getApiBaseUrl());
 
-    constructor(private http: HttpClient, private auth: AuthService, private backendStatus: BackendStatusService) { }
+    constructor(private http: HttpClient, private auth: CentralizedAuthService, private backendStatus: BackendStatusService) { }
 
     private normalizeBaseUrl(url: string): string {
         if (!url) return '';
@@ -30,55 +33,7 @@ export class PostService {
         return full.replace(/([^:])\/\//g, '$1/');
     }
 
-    /**
-     * Get authentication headers for API requests
-     * This uses the same authentication approach as AuthService
-     */
-    private getAuthHeaders(): HttpHeaders {
-        // Get stored auth data from localStorage (same as AuthService)
-        const authData = this.getStoredAuthData();
-
-        if (!authData) {
-            return new HttpHeaders();
-        }
-
-        // Use Basic Authentication (same as AuthService)
-        const credentials = btoa(`${authData.username}:${authData.password}`);
-        const headers = new HttpHeaders({
-            'Authorization': `Basic ${credentials}`
-        });
-
-        return headers;
-    }
-
-    /**
-     * For public endpoints: include Authorization header only if credentials exist.
-     */
-    private getOptionalAuthHeaders(): HttpHeaders {
-        const authData = this.getStoredAuthData();
-        if (!authData) return new HttpHeaders();
-        const credentials = btoa(`${authData.username}:${authData.password}`);
-        return new HttpHeaders({ 'Authorization': `Basic ${credentials}` });
-    }
-
-    /**
-     * Get headers for JSON requests (POST/PUT) that need Content-Type
-     */
-    private getJsonHeaders(): HttpHeaders {
-        const authData = this.getStoredAuthData();
-
-        if (!authData) {
-            return new HttpHeaders({
-                'Content-Type': 'application/json'
-            });
-        }
-
-        const credentials = btoa(`${authData.username}:${authData.password}`);
-        return new HttpHeaders({
-            'Authorization': `Basic ${credentials}`,
-            'Content-Type': 'application/json'
-        });
-    }
+    // Rely on interceptor for Authorization. Angular sets JSON headers automatically for JSON bodies.
 
     /**
      * Get stored authentication data from localStorage
@@ -126,66 +81,57 @@ export class PostService {
             }
             return built;
         });
-    }    /**
+    }
+
+    /**
      * Process a single post to fix media URLs and other transformations
+     * Updated to handle the new API response format with nested author object
      */
     private processPost(post: any): Post {
-        // Attempt to derive a stable author identifier across multiple possible backend field shapes
-        // Backend docs show userName frequently; posts may expose either a nested author object or flat fields.
-        const derivedAuthorId =
-            post.authorId ||
-            post.author_id ||
-            post.author?.id ||
-            post.author?.userId ||
-            post.author?.userID ||
-            post.author?.uuid ||
-            post.author?.user_id ||
-            post.userId ||
-            post.user_id ||
-            post.user?.id ||
-            post.user?.userId ||
-            post.user?.uuid ||
-            // fall back to username as identifier if no numeric/id style field present
-            post.author?.userName ||
-            post.author?.username ||
-            post.userName ||
-            post.username;
+        // Handle the new API response format with nested author object
+        let author: { id: string; userName: string; firstName: string; lastName: string };
 
-        const derivedAuthorName =
-            post.author?.userName ||
-            post.author?.username ||
-            post.authorName ||
-            post.userName ||
-            post.username ||
-            'Unknown';
+        if (post.author && typeof post.author === 'object') {
+            // Use the nested author object from the API response
+            author = {
+                id: post.author.id || '',
+                userName: post.author.userName || post.author.username || '',
+                firstName: post.author.firstName || '',
+                lastName: post.author.lastName || ''
+            };
+        } else {
+            // Fallback for old format or missing author object
+            console.warn('[PostService] Post missing author object, using fallback:', {
+                postId: post.id,
+                author: post.author
+            });
+
+            // Try to derive author info from flat fields (backward compatibility)
+            author = {
+                id: post.authorId || post.author_id || post.userId || post.user_id || '',
+                userName: post.userName || post.username || post.authorName || '',
+                firstName: post.firstName || '',
+                lastName: post.lastName || ''
+            };
+        }
 
         const processed: Post = {
             ...post,
-            authorId: derivedAuthorId != null ? String(derivedAuthorId) : undefined,
-            authorName: derivedAuthorName,
+            author: author,
             mediaUrls: this.processMediaUrls(post.mediaUrls)
         };
+
         // Debug instrumentation (enabled via localStorage flag)
         try {
             if (localStorage.getItem('travner_debug') === 'true') {
-                if (!processed.authorId) {
-                    // Log once per post id to avoid spam
-                    console.warn('[PostService] Missing authorId after processing post:', {
-                        id: processed.id,
-                        rawAuthor: post.author || post.user,
-                        topLevelKeys: Object.keys(post || {}),
-                        derivedAuthorId: processed.authorId,
-                        fallbackFieldsTried: ['authorId', 'author_id', 'author.id', 'author.userId', 'author.userID', 'author.uuid', 'author.user_id', 'userId', 'user_id', 'user.id', 'user.userId', 'user.uuid', 'author.userName', 'author.username', 'userName', 'username']
-                    });
-                } else {
-                    console.debug('[PostService] Processed post ownership mapping:', {
-                        postId: processed.id,
-                        authorId: processed.authorId,
-                        authorName: processed.authorName
-                    });
-                }
+                console.debug('[PostService] Processed post:', {
+                    postId: processed.id,
+                    author: processed.author,
+                    mediaUrls: processed.mediaUrls
+                });
             }
         } catch { }
+
         return processed;
     }
 
@@ -193,177 +139,125 @@ export class PostService {
 
     // Unified parsing logic for any posts list style according to backend docs
     private parsePostsList(response: any, page: number, size: number): PostsResponse {
-        // Wrapper with data possibly containing content or being the array directly
-        if (response && response.success) {
-            const data = response.data;
-            const paginationFromRoot = response.pagination || response.page || response.pageInfo || {};
-            // Case: data is a wrapper again containing content
-            if (data && Array.isArray(data.content)) {
-                const pagination = data.pagination || paginationFromRoot;
-                return {
-                    content: data.content.map((p: any) => this.processPost(p)),
-                    totalElements: pagination?.totalElements || pagination?.total_items || data.totalElements || data.total_items || data.content.length,
-                    totalPages: pagination?.totalPages || pagination?.total_pages || data.totalPages || 1,
-                    size: pagination?.size || size,
-                    number: pagination?.page || pagination?.pageNumber || page
-                } as PostsResponse;
+        // Use our standardized API response handler to normalize base shape
+        const parsedResponse = ApiResponseHandler.parsePaginatedResponse<Post>(response, page, size);
+
+        // Extract content and pagination robustly across variants
+        let content: Post[] = [];
+        let totalElements = 0;
+        let totalPages = 0;
+        let pageSize = size;
+        let pageNumber = page;
+
+        // Prefer normalized pagination if available
+        if (parsedResponse.pagination) {
+            totalElements = parsedResponse.pagination.totalElements ?? totalElements;
+            totalPages = parsedResponse.pagination.totalPages ?? totalPages;
+            pageSize = parsedResponse.pagination.size ?? pageSize;
+            pageNumber = parsedResponse.pagination.page ?? pageNumber;
+        }
+
+        // Determine the data block that may contain posts
+        const dataBlock: any =
+            parsedResponse?.data ?? // { success, data }
+            response?.data ??        // raw { data }
+            response;                // raw list or Spring-style
+
+        if (Array.isArray(dataBlock)) {
+            // Direct array of posts
+            content = dataBlock.map((p: any) => this.processPost(p));
+        } else if (dataBlock && Array.isArray(dataBlock.content)) {
+            // Spring-style or wrapped content array
+            content = dataBlock.content.map((p: any) => this.processPost(p));
+            // Try to infer pagination when not provided by handler
+            if (!parsedResponse.pagination) {
+                totalElements = dataBlock.totalElements ?? dataBlock.total_elements ?? content.length;
+                pageSize = dataBlock.size ?? size;
+                pageNumber = dataBlock.number ?? dataBlock.page ?? page;
+                totalPages = dataBlock.totalPages ?? dataBlock.total_pages ?? Math.max(1, Math.ceil(totalElements / (pageSize || 1)));
             }
-            // Case: data itself is an array
-            if (Array.isArray(data)) {
-                return {
-                    content: data.map((p: any) => this.processPost(p)),
-                    totalElements: data.length,
-                    totalPages: 1,
-                    size,
-                    number: page
-                } as PostsResponse;
+        } else if (dataBlock && Array.isArray((dataBlock as any).items)) {
+            // Generic items list fallback
+            const items = (dataBlock as any).items;
+            content = items.map((p: any) => this.processPost(p));
+            if (!parsedResponse.pagination) {
+                totalElements = (dataBlock as any).total ?? items.length;
+                totalPages = Math.max(1, Math.ceil(totalElements / (size || 1)));
             }
-            // Case: data is a page object (Spring style) with content
-            if (data && Array.isArray(data.content)) {
-                return {
-                    content: data.content.map((p: any) => this.processPost(p)),
-                    totalElements: data.totalElements || data.total_elements || data.content.length,
-                    totalPages: data.totalPages || data.total_pages || 1,
-                    size: data.size || size,
-                    number: data.number || data.page || page
-                } as PostsResponse;
+        } else if (dataBlock && typeof dataBlock === 'object') {
+            // Possibly a single post object
+            if ('id' in dataBlock || 'title' in dataBlock || 'author' in dataBlock) {
+                content = [this.processPost(dataBlock)];
+                if (!parsedResponse.pagination) {
+                    totalElements = 1;
+                    totalPages = 1;
+                    pageSize = 1;
+                    pageNumber = 0;
+                }
             }
         }
-        // Direct Spring page w/out wrapper
-        if (response && Array.isArray(response.content)) {
-            return {
-                ...response,
-                content: response.content.map((p: any) => this.processPost(p))
-            } as PostsResponse;
+
+        // Final fallback
+        if (content.length === 0) {
+            totalElements = 0;
+            totalPages = 0;
+        } else if (!totalElements) {
+            totalElements = content.length;
+            totalPages = Math.max(1, Math.ceil(totalElements / (pageSize || size || 1)));
         }
-        // Simple array
-        if (Array.isArray(response)) {
-            return {
-                content: response.map((p: any) => this.processPost(p)),
-                totalElements: response.length,
-                totalPages: 1,
-                size,
-                number: page
-            } as PostsResponse;
-        }
-        console.warn('[PostService] Unexpected posts list format', response);
-        return { content: [], totalElements: 0, totalPages: 0, size, number: page } as PostsResponse;
+
+        return {
+            content,
+            totalElements,
+            totalPages,
+            size: pageSize,
+            number: pageNumber
+        } as PostsResponse;
     }
 
     // Get all posts with pagination (PUBLIC)
     getPosts(page: number = 0, size: number = 10): Observable<PostsResponse> {
         const params = new HttpParams().set('page', page.toString()).set('size', size.toString());
-        const headers = this.getOptionalAuthHeaders();
         const url = this.buildUrl('/posts');
         if (localStorage.getItem('travner_debug') === 'true' && page === 0 && size === 10) {
             console.log('[PostService] Fetching posts:', { url, page, size, base: this.API_BASE_URL });
         }
-        return this.http.get(url, { headers, params, withCredentials: false, responseType: 'text' }).pipe(
-            map(raw => {
-                const trimmed = raw.trim().toLowerCase();
-                const isHtml = trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html');
-                if (isHtml) {
-                    console.warn('[PostService] HTML fallback detected for posts list via proxy. Attempting direct backend retry...', { firstUrl: url });
-                    this.backendStatus.reportHtmlFallback('posts:list:proxy');
-                    // Attempt one synchronous-like fallback by throwing an identifiable object we catch below
-                    throw { __htmlFallback: true, raw };
-                }
-                let parsed: any;
-                try { parsed = JSON.parse(raw); } catch (e) {
-                    const jsonMatch = raw.match(/\{[\s\S]*\}$/);
-                    if (jsonMatch) { try { parsed = JSON.parse(jsonMatch[0]); } catch { /* ignore */ } }
-                    if (!parsed) {
-                        console.error('[PostService] Failed to parse posts JSON after proxy response', { url, snippet: raw.substring(0, 200) });
-                        return { content: [], totalElements: 0, totalPages: 0, size, number: page } as PostsResponse;
-                    }
-                }
-                const parsedList = this.parsePostsList(parsed, page, size);
+        return this.http.get<any>(url, { params, withCredentials: false }).pipe(
+            map(response => {
+                // Backend returns proper JSON, no need for text parsing
+                console.log('[PostService] Received JSON response:', response);
+
+                // Use existing parsePostsList method to handle response format
+                const result = this.parsePostsList(response, page, size);
                 this.backendStatus.reportSuccess('posts:list:proxy');
-                return parsedList;
+                return result;
             }),
             catchError(err => {
-                if (err && err.__htmlFallback) {
-                    return this.attemptDirectPostsFetch(page, size);
+                // Use our standardized error handler
+                if (err instanceof HttpErrorResponse) {
+                    const parsedError: ApiError = ErrorHandler.parseHttpError(err);
+                    console.error('[PostService] getPosts transport error (non-HTML fallback)', {
+                        url,
+                        page,
+                        size,
+                        status: parsedError.status,
+                        message: parsedError.message
+                    });
+                    return throwError(parsedError);
                 }
+
                 console.error('[PostService] getPosts transport error (non-HTML fallback)', { url, page, size, status: err.status, message: err.message });
-                throw err;
+                return throwError(() => err);
             })
         ) as Observable<PostsResponse>;
     }
 
-    /** Build Basic auth headers for direct fetch fallback */
-    private buildDirectHeaders(): Headers {
-        const headers = new Headers();
-        const auth = this.getStoredAuthData();
-        if (auth) headers.set('Authorization', 'Basic ' + btoa(`${auth.username}:${auth.password}`));
-        return headers;
-    }
-
-    /** Attempt multiple direct backend candidate endpoints for posts when proxy served HTML */
-    private attemptDirectPostsFetch(page: number, size: number): Observable<PostsResponse> {
-        const override = localStorage.getItem('travner_backend_override');
-        const directBase = (override || 'http://localhost:8080').replace(/\/$/, '');
-        const discovered = localStorage.getItem('travner_posts_endpoint');
-        const debug = localStorage.getItem('travner_debug') === 'true';
-        const candidates: string[] = [];
-        if (discovered) candidates.push(discovered); // prefer previously good one
-        candidates.push(
-            `${directBase}/posts`,
-            `${directBase}/api/posts`,
-            `${directBase}/api/v1/posts`
-        );
-        // de-dupe
-        const unique = [...new Set(candidates)];
-        if (debug) console.log('[PostService] Direct fetch candidate endpoints:', unique);
-        const headers = this.buildDirectHeaders();
-        return new Observable<PostsResponse>(subscriber => {
-            const tryNext = (index: number) => {
-                if (index >= unique.length) {
-                    console.error('[PostService] All direct post endpoint candidates failed (HTML or parse).');
-                    this.backendStatus.reportHtmlFallback('posts:list:direct-all-failed');
-                    subscriber.next({ content: [], totalElements: 0, totalPages: 0, size, number: page });
-                    subscriber.complete();
-                    return;
-                }
-                const endpoint = unique[index];
-                if (debug) console.log('[PostService] Trying direct posts endpoint candidate', { endpoint });
-                fetch(`${endpoint}?page=${page}&size=${size}`, { headers: headers as any })
-                    .then(r => r.text().then(t => ({ status: r.status, text: t })))
-                    .then(({ status, text }) => {
-                        const low = text.trim().toLowerCase();
-                        const isHtml = low.startsWith('<!doctype html') || low.startsWith('<html');
-                        if (isHtml) {
-                            if (debug) console.warn('[PostService] Candidate returned HTML fallback, trying next', { endpoint, status });
-                            return tryNext(index + 1);
-                        }
-                        try {
-                            const parsed = JSON.parse(text);
-                            const result = this.parsePostsList(parsed, page, size);
-                            // Persist working endpoint (even if empty list) to avoid re-trying all candidates next time
-                            localStorage.setItem('travner_posts_endpoint', endpoint);
-                            this.backendStatus.reportSuccess('posts:list:direct');
-                            subscriber.next(result);
-                        } catch (e2) {
-                            console.error('[PostService] JSON parse failed for candidate, trying next', { endpoint, snippet: text.substring(0, 120) });
-                            return tryNext(index + 1);
-                        }
-                        subscriber.complete();
-                    })
-                    .catch(err => {
-                        console.error('[PostService] Network error for candidate, trying next', { endpoint, error: err });
-                        tryNext(index + 1);
-                    });
-            };
-            tryNext(0);
-        });
-    }
+    // Removed direct HTML fallback to simplify: rely on proxy and backend endpoints only
 
     // Get a specific post by ID
     getPostById(id: string): Observable<Post> {
-        const headers = this.getOptionalAuthHeaders(); // public endpoint
         const url = this.buildUrl(`/posts/${id}`);
         return this.http.get<any>(url, {
-            headers,
             withCredentials: false
         }).pipe(
             map((response: any) => {
@@ -387,10 +281,8 @@ export class PostService {
         const params = new HttpParams()
             .set('page', page.toString())
             .set('size', size.toString());
-        const headers = this.getOptionalAuthHeaders(); // public
         const url = this.buildUrl(`/posts/user/${username}`);
         return this.http.get<any>(url, {
-            headers,
             params,
             withCredentials: false
         }).pipe(
@@ -404,10 +296,8 @@ export class PostService {
             .set('query', query)
             .set('page', page.toString())
             .set('size', size.toString());
-        const headers = this.getOptionalAuthHeaders(); // public
         const url = this.buildUrl('/posts/search');
         return this.http.get<any>(url, {
-            headers,
             params,
             withCredentials: false
         }).pipe(
@@ -421,10 +311,8 @@ export class PostService {
             .set('location', location)
             .set('page', page.toString())
             .set('size', size.toString());
-        const headers = this.getOptionalAuthHeaders(); // public
         const url = this.buildUrl('/posts/location');
         return this.http.get<any>(url, {
-            headers,
             params,
             withCredentials: false
         }).pipe(
@@ -438,10 +326,8 @@ export class PostService {
             .set('tags', tags.join(','))
             .set('page', page.toString())
             .set('size', size.toString());
-        const headers = this.getOptionalAuthHeaders(); // public
         const url = this.buildUrl('/posts/tags');
         return this.http.get<any>(url, {
-            headers,
             params,
             withCredentials: false
         }).pipe(
@@ -451,22 +337,60 @@ export class PostService {
 
     // Create a new post
     createPost(post: PostCreate): Observable<Post> {
-        const headers = this.getJsonHeaders();
         const url = this.buildUrl('/posts');
-        return this.http.post<any>(url, post, {
-            headers,
-            withCredentials: false
-        }).pipe(
+
+        // Add debugging
+        console.log('[PostService] Creating post:', {
+            url,
+            postData: post,
+            note: 'Relying on interceptor for Authorization'
+        });
+
+        return this.http.post<any>(url, post, { withCredentials: false }).pipe(
             map((response: any) => {
+                console.log('[PostService] Create post response:', response);
+
                 // Handle enhanced response format
                 if (response && response.success && response.data) {
+                    // New API format: { success: boolean, data: Post }
                     return this.processPost(response.data);
                 } else if (response && response.id) {
                     // Direct post object response
                     return this.processPost(response);
                 } else {
+                    console.error('[PostService] Invalid create response format:', response);
                     throw new Error('Invalid response format from create post');
                 }
+            }),
+            catchError((error: HttpErrorResponse) => {
+                console.error('[PostService] Create post error:', error);
+                console.error('[PostService] Error details:', {
+                    status: error.status,
+                    statusText: error.statusText,
+                    message: error.message,
+                    error: error.error
+                });
+
+                let errorMessage = 'Failed to create post. ';
+                if (error.status === 401) {
+                    errorMessage += 'Please sign in to create a post.';
+                } else if (error.status === 400) {
+                    errorMessage += 'Please check your input and try again.';
+                    // Try to extract more specific error from response
+                    if (error.error && error.error.message) {
+                        errorMessage += ` (${error.error.message})`;
+                    }
+                } else if (error.status === 403) {
+                    errorMessage += 'You do not have permission to create posts.';
+                } else if (error.status === 0) {
+                    errorMessage += 'Network error. Please check your connection.';
+                } else {
+                    errorMessage += 'Please try again later.';
+                    if (error.error && error.error.message) {
+                        errorMessage += ` (${error.error.message})`;
+                    }
+                }
+                return throwError(() => new Error(errorMessage));
             })
         );
     }
@@ -478,12 +402,8 @@ export class PostService {
         if (!currentUser) {
             throw new Error('Not authenticated');
         }
-        const headers = this.getJsonHeaders();
         const url = this.buildUrl(`/posts/${id}`);
-        return this.http.put<any>(url, post, {
-            headers,
-            withCredentials: false
-        }).pipe(
+        return this.http.put<any>(url, post, { withCredentials: false }).pipe(
             map((response: any) => {
                 // Handle enhanced response format
                 if (response && response.success && response.data) {
@@ -501,32 +421,20 @@ export class PostService {
         if (!currentUser) {
             throw new Error('Not authenticated');
         }
-        const headers = this.getAuthHeaders();
         const url = this.buildUrl(`/posts/${id}`);
-        return this.http.delete<void>(url, {
-            headers,
-            withCredentials: false
-        });
+        return this.http.delete<void>(url, { withCredentials: false });
     }
 
     // Upvote a post
     upvotePost(id: string): Observable<Post> {
-        const headers = this.getAuthHeaders();
         const url = this.buildUrl(`/posts/${id}/upvote`);
-        return this.http.post<Post>(url, {}, {
-            headers,
-            withCredentials: false
-        });
+        return this.http.post<Post>(url, {}, { withCredentials: false });
     }
 
     // Downvote a post
     downvotePost(id: string): Observable<Post> {
-        const headers = this.getAuthHeaders();
         const url = this.buildUrl(`/posts/${id}/downvote`);
-        return this.http.post<Post>(url, {}, {
-            headers,
-            withCredentials: false
-        });
+        return this.http.post<Post>(url, {}, { withCredentials: false });
     }
 
     // COMMENTS API ENDPOINTS
@@ -536,85 +444,99 @@ export class PostService {
         const params = new HttpParams()
             .set('page', page.toString())
             .set('size', size.toString());
-        const headers = this.getAuthHeaders();
         const url = this.buildUrl(`/posts/${postId}/comments`);
-        return this.http.get<CommentsResponse>(url, {
-            headers,
-            params,
-            withCredentials: false
-        });
+        return this.http.get<CommentsResponse>(url, { params, withCredentials: false });
     }
 
     // Get a specific comment
     getComment(postId: string, commentId: string): Observable<Comment> {
-        const headers = this.getAuthHeaders();
         const url = this.buildUrl(`/posts/${postId}/comments/${commentId}`);
-        return this.http.get<Comment>(url, {
-            headers,
-            withCredentials: false
-        });
+        return this.http.get<Comment>(url, { withCredentials: false });
     }
 
     // Create a comment
     createComment(postId: string, comment: CommentCreate): Observable<Comment> {
-        const headers = this.getJsonHeaders();
         const url = this.buildUrl(`/posts/${postId}/comments`);
-        return this.http.post<Comment>(url, comment, {
-            headers,
-            withCredentials: false
-        });
+        return this.http.post<Comment>(url, comment, { withCredentials: false });
     }
 
     // Update a comment
     updateComment(postId: string, commentId: string, comment: CommentUpdate): Observable<Comment> {
-        const headers = this.getJsonHeaders();
         const url = this.buildUrl(`/posts/${postId}/comments/${commentId}`);
-        return this.http.put<Comment>(url, comment, {
-            headers,
-            withCredentials: false
-        });
+        return this.http.put<Comment>(url, comment, { withCredentials: false });
     }
 
     // Delete a comment
     deleteComment(postId: string, commentId: string): Observable<void> {
-        const headers = this.getAuthHeaders();
         const url = this.buildUrl(`/posts/${postId}/comments/${commentId}`);
-        return this.http.delete<void>(url, {
-            headers,
-            withCredentials: false
-        });
+        return this.http.delete<void>(url, { withCredentials: false });
     }
 
     // Upvote a comment
     upvoteComment(postId: string, commentId: string): Observable<Comment> {
-        const headers = this.getAuthHeaders();
         const url = this.buildUrl(`/posts/${postId}/comments/${commentId}/upvote`);
-        return this.http.post<Comment>(url, {}, {
-            headers,
-            withCredentials: false
-        });
+        return this.http.post<Comment>(url, {}, { withCredentials: false });
     }
 
     // Downvote a comment
     downvoteComment(postId: string, commentId: string): Observable<Comment> {
-        const headers = this.getAuthHeaders();
         const url = this.buildUrl(`/posts/${postId}/comments/${commentId}/downvote`);
-        return this.http.post<Comment>(url, {}, {
-            headers,
-            withCredentials: false
-        });
+        return this.http.post<Comment>(url, {}, { withCredentials: false });
     }
 
     // MEDIA API ENDPOINTS
 
+    /**
+     * Process media object from API response to ensure consistent format
+     */
+    private processMedia(media: any): Media {
+        return {
+            id: media.id || '',
+            fileName: media.fileName || '',
+            fileUrl: media.fileUrl || media.url || '',
+            fileType: media.fileType || media.type || '',
+            fileSize: Number(media.fileSize) || 0,
+            uploaderId: media.uploaderId || '',
+            postId: media.postId || '',
+            uploadedAt: media.uploadedAt || media.createdAt || '',
+            // Legacy backward compatibility
+            url: media.fileUrl || media.url || '',
+            type: this.mapFileTypeToMediaType(media.fileType || media.type || ''),
+            createdAt: media.uploadedAt || media.createdAt || ''
+        };
+    }
+
+    /**
+     * Map file type string to MediaType enum
+     */
+    private mapFileTypeToMediaType(fileType: string): MediaType {
+        if (fileType.startsWith('image/')) {
+            return MediaType.IMAGE;
+        } else if (fileType.startsWith('video/')) {
+            return MediaType.VIDEO;
+        }
+        // Default to IMAGE for unknown types
+        return MediaType.IMAGE;
+    }
+
     // Get media for a post
     getMedia(postId: string): Observable<Media[]> {
-        const headers = this.getAuthHeaders();
         const url = this.buildUrl(`/posts/${postId}/media`);
-        return this.http.get<Media[]>(url, {
-            headers,
-            withCredentials: false
-        });
+        return this.http.get<any>(url, { withCredentials: false }).pipe(
+            map((response: any) => {
+                if (response && response.success && response.data) {
+                    // Enhanced API response format
+                    const mediaData = Array.isArray(response.data) ? response.data : [response.data];
+                    return mediaData.map((media: any) => this.processMedia(media));
+                } else if (Array.isArray(response)) {
+                    // Direct array response
+                    return response.map((media: any) => this.processMedia(media));
+                } else {
+                    console.warn('[PostService] Unexpected media list response format', response);
+                    return [];
+                }
+            })
+        );
     }
 
     // Upload media for a post
@@ -631,22 +553,11 @@ export class PostService {
             formData.append('file', file);
         });
 
-        // For file uploads, we need to create headers without Content-Type so browser sets it with boundary
-        const authData = this.getStoredAuthData();
-        console.log('🔐 Auth data available:', !!authData);
-
-        let headers = new HttpHeaders();
-
-        if (authData) {
-            const credentials = btoa(`${authData.username}:${authData.password}`);
-            headers = headers.set('Authorization', `Basic ${credentials}`);
-            console.log('🔑 Authorization header set for user:', authData.username);
-        } else {
-            console.warn('⚠️ No auth data found for media upload!');
-        }
-
-        const uploadUrl = this.buildUrl(`/posts/${postId}/media/upload`);
-        console.log('🌐 Upload URL:', uploadUrl);
+        // Use the same URL builder as other post endpoints to ensure consistent proxying
+        const primaryUploadUrl = this.buildUrl(`/posts/${postId}/media/upload`);
+        const fallbackUploadUrl = this.buildUrl(`/posts/${postId}/media`); // some backends accept POST here
+        console.log('🌐 Upload URL (primary):', primaryUploadUrl);
+        console.log('🌐 Upload URL (fallback):', fallbackUploadUrl);
         console.log('📋 FormData entries:');
         formData.forEach((value, key) => {
             if (value instanceof File) {
@@ -656,50 +567,100 @@ export class PostService {
             }
         });
 
-        return this.http.post<any>(uploadUrl, formData, {
-            headers: headers,
-            withCredentials: false
-        }).pipe(
+        const doUpload = (url: string) => this.http.post<any>(url, formData, { withCredentials: false });
+
+        return doUpload(primaryUploadUrl).pipe(
             map((response: any) => {
                 console.log('✅ Media upload response:', response);
                 // Handle enhanced response format
                 if (response && response.success && response.data) {
                     // Enhanced format - data could be single object or array
-                    const result = Array.isArray(response.data) ? response.data : [response.data];
+                    const mediaData = Array.isArray(response.data) ? response.data : [response.data];
+                    const result = mediaData.map((media: any) => this.processMedia(media));
                     console.log('📤 Processed upload result:', result);
                     return result;
                 } else if (Array.isArray(response)) {
                     // Direct array response
-                    console.log('📤 Direct array response:', response);
-                    return response;
+                    const result = response.map((media: any) => this.processMedia(media));
+                    console.log('📤 Direct array response processed:', result);
+                    return result;
                 } else if (response) {
                     // Single object response
-                    const result = [response];
-                    console.log('📤 Single object response wrapped in array:', result);
+                    const result = [this.processMedia(response)];
+                    console.log('📤 Single object response processed:', result);
                     return result;
                 } else {
                     console.warn('⚠️ Empty or invalid response from media upload');
                     return [];
                 }
             }),
-            catchError(error => {
-                console.error('❌ Media upload error details:', {
+            catchError((error: HttpErrorResponse) => {
+                console.error('❌ Media upload error (primary):', {
                     status: error.status,
                     statusText: error.statusText,
                     url: error.url,
                     message: error.message,
                     error: error.error
                 });
-                throw error;
+
+                const isConnReset = error.status === 0 || /ECONNRESET|Connection reset/i.test(error.message || '');
+                const mayTryFallback = isConnReset || error.status === 404 || error.status === 405;
+
+                if (mayTryFallback) {
+                    console.warn('↩️ Retrying media upload using fallback endpoint:', fallbackUploadUrl);
+                    return doUpload(fallbackUploadUrl).pipe(
+                        map((response: any) => {
+                            console.log('✅ Media upload response (fallback):', response);
+                            if (response && response.success && response.data) {
+                                const mediaData = Array.isArray(response.data) ? response.data : [response.data];
+                                const result = mediaData.map((media: any) => this.processMedia(media));
+                                console.log('📤 Processed upload result (fallback):', result);
+                                return result;
+                            } else if (Array.isArray(response)) {
+                                const result = response.map((media: any) => this.processMedia(media));
+                                console.log('📤 Direct array response processed (fallback):', result);
+                                return result;
+                            } else if (response) {
+                                const result = [this.processMedia(response)];
+                                console.log('📤 Single object response processed (fallback):', result);
+                                return result;
+                            } else {
+                                console.warn('⚠️ Empty or invalid response from media upload (fallback)');
+                                return [];
+                            }
+                        }),
+                        catchError((fallbackErr: HttpErrorResponse) => {
+                            console.error('❌ Media upload error (fallback):', {
+                                status: fallbackErr.status,
+                                statusText: fallbackErr.statusText,
+                                url: fallbackErr.url,
+                                message: fallbackErr.message,
+                                error: fallbackErr.error
+                            });
+                            let msg = 'Failed to upload media. ';
+                            if (fallbackErr.status === 401) msg += 'Please sign in to upload media.';
+                            else if (fallbackErr.status === 400) msg += 'Invalid file format or size.';
+                            else if (fallbackErr.status === 0) msg += 'Network error. Please check your connection.';
+                            else msg += 'Please try again later.';
+                            return throwError(() => new Error(msg));
+                        })
+                    );
+                }
+
+                let errorMessage = 'Failed to upload media. ';
+                if (error.status === 401) errorMessage += 'Please sign in to upload media.';
+                else if (error.status === 400) errorMessage += 'Invalid file format or size.';
+                else if (error.status === 0) errorMessage += 'Network error. Please check your connection.';
+                else errorMessage += 'Please try again later.';
+                return throwError(() => new Error(errorMessage));
             })
         );
     }
 
     // Delete media
     deleteMedia(postId: string, mediaId: string): Observable<void> {
-        const headers = this.getAuthHeaders();
         const url = this.buildUrl(`/posts/${postId}/media/${mediaId}`);
-        return this.http.delete<void>(url, { headers, withCredentials: false });
+        return this.http.delete<void>(url, { withCredentials: false });
     }
 
     /**
@@ -708,14 +669,25 @@ export class PostService {
      */
     getMediaBlob(mediaUrl: string): Observable<string> {
         const debug = localStorage.getItem('travner_debug') === 'true';
-        const headers = this.getAuthHeaders();
         return new Observable<string>(subscriber => {
             const attemptProxy = () => {
-                this.http.get(mediaUrl, { headers, responseType: 'blob', observe: 'response' as const }).subscribe({
+                console.log('[PostService] Attempting media blob request:', { mediaUrl });
+                this.http.get(mediaUrl, { responseType: 'blob', observe: 'response' as const }).subscribe({
                     next: async resp => {
                         const blob = resp.body as Blob;
                         const type = blob?.type || resp.headers.get('Content-Type') || '';
                         const size = blob?.size || 0;
+                        const status = resp.status;
+
+                        console.log('[PostService] Media blob response details:', {
+                            mediaUrl,
+                            status,
+                            type,
+                            size,
+                            contentType: resp.headers.get('Content-Type'),
+                            responseHeaders: Array.from(resp.headers.keys()).map(key => ({ [key]: resp.headers.get(key) }))
+                        });
+
                         let looksHtml = false;
                         if (type.includes('text/html') || type.includes('text/plain')) {
                             looksHtml = true;
@@ -723,6 +695,7 @@ export class PostService {
                             try {
                                 const text = await blob.text();
                                 const low = text.trim().toLowerCase();
+                                console.log('[PostService] Small blob content preview:', { mediaUrl, size, preview: low.substring(0, 200) });
                                 if (low.startsWith('<!doctype html') || low.startsWith('<html')) {
                                     looksHtml = true;
                                 } else if (debug && low.startsWith('{')) {
@@ -730,14 +703,28 @@ export class PostService {
                                 }
                             } catch { /* ignore */ }
                         }
+
                         if (looksHtml) {
                             if (debug) console.warn('[PostService] Media proxy returned HTML fallback, attempting direct candidates...', { mediaUrl, type, size });
                             attemptDirect();
                             return;
                         }
-                        const url = URL.createObjectURL(blob);
-                        subscriber.next(url);
-                        subscriber.complete();
+
+                        // Validate blob before creating object URL
+                        if (!blob || !(blob instanceof Blob) || blob.size === 0) {
+                            console.warn('[PostService] Invalid blob received, attempting direct candidates', { mediaUrl, blob, type, size });
+                            attemptDirect();
+                            return;
+                        }
+
+                        try {
+                            const url = URL.createObjectURL(blob);
+                            subscriber.next(url);
+                            subscriber.complete();
+                        } catch (error) {
+                            console.error('[PostService] Failed to create object URL for blob, attempting direct candidates', { mediaUrl, error, blob });
+                            attemptDirect();
+                        }
                     },
                     error: err => {
                         console.error('[PostService] Media proxy request failed, attempting direct candidates', { mediaUrl, status: err.status });
@@ -757,7 +744,7 @@ export class PostService {
                     `${directBase}${path}`,
                     `${directBase}/api${path}` // in case backend actually expects /api prefix
                 );
-                const unique = [...new Set(candidates)];
+                const unique = Array.from(new Set(candidates));
                 if (debug) console.log('[PostService] Media direct fetch candidates', unique);
                 const auth = this.getStoredAuthData();
                 const authHeader = auth ? 'Basic ' + btoa(`${auth.username}:${auth.password}`) : null;

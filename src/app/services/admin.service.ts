@@ -12,6 +12,7 @@ export interface AdminUser {
     lastName: string;
     email: string;
     roles: string[];
+    active: boolean;
 }
 
 export interface SystemStats {
@@ -39,6 +40,10 @@ export interface UpdateRolesRequest {
 
 export interface ResetPasswordRequest {
     password: string;
+}
+
+export interface UpdateUserStatusRequest {
+    active: boolean;
 }
 
 @Injectable({

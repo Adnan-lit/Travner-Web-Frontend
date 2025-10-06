@@ -78,8 +78,35 @@ export class PostEditComponent implements OnInit {
     private load(): void {
         this.postService.getPostById(this.postId!).subscribe({
             next: (post) => {
-                const current = this.auth.getCurrentUser?.();
-                if (!isPostOwner(post, current, 'PostEdit')) {
+                let current = this.auth.getCurrentUser?.();
+
+                // Handle potential JSON string
+                if (typeof current === 'string') {
+                    try {
+                        const parsed = JSON.parse(current);
+                        current = parsed.data || parsed; // Handle API response format
+                    } catch (e) {
+                        console.error('Failed to parse current user:', e);
+                        current = null;
+                    }
+                }
+
+                // Create a PostOwner-compatible object from the Post
+                const postOwner = {
+                    authorId: post.author?.id,
+                    authorName: post.author?.userName // Use username instead of concatenated names
+                };
+
+                const ownershipResult = isPostOwner(postOwner, current, 'PostEdit');
+
+                if (!ownershipResult) {
+                    console.error('🚫 PostEdit ownership check failed:', {
+                        postId: post.id,
+                        postOwner,
+                        currentUser: current,
+                        rawCurrentUser: this.auth.getCurrentUser?.(),
+                        enableDebugMode: 'localStorage.setItem("travner_debug", "true")'
+                    });
                     this.error = 'You are not allowed to edit this post.';
                     return;
                 }
@@ -154,5 +181,34 @@ export class PostEditComponent implements OnInit {
         } else {
             this.router.navigate(['/community']);
         }
+    }
+
+    debugOwnership(): void {
+        let current = this.auth.getCurrentUser?.();
+
+        // Handle potential JSON string
+        if (typeof current === 'string') {
+            try {
+                const parsed = JSON.parse(current);
+                current = parsed.data || parsed;
+            } catch (e) {
+                console.error('Failed to parse current user:', e);
+                current = null;
+            }
+        }
+
+        const postOwner = {
+            authorId: this.post?.author?.id,
+            authorName: this.post?.author?.userName
+        };
+
+        console.log('🔍 PostEdit Ownership Debug:', {
+            postId: this.postId,
+            postOwner,
+            currentUser: current,
+            rawCurrentUser: this.auth.getCurrentUser?.(),
+            isOwner: this.post ? isPostOwner(postOwner, current, 'PostEditDebug') : 'No post loaded',
+            enableDebugMode: 'Run: localStorage.setItem("travner_debug", "true"); then refresh'
+        });
     }
 }

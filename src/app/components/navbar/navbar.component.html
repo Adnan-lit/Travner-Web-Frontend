@@ -32,6 +32,12 @@
           >Community</a
         >
         <a
+          routerLink="/marketplace"
+          routerLinkActive="active"
+          (click)="closeMobileMenu()"
+          >Marketplace</a
+        >
+        <a
           routerLink="/chat"
           routerLinkActive="active"
           (click)="closeMobileMenu()"
@@ -88,6 +94,28 @@
     </div>
 
     <div class="nav-right auth" *ngIf="isAuthenticated">
+      <button
+        class="icon cart-icon"
+        routerLink="/marketplace/cart"
+        aria-label="Shopping Cart"
+        *ngIf="isMarketplacePage()"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          stroke="currentColor"
+          fill="none"
+          stroke-width="2"
+        >
+          <circle cx="9" cy="21" r="1" />
+          <circle cx="20" cy="21" r="1" />
+          <path d="m1 1 4 4 5.5 11h8l3.5-7" />
+        </svg>
+        <span class="cart-badge" *ngIf="cartItemCount > 0">{{
+          cartItemCount
+        }}</span>
+      </button>
       <button class="icon" (click)="toggleTheme()" aria-label="Toggle theme">
         <ng-container *ngIf="(theme$ | async) === 'light'; else darkIcon2">
           <svg
@@ -139,6 +167,15 @@
         <div class="menu" *ngIf="showUserMenu" (mouseleave)="closeUserMenu()">
           <button (click)="go('/dashboard'); closeUserMenu()">Dashboard</button>
           <button (click)="go('/community'); closeUserMenu()">Community</button>
+          <button (click)="go('/marketplace'); closeUserMenu()">
+            Marketplace
+          </button>
+          <button
+            (click)="go('/marketplace/cart'); closeUserMenu()"
+            *ngIf="isMarketplacePage()"
+          >
+            Cart
+          </button>
           <button (click)="go('/chat'); closeUserMenu()">Chat</button>
           <button *ngIf="isAdmin()" (click)="go('/admin'); closeUserMenu()">
             Admin Panel
@@ -183,6 +220,19 @@
         >Community</a
       >
       <a
+        routerLink="/marketplace"
+        routerLinkActive="active"
+        (click)="closeMobileMenu()"
+        >Marketplace</a
+      >
+      <a
+        routerLink="/marketplace/cart"
+        routerLinkActive="active"
+        (click)="closeMobileMenu()"
+        *ngIf="isAuthenticated && isMarketplacePage()"
+        >Cart</a
+      >
+      <a
         routerLink="/chat"
         routerLinkActive="active"
         (click)="closeMobileMenu()"
@@ -217,6 +267,9 @@
       </div>
       <button (click)="go('/dashboard'); closeMobileMenu()">Dashboard</button>
       <button (click)="go('/community'); closeMobileMenu()">Community</button>
+      <button (click)="go('/marketplace'); closeMobileMenu()">
+        Marketplace
+      </button>
       <button (click)="go('/chat'); closeMobileMenu()">Chat</button>
       <button *ngIf="isAdmin()" (click)="go('/admin'); closeMobileMenu()">
         Admin Panel

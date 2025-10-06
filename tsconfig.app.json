@@ -4,7 +4,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
-    "types": ["jest"]
+    "types": []
   },
   "files": [
     "src/main.ts"
@@ -12,5 +12,9 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.d.ts"
+  ],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/test.ts"
   ]
 }
