@@ -63,33 +63,33 @@
   <div *ngIf="!loading && !error" class="products-grid">
     <div *ngIf="products$ | async as products">
       <div
-        *ngIf="products && products.content && products.content.length > 0"
+        *ngIf="products && products['data'] && products['data'].length > 0"
         class="grid"
       >
         <div
-          *ngFor="let product of products.content"
+          *ngFor="let product of products['data']"
           class="product-card"
-          [ngClass]="getStockClass(product.stock)"
+          [ngClass]="getStockClass(product.stockQuantity)"
         >
           <div class="product-image-container">
             <img
               [src]="getProductImage(product)"
-              [alt]="product.title"
+              [alt]="product.name"
               class="product-image"
               (error)="handleImageError($event)"
             />
-            <div *ngIf="product.stock === 0" class="out-of-stock-overlay">
+            <div *ngIf="product.stockQuantity === 0" class="out-of-stock-overlay">
               <span>Out of Stock</span>
             </div>
           </div>
 
           <div class="product-info">
-            <h3 class="product-title">{{ product.title }}</h3>
+            <h3 class="product-title">{{ product.name }}</h3>
             <p class="product-description">
               {{
-                product.description.length > 100
+                (product.description && product.description.length > 100)
                   ? product.description.substring(0, 100) + "..."
-                  : product.description
+                  : (product.description || "")
               }}
             </p>
 
@@ -97,9 +97,9 @@
               <span class="product-category">{{ product.category }}</span>
               <span
                 class="product-stock"
-                [class]="getStockClass(product.stock)"
+                [class]="getStockClass(product.stockQuantity)"
               >
-                {{ getStockStatus(product.stock) }}
+                {{ getStockStatus(product.stockQuantity) }}
               </span>
             </div>
 
@@ -109,14 +109,14 @@
               }}</span>
               <div class="product-actions">
                 <button
-                  *ngIf="product.stock > 0"
+                  *ngIf="product.stockQuantity > 0"
                   (click)="viewProductDetails(product.id)"
                   class="view-details-button"
                 >
                   View Details
                 </button>
                 <button
-                  *ngIf="product.stock > 0"
+                  *ngIf="product.stockQuantity > 0"
                   (click)="addToCart(product)"
                   class="add-to-cart-button"
                   [disabled]="isAddingToCart"
@@ -150,7 +150,7 @@
   <!-- Pagination -->
   <div *ngIf="!loading && !error" class="pagination">
     <div *ngIf="products$ | async as products">
-      <div *ngIf="products?.totalPages && products.totalPages > 1">
+      <div *ngIf="products && products['pagination'] && products['pagination']['totalPages'] > 1">
         <button
           *ngIf="currentPage > 0"
           (click)="onPageChange(currentPage - 1)"
@@ -161,12 +161,12 @@
         </button>
 
         <div class="pagination-info">
-          Page {{ currentPage + 1 }} of {{ totalPages }}
-          <span *ngIf="totalElements > 0">({{ totalElements }} products)</span>
+          Page {{ currentPage + 1 }} of {{ products['pagination']['totalPages'] }}
+          <span *ngIf="products['pagination']['totalElements'] > 0">({{ products['pagination']['totalElements'] }} products)</span>
         </div>
 
         <button
-          *ngIf="currentPage < totalPages - 1"
+          *ngIf="currentPage < products['pagination']['totalPages'] - 1"
           (click)="onPageChange(currentPage + 1)"
           class="pagination-button"
           [disabled]="loading"

@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Order, OrderListResponse, OrderSearchParams, OrderStatus } from '../../../../models/marketplace.model';
+import { Order, OrderListResponse } from '../../../../models/marketplace.model';
+import { ApiResponse } from '../../../../models/api-response.model';
 import { MarketplaceService } from '../../../../services/marketplace.service';
 import { ToastService } from '../../../../services/toast.service';
 import { AuthService } from '../../../../services/auth.service';
@@ -32,7 +33,7 @@ export class OrderManagementComponent implements OnInit {
     totalElements = 0;
 
     // Filters
-    statusFilter: OrderStatus | 'ALL' = 'ALL';
+    statusFilter: Order['status'] | 'ALL' = 'ALL';
     buyerIdFilter = '';
 
     constructor(
@@ -62,7 +63,7 @@ export class OrderManagementComponent implements OnInit {
         this.loading = true;
         this.error = null;
 
-        const params: OrderSearchParams = {
+        const params: any = {
             page: this.currentPage,
             size: this.pageSize
         };
@@ -77,12 +78,12 @@ export class OrderManagementComponent implements OnInit {
 
         this.marketplaceService.getAdminOrders(params).subscribe({
             next: (response: OrderListResponse) => {
-                this.orders = response.content;
-                this.totalPages = response.totalPages;
-                this.totalElements = response.totalElements;
+                this.orders = response['content'];
+                this.totalPages = response['totalPages'];
+                this.totalElements = response['totalElements'];
                 this.loading = false;
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error loading orders:', err);
                 const errorMessage = MarketplaceErrorHandler.getErrorMessage(err);
                 this.error = errorMessage;
@@ -148,16 +149,17 @@ export class OrderManagementComponent implements OnInit {
 
     markOrderPaid(orderId: string, notes?: string): void {
         this.marketplaceService.markOrderPaid(orderId, notes).subscribe({
-            next: (updatedOrder) => {
+            next: (response: ApiResponse<Order>) => {
+                const updatedOrder = response.data;
                 // Update the order in the list
                 const index = this.orders.findIndex(o => o.id === orderId);
-                if (index !== -1) {
+                if (index !== -1 && updatedOrder) {
                     this.orders[index] = updatedOrder;
                 }
                 this.toastService.success('Order marked as paid');
                 this.closeNotesForm();
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error marking order as paid:', err);
                 const errorMessage = MarketplaceErrorHandler.getErrorMessage(err);
                 this.toastService.error(errorMessage);
@@ -168,16 +170,17 @@ export class OrderManagementComponent implements OnInit {
 
     fulfillOrder(orderId: string, notes?: string): void {
         this.marketplaceService.fulfillOrder(orderId, notes).subscribe({
-            next: (updatedOrder) => {
+            next: (response: ApiResponse<Order>) => {
+                const updatedOrder = response.data;
                 // Update the order in the list
                 const index = this.orders.findIndex(o => o.id === orderId);
-                if (index !== -1) {
+                if (index !== -1 && updatedOrder) {
                     this.orders[index] = updatedOrder;
                 }
                 this.toastService.success('Order fulfilled');
                 this.closeNotesForm();
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error fulfilling order:', err);
                 const errorMessage = MarketplaceErrorHandler.getErrorMessage(err);
                 this.toastService.error(errorMessage);
@@ -188,16 +191,17 @@ export class OrderManagementComponent implements OnInit {
 
     adminCancelOrder(orderId: string, notes?: string): void {
         this.marketplaceService.adminCancelOrder(orderId, notes).subscribe({
-            next: (updatedOrder) => {
+            next: (response: ApiResponse<Order>) => {
+                const updatedOrder = response.data;
                 // Update the order in the list
                 const index = this.orders.findIndex(o => o.id === orderId);
-                if (index !== -1) {
+                if (index !== -1 && updatedOrder) {
                     this.orders[index] = updatedOrder;
                 }
                 this.toastService.success('Order canceled');
                 this.closeNotesForm();
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error canceling order:', err);
                 const errorMessage = MarketplaceErrorHandler.getErrorMessage(err);
                 this.toastService.error(errorMessage);
@@ -210,22 +214,24 @@ export class OrderManagementComponent implements OnInit {
         this.router.navigate(['/marketplace/orders', orderId]);
     }
 
-    getStatusClass(status: OrderStatus): string {
+    getStatusClass(status: Order['status']): string {
         switch (status) {
             case 'PLACED': return 'status-placed';
-            case 'PAID': return 'status-paid';
-            case 'FULFILLED': return 'status-fulfilled';
-            case 'CANCELED': return 'status-canceled';
+            case 'CONFIRMED': return 'status-confirmed';
+            case 'SHIPPED': return 'status-shipped';
+            case 'DELIVERED': return 'status-delivered';
+            case 'CANCELLED': return 'status-canceled';
             default: return '';
         }
     }
 
-    getStatusText(status: OrderStatus): string {
+    getStatusText(status: Order['status']): string {
         switch (status) {
             case 'PLACED': return 'Placed';
-            case 'PAID': return 'Paid';
-            case 'FULFILLED': return 'Fulfilled';
-            case 'CANCELED': return 'Canceled';
+            case 'CONFIRMED': return 'Confirmed';
+            case 'SHIPPED': return 'Shipped';
+            case 'DELIVERED': return 'Delivered';
+            case 'CANCELLED': return 'Canceled';
             default: return status;
         }
     }

@@ -1,14 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Product, ProductListResponse, ProductSearchParams, ProductCreate, ProductUpdate } from '../../../../models/marketplace.model';
-import { MarketplaceService } from '../../../../services/marketplace.service';
-import { ToastService } from '../../../../services/toast.service';
-import { AuthService } from '../../../../services/auth.service';
+import { Product, ProductListResponse, ProductSearchParams, CreateProductRequest, UpdateProductRequest } from '@app/models/marketplace.model';
+import { MarketplaceService } from '@services/marketplace.service';
+import { ToastService } from '@services/toast.service';
+import { AuthService } from '@services/auth.service';
 import { NgIf, NgFor, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MarketplaceErrorHandler } from '../../../../utils/marketplace-error-handler';
-import { ImageUtil } from '../../../../utils/image.util';
+// import { MarketplaceErrorHandler } from '../../../../../../utils/marketplace-error-handler';
+import { ImageUtil } from '@app/utils/image.util';
 
 @Component({
     selector: 'app-product-management',
@@ -76,12 +76,8 @@ export class ProductManagementComponent implements OnInit {
         const params: ProductSearchParams = {
             page: this.currentPage,
             size: this.pageSize,
-            active: undefined // Show all products (active and inactive)
+            query: this.searchQuery
         };
-
-        if (this.searchQuery) {
-            params.q = this.searchQuery;
-        }
 
         if (this.categoryFilter) {
             params.category = this.categoryFilter;
@@ -89,14 +85,14 @@ export class ProductManagementComponent implements OnInit {
 
         this.marketplaceService.getProducts(params).subscribe({
             next: (response: ProductListResponse) => {
-                this.products = response.content;
-                this.totalPages = response.totalPages;
-                this.totalElements = response.totalElements;
+                this.products = response['content'];
+                this.totalPages = response['totalPages'];
+                this.totalElements = response['totalElements'];
                 this.loading = false;
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error loading products:', err);
-                const errorMessage = MarketplaceErrorHandler.getErrorMessage(err);
+                const errorMessage = err.message || 'Failed to load products';
                 this.error = errorMessage;
                 this.loading = false;
                 this.toastService.error(errorMessage);
@@ -141,13 +137,13 @@ export class ProductManagementComponent implements OnInit {
         this.editingProduct = product;
 
         this.productForm.patchValue({
-            title: product.title,
+            title: product.name,
             description: product.description,
             price: product.price,
-            stock: product.stock,
+            stock: product.stockQuantity,
             category: product.category,
-            imageUrls: product.imageUrls.join(', '),
-            active: product.active
+            imageUrls: product.images.join(', '),
+            active: product.isAvailable
         });
     }
 
@@ -166,13 +162,12 @@ export class ProductManagementComponent implements OnInit {
 
         const formValue = this.productForm.value;
         const productData: any = {
-            title: formValue.title,
+            name: formValue.title,
             description: formValue.description,
             price: formValue.price,
-            stock: formValue.stock,
+            stockQuantity: formValue.stock,
             category: formValue.category,
-            active: formValue.active,
-            currency: 'BDT'
+            isAvailable: formValue.active
         };
 
         // Handle image URLs
@@ -194,38 +189,48 @@ export class ProductManagementComponent implements OnInit {
         }
     }
 
-    createProduct(productData: ProductCreate): void {
+    createProduct(productData: CreateProductRequest): void {
         this.marketplaceService.createProduct(productData).subscribe({
-            next: (product) => {
-                this.toastService.success('Product created successfully');
-                this.closeForm();
-                this.loadProducts(); // Refresh the product list
+            next: (response: any) => {
+                // Handle the ApiResponse structure
+                if (response && response.success && response.data) {
+                    this.toastService.success('Product created successfully');
+                    this.closeForm();
+                    this.loadProducts(); // Refresh the product list
+                } else {
+                    this.toastService.error('Failed to create product');
+                }
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error creating product:', err);
-                const errorMessage = MarketplaceErrorHandler.getErrorMessage(err);
+                const errorMessage = err.message || 'Failed to create product';
                 this.toastService.error(errorMessage);
             }
         });
     }
 
-    updateProduct(id: string, productData: ProductUpdate): void {
+    updateProduct(id: string, productData: UpdateProductRequest): void {
         this.marketplaceService.updateProduct(id, productData).subscribe({
-            next: (product) => {
-                this.toastService.success('Product updated successfully');
-                this.closeForm();
-                this.loadProducts(); // Refresh the product list
+            next: (response: any) => {
+                // Handle the ApiResponse structure
+                if (response && response.success && response.data) {
+                    this.toastService.success('Product updated successfully');
+                    this.closeForm();
+                    this.loadProducts(); // Refresh the product list
+                } else {
+                    this.toastService.error('Failed to update product');
+                }
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error updating product:', err);
-                const errorMessage = MarketplaceErrorHandler.getErrorMessage(err);
+                const errorMessage = err.message || 'Failed to update product';
                 this.toastService.error(errorMessage);
             }
         });
     }
 
     deleteProduct(product: Product): void {
-        if (!confirm(`Are you sure you want to delete "${product.title}"?`)) {
+        if (!confirm(`Are you sure you want to delete "${product.name}"?`)) {
             return;
         }
 
@@ -234,33 +239,38 @@ export class ProductManagementComponent implements OnInit {
                 this.toastService.success('Product deleted successfully');
                 this.loadProducts(); // Refresh the product list
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error deleting product:', err);
-                const errorMessage = MarketplaceErrorHandler.getErrorMessage(err);
+                const errorMessage = err.message || 'Failed to delete product';
                 this.toastService.error(errorMessage);
             }
         });
     }
 
     toggleProductStatus(product: Product): void {
-        const action = product.active ? 'deactivate' : 'activate';
+        const action = product.isAvailable ? 'deactivate' : 'activate';
 
-        if (!confirm(`Are you sure you want to ${action} "${product.title}"?`)) {
+        if (!confirm(`Are you sure you want to ${action} "${product.name}"?`)) {
             return;
         }
 
-        this.marketplaceService.updateProduct(product.id, { active: !product.active }).subscribe({
-            next: (updatedProduct) => {
-                // Update the product in the list
-                const index = this.products.findIndex(p => p.id === product.id);
-                if (index !== -1) {
-                    this.products[index] = updatedProduct;
+        this.marketplaceService.updateProduct(product.id, { isAvailable: !product.isAvailable } as UpdateProductRequest).subscribe({
+            next: (response: any) => {
+                // Handle the ApiResponse structure
+                if (response && response.success && response.data) {
+                    // Update the product in the list
+                    const index = this.products.findIndex(p => p.id === product.id);
+                    if (index !== -1) {
+                        this.products[index] = response.data;
+                    }
+                    this.toastService.success(`Product ${action}d successfully`);
+                } else {
+                    this.toastService.error(`Failed to ${action} product`);
                 }
-                this.toastService.success(`Product ${action}d successfully`);
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error(`Error ${action}ing product:`, err);
-                const errorMessage = MarketplaceErrorHandler.getErrorMessage(err);
+                const errorMessage = err.message || `Failed to ${action} product`;
                 this.toastService.error(errorMessage);
             }
         });

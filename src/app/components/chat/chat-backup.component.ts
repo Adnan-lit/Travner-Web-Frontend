@@ -1,1 +1,0 @@
-// Backup of existing chat component before fresh implementation

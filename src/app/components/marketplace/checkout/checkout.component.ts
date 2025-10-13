@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Cart, CustomerInfo, Order } from '../../../models/marketplace.model';
+import { Cart, CustomerInfo, Order, CartResponse } from '../../../models/marketplace.model';
 import { MarketplaceService } from '../../../services/marketplace.service';
 import { ToastService } from '../../../services/toast.service';
 import { AuthService } from '../../../services/auth.service';
@@ -57,17 +57,17 @@ export class CheckoutComponent implements OnInit {
         this.error = null;
 
         this.marketplaceService.getCart().subscribe({
-            next: (cart) => {
-                this.cart = cart;
+            next: (response: CartResponse) => {
+                this.cart = response.data || null;
                 this.loading = false;
 
                 // Redirect to cart if empty
-                if (!cart.items.length) {
+                if (this.cart && !this.cart.items.length) {
                     this.toastService.info('Your cart is empty');
                     this.router.navigate(['/marketplace/cart']);
                 }
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error loading cart:', err);
                 this.error = err.message || 'Failed to load cart. Please try again later.';
                 this.loading = false;
@@ -93,14 +93,15 @@ export class CheckoutComponent implements OnInit {
 
         const customerInfo: CustomerInfo = this.checkoutForm.value;
 
-        this.marketplaceService.checkout({ customerInfo }).subscribe({
-            next: (order: Order) => {
+        this.marketplaceService.checkout().subscribe({
+            next: (response: any) => {
                 this.submitting = false;
                 this.toastService.success('Order placed successfully!');
                 // Navigate to order confirmation page
-                this.router.navigate(['/marketplace/orders', order.id]);
+                // TODO: Extract order ID from response if available
+                this.router.navigate(['/marketplace/orders']);
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error during checkout:', err);
                 this.submitting = false;
                 this.error = err.message || 'Failed to process checkout. Please try again.';

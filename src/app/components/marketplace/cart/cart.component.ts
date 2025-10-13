@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { Cart, CartItem } from '../../../models/marketplace.model';
-import { MarketplaceService } from '../../../services/marketplace.service';
-import { ToastService } from '../../../services/toast.service';
-import { AuthService } from '../../../services/auth.service';
+import { Cart, CartItem } from '@app/models/marketplace.model';
+import { MarketplaceService } from '@services/marketplace.service';
+import { ToastService } from '@services/toast.service';
+import { AuthService } from '@services/auth.service';
 import { NgIf, NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ImageUtil } from '../../../utils/image.util';
+import { ImageUtil } from '@app/utils/image.util';
 
 @Component({
     selector: 'app-cart',
@@ -44,11 +44,16 @@ export class CartComponent implements OnInit {
         this.error = null;
 
         this.marketplaceService.getCart().subscribe({
-            next: (cart) => {
-                this.cart = cart;
+            next: (response: any) => {
+                // Handle the ApiResponse structure
+                if (response && response.success && response.data) {
+                    this.cart = response.data;
+                } else {
+                    this.cart = null;
+                }
                 this.loading = false;
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error loading cart:', err);
                 this.error = err.message || 'Failed to load cart. Please try again later.';
                 this.loading = false;
@@ -76,12 +81,15 @@ export class CartComponent implements OnInit {
         this.updatingItemIds.add(item.lineId);
 
         this.marketplaceService.updateCartItem(item.lineId, { quantity: newQuantity }).subscribe({
-            next: (updatedCart) => {
-                this.cart = updatedCart;
+            next: (response: any) => {
+                // Handle the ApiResponse structure
+                if (response && response.success && response.data) {
+                    this.cart = response.data;
+                }
                 this.updatingItemIds.delete(item.lineId);
                 this.toastService.success('Cart updated');
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error updating cart item:', err);
                 this.updatingItemIds.delete(item.lineId);
                 const errorMessage = err.message || 'Failed to update item quantity';
@@ -106,12 +114,15 @@ export class CartComponent implements OnInit {
         this.updatingItemIds.add(lineId);
 
         this.marketplaceService.removeCartItem(lineId).subscribe({
-            next: (updatedCart) => {
-                this.cart = updatedCart;
+            next: (response: any) => {
+                // Handle the ApiResponse structure
+                if (response && response.success && response.data) {
+                    this.cart = response.data;
+                }
                 this.updatingItemIds.delete(lineId);
                 this.toastService.success('Item removed from cart');
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error removing cart item:', err);
                 this.updatingItemIds.delete(lineId);
                 this.toastService.error('Failed to remove item from cart');
@@ -120,21 +131,24 @@ export class CartComponent implements OnInit {
     }
 
     clearCart(): void {
-        if (!this.cart || !this.cart.items.length) return;
+        if (!this.cart || !this.cart.items || !this.cart.items.length) return;
 
         if (!confirm('Are you sure you want to clear your cart?')) {
             return;
         }
 
         this.marketplaceService.clearCart().subscribe({
-            next: () => {
-                if (this.cart) {
+            next: (response: any) => {
+                // Handle the ApiResponse structure
+                if (response && response.success && response.data) {
+                    this.cart = response.data;
+                } else if (this.cart) {
                     this.cart.items = [];
-                    this.cart.subtotal = 0;
+                    this.cart.totalAmount = 0;
                 }
                 this.toastService.success('Cart cleared');
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error clearing cart:', err);
                 this.toastService.error('Failed to clear cart');
             }
@@ -142,7 +156,7 @@ export class CartComponent implements OnInit {
     }
 
     proceedToCheckout(): void {
-        if (!this.cart || !this.cart.items.length) {
+        if (!this.cart || !this.cart.items || !this.cart.items.length) {
             this.toastService.error('Your cart is empty');
             return;
         }

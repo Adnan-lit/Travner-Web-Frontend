@@ -1,120 +1,89 @@
 <div class="dashboard-container">
-  <!-- Global navbar already handles navigation & user menu; header removed to avoid duplication -->
+  <div class="dashboard-header">
+    <h1>Welcome to Your Dashboard</h1>
+    <p>Manage your travel community experience</p>
+  </div>
 
-  <!-- Main Dashboard Content -->
-  <main class="dashboard-main">
-    <div class="container">
-      <!-- Welcome Section -->
-      <section class="welcome-section">
-        <div class="welcome-content">
-          <h2 class="welcome-title" *ngIf="currentUser">
-            Welcome back, {{ currentUser.firstName }}! 🌍
-          </h2>
-          <p class="welcome-subtitle">
-            Ready for your next adventure? Let's explore the world together.
-          </p>
-        </div>
-        <div class="welcome-image">
-          <div class="travel-icon">✈️</div>
-        </div>
-      </section>
-
-      <!-- Quick Actions -->
-      <section class="quick-actions">
-        <h3 class="section-title">Quick Actions</h3>
-        <div class="actions-grid">
-          <div class="action-card">
-            <div class="action-icon">🗺️</div>
-            <h4>Plan a Trip</h4>
-            <p>Create your next adventure</p>
-            <button class="action-btn">Start Planning</button>
+  <div class="user-info" *ngIf="currentUser">
+    <div class="user-card">
+      <div class="user-avatar">
+        <img src="https://ui-avatars.com/api/?name={{currentUser.firstName}}+{{currentUser.lastName}}&background=007bff&color=fff&size=100" 
+             alt="{{currentUser.firstName}} {{currentUser.lastName}}" 
+             *ngIf="currentUser.profileImageUrl; else defaultAvatar">
+        <ng-template #defaultAvatar>
+          <div class="avatar-placeholder">
+            {{currentUser.firstName?.charAt(0)}}{{currentUser.lastName?.charAt(0)}}
           </div>
-          <div class="action-card">
-            <div class="action-icon">🎯</div>
-            <h4>Discover Places</h4>
-            <p>Find amazing destinations</p>
-            <button class="action-btn">Explore Now</button>
-          </div>
-          <div class="action-card">
-            <div class="action-icon">📖</div>
-            <h4>Travel Journal</h4>
-            <p>Document your experiences</p>
-            <button class="action-btn">Write Entry</button>
-          </div>
-          <div class="action-card">
-            <div class="action-icon">👥</div>
-            <h4>Connect</h4>
-            <p>Meet fellow travelers</p>
-            <button class="action-btn">Find People</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Travel Posts Section -->
-      <section class="travel-posts-section">
-        <h3 class="section-title">Travel Stories</h3>
-        <p class="section-description">
-          Share your travel experiences or discover amazing journeys from fellow
-          travelers.
+        </ng-template>
+      </div>
+      <div class="user-details">
+        <h2>{{currentUser.firstName}} {{currentUser.lastName}}</h2>
+        <p class="username">&#64;<span>{{currentUser.userName}}</span></p>
+        <p class="email">{{currentUser.email}}</p>
+        <p class="bio" *ngIf="currentUser.bio">{{currentUser.bio}}</p>
+        <p class="location" *ngIf="currentUser.location">
+          <i class="fas fa-map-marker-alt"></i> {{currentUser.location}}
         </p>
-
-        <!-- Travel Posts Component -->
-        <app-post-list></app-post-list>
-      </section>
-
-      <!-- Recent Activity -->
-      <section class="recent-activity">
-        <h3 class="section-title">Recent Activity</h3>
-        <div class="activity-list">
-          <div class="activity-item">
-            <div class="activity-icon">🎉</div>
-            <div class="activity-content">
-              <h4>Welcome to Travner!</h4>
-              <p>Your account has been created successfully</p>
-              <span class="activity-time">Just now</span>
-            </div>
-          </div>
-          <div class="activity-item">
-            <div class="activity-icon">🌟</div>
-            <div class="activity-content">
-              <h4>Getting Started</h4>
-              <p>Complete your profile to get personalized recommendations</p>
-              <span class="activity-time">5 min ago</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Featured Destinations -->
-      <section class="featured-destinations">
-        <h3 class="section-title">Featured Destinations</h3>
-        <div class="destinations-grid">
-          <div class="destination-card">
-            <div class="destination-image">🏔️</div>
-            <div class="destination-content">
-              <h4>Swiss Alps</h4>
-              <p>Breathtaking mountain views</p>
-              <span class="destination-tag">Adventure</span>
-            </div>
-          </div>
-          <div class="destination-card">
-            <div class="destination-image">🏖️</div>
-            <div class="destination-content">
-              <h4>Bali, Indonesia</h4>
-              <p>Tropical paradise beaches</p>
-              <span class="destination-tag">Relaxation</span>
-            </div>
-          </div>
-          <div class="destination-card">
-            <div class="destination-image">🏛️</div>
-            <div class="destination-content">
-              <h4>Rome, Italy</h4>
-              <p>Rich history and culture</p>
-              <span class="destination-tag">Culture</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      </div>
     </div>
-  </main>
+  </div>
+
+  <div class="dashboard-actions">
+    <div class="action-grid">
+      <a href="/community" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-comments"></i>
+        </div>
+        <h3>Community</h3>
+        <p>Join discussions and share your travel experiences</p>
+      </a>
+
+      <a href="/community/new" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-plus-circle"></i>
+        </div>
+        <h3>Create Post</h3>
+        <p>Share your travel stories and photos</p>
+      </a>
+
+      <a href="/marketplace" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-shopping-bag"></i>
+        </div>
+        <h3>Marketplace</h3>
+        <p>Discover travel products and services</p>
+      </a>
+
+      <a href="/chat" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-comments"></i>
+        </div>
+        <h3>Chat</h3>
+        <p>Connect with fellow travelers</p>
+      </a>
+
+      <a href="/profile" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-user"></i>
+        </div>
+        <h3>Profile</h3>
+        <p>Update your profile and settings</p>
+      </a>
+
+      <a href="/settings" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-cog"></i>
+        </div>
+        <h3>Settings</h3>
+        <p>Manage your account preferences</p>
+      </a>
+    </div>
+  </div>
+
+  <div class="recent-activity" *ngIf="currentUser">
+    <h3>Recent Activity</h3>
+    <div class="activity-placeholder">
+      <p>Your recent activity will appear here...</p>
+    </div>
+  </div>
 </div>

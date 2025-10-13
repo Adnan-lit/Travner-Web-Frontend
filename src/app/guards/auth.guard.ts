@@ -1,16 +1,26 @@
-import { inject } from '@angular/core';
-import { CanActivateFn, Router, UrlTree } from '@angular/router';
+import { Injectable } from '@angular/core';
+import { CanActivate, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 
-/**
- * Auth guard to protect routes requiring authentication.
- * Redirects to /signin with returnUrl if not authenticated.
- */
-export const authGuard: CanActivateFn = (route, state): boolean | UrlTree => {
-    const auth = inject(AuthService);
-    const router = inject(Router);
-    if (auth.isAuthenticated()) {
-        return true;
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthGuard implements CanActivate {
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  canActivate(): Observable<boolean> {
+    // Check if user is authenticated
+    if (this.authService.isAuthenticated()) {
+      return of(true);
     }
-    return router.createUrlTree(['/signin'], { queryParams: { returnUrl: state.url } });
-};
+
+    // If not authenticated, redirect to sign-in page
+    this.router.navigate(['/signin']);
+    return of(false);
+  }
+}

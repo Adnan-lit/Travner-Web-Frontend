@@ -1,19 +1,12 @@
+import { ApiResponse } from './api-response.model';
+
 export interface Media {
     id: string;
-    fileName: string;
-    fileUrl: string;
-    fileType: string;
-    fileSize: number;
-    uploaderId: string;
-    postId: string;
-    uploadedAt: string;
-    // Legacy fields for backward compatibility
-    url?: string;
-    type?: MediaType;
-    createdAt?: string;
+    url: string;
+    type: 'image' | 'video';
+    caption?: string;
+    createdAt: string;
 }
 
-export enum MediaType {
-    IMAGE = 'IMAGE',
-    VIDEO = 'VIDEO'
-}
+export type MediaResponse = ApiResponse<Media>;
+export type MediaListResponse = ApiResponse<Media[]>;

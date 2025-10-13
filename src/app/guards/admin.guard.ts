@@ -1,15 +1,30 @@
-import { inject } from '@angular/core';
-import { CanActivateFn, Router, UrlTree } from '@angular/router';
+import { Injectable } from '@angular/core';
+import { CanActivate, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 
-/**
- * Admin guard to protect admin-only routes.
- */
-export const adminGuard: CanActivateFn = (route, state): boolean | UrlTree => {
-    const auth = inject(AuthService);
-    const router = inject(Router);
-    if (auth.isAuthenticated() && auth.isAdmin()) {
-        return true;
+@Injectable({
+  providedIn: 'root'
+})
+export class AdminGuard implements CanActivate {
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  canActivate(): Observable<boolean> {
+    // Check if user is authenticated and has admin role
+    if (this.authService.isAuthenticated() && this.authService.isAdmin()) {
+      return of(true);
     }
-    return router.createUrlTree(['/signin'], { queryParams: { returnUrl: state.url } });
-};
+
+    // If not authenticated or not admin, redirect to dashboard or sign-in
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/signin']);
+    } else {
+      this.router.navigate(['/dashboard']);
+    }
+    return of(false);
+  }
+}

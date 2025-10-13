@@ -1,14 +1,14 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Comment, CommentCreate } from '../../../models/comment.model';
+import { Comment, CommentCreate } from '../../../models/post.model';
 import { AuthService } from '../../../services/auth.service';
-import { PostService } from '../../../services/post.service';
+import { CommentService } from '../../../services/comment.service';
 
 @Component({
-    selector: 'app-comment',
-    imports: [CommonModule, ReactiveFormsModule],
-    template: `
+  selector: 'app-comment',
+  imports: [CommonModule, ReactiveFormsModule],
+  template: `
     <div class="comment" [class.reply]="isReply" [class.has-replies]="hasReplies">
       <div class="comment-header">
         <div class="comment-author">
@@ -50,26 +50,22 @@ import { PostService } from '../../../services/post.service';
         <div class="vote-actions">
           <button 
             class="vote-btn upvote" 
-            [class.active]="comment?.hasUserUpvoted" 
             (click)="upvoteComment()"
-            [disabled]="comment?.hasUserUpvoted"
           >
             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
             </svg>
-            <span>{{ comment?.upvotes || 0 }}</span>
+            <span>{{ comment?.likes || 0 }}</span>
           </button>
           
           <button 
             class="vote-btn downvote" 
-            [class.active]="comment?.hasUserDownvoted" 
             (click)="downvoteComment()"
-            [disabled]="comment?.hasUserDownvoted"
           >
             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
-            <span>{{ comment?.downvotes || 0 }}</span>
+            <span>{{ comment?.likes || 0 }}</span>
           </button>
         </div>
         
@@ -109,7 +105,7 @@ import { PostService } from '../../../services/post.service';
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     .comment {
       background-color: white;
       border-radius: 8px;
@@ -290,248 +286,268 @@ import { PostService } from '../../../services/post.service';
   `]
 })
 export class CommentComponent {
-    @Input() comment: Comment | null = null;
-    @Input() postId: string = '';
-    @Input() isReply: boolean = false;
+  @Input() comment: Comment | null = null;
+  @Input() postId: string = '';
+  @Input() isReply: boolean = false;
 
-    get hasReplies(): boolean {
-        return !!this.comment?.replies && this.comment.replies.length > 0;
+  get hasReplies(): boolean {
+    return !!(this.comment as any)?.replies && (this.comment as any).replies.length > 0;
+  }
+
+  get replies(): Comment[] {
+    return (this.comment as any)?.replies || [];
+  }
+
+  @Output() commentUpdated = new EventEmitter<Comment>();
+  @Output() commentDeleted = new EventEmitter<string>();
+  @Output() replyAdded = new EventEmitter<Comment>();
+
+  commentForm: FormGroup;
+  replyForm: FormGroup;
+  isEditing: boolean = false;
+  updating: boolean = false;
+  showReplyForm: boolean = false;
+  submittingReply: boolean = false;
+
+  constructor(
+    private formBuilder: FormBuilder,
+    private commentService: CommentService,
+    private authService: AuthService
+  ) {
+    this.commentForm = this.formBuilder.group({
+      content: ['', [Validators.required, Validators.minLength(3)]]
+    });
+
+    this.replyForm = this.formBuilder.group({
+      content: ['', [Validators.required, Validators.minLength(3)]]
+    });
+  }
+
+  // Utility functions
+  getInitials(name: string): string {
+    return name
+      .split(' ')
+      .map(part => part.charAt(0))
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  }
+
+  formatDate(dateString: string): string {
+    if (!dateString) return '';
+
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+      if (diffHours === 0) {
+        const diffMinutes = Math.floor(diffTime / (1000 * 60));
+        return diffMinutes === 0 ? 'just now' : `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+      }
+      return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    } else if (diffDays < 7) {
+      return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  }
+
+  // Permission checks
+  canModifyComment(): boolean {
+    if (!this.comment) return false;
+
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) return false;
+
+    // Handle complex ID structure from API
+    let currentUserId: string | number | null = null;
+    if (currentUser.id != null) {
+      if (typeof currentUser.id === 'object' && 'timestamp' in currentUser.id) {
+        currentUserId = (currentUser.id as any).timestamp;
+      } else {
+        currentUserId = currentUser.id;
+      }
     }
 
-    get replies(): Comment[] {
-        return this.comment?.replies || [];
-    }
+    return String(currentUserId) === String(this.comment.authorId) || this.authService.isAdmin();
+  }
 
-    @Output() commentUpdated = new EventEmitter<Comment>();
-    @Output() commentDeleted = new EventEmitter<string>();
-    @Output() replyAdded = new EventEmitter<Comment>();
+  // Comment actions
+  startEditing(): void {
+    if (!this.comment) return;
 
-    commentForm: FormGroup;
-    replyForm: FormGroup;
-    isEditing: boolean = false;
-    updating: boolean = false;
-    showReplyForm: boolean = false;
-    submittingReply: boolean = false;
+    this.commentForm.patchValue({
+      content: this.comment.content
+    });
 
-    constructor(
-        private formBuilder: FormBuilder,
-        private postService: PostService,
-        private authService: AuthService
-    ) {
-        this.commentForm = this.formBuilder.group({
-            content: ['', [Validators.required, Validators.minLength(3)]]
-        });
+    this.isEditing = true;
+  }
 
-        this.replyForm = this.formBuilder.group({
-            content: ['', [Validators.required, Validators.minLength(3)]]
-        });
-    }
+  cancelEdit(): void {
+    this.isEditing = false;
+  }
 
-    // Utility functions
-    getInitials(name: string): string {
-        return name
-            .split(' ')
-            .map(part => part.charAt(0))
-            .join('')
-            .toUpperCase()
-            .substring(0, 2);
-    }
+  updateComment(): void {
+    if (this.commentForm.invalid || !this.comment) return;
 
-    formatDate(dateString: string): string {
-        if (!dateString) return '';
+    this.updating = true;
+    const commentUpdate = {
+      content: this.commentForm.value.content
+    };
 
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffTime = Math.abs(now.getTime() - date.getTime());
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    this.commentService.updateComment(this.comment.id, commentUpdate.content)
+      .subscribe({
+        next: (response: any) => {
+          // Handle the ApiResponse structure
+          if (response && response.success && response.data) {
+            this.isEditing = false;
+            this.updating = false;
 
-        if (diffDays === 0) {
-            const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-            if (diffHours === 0) {
-                const diffMinutes = Math.floor(diffTime / (1000 * 60));
-                return diffMinutes === 0 ? 'just now' : `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
-            }
-            return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
-        } else if (diffDays < 7) {
-            return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
-        } else {
-            return date.toLocaleDateString();
+            // Update the local comment with new data
+            Object.assign(this.comment as Comment, response.data);
+
+            // Emit event to notify parent
+            this.commentUpdated.emit(response.data);
+          } else {
+            this.updating = false;
+            console.error('Failed to update comment');
+          }
+        },
+        error: (error) => {
+          console.error('Error updating comment:', error);
+          this.updating = false;
         }
-    }
+      });
+  }
 
-    // Permission checks
-    canModifyComment(): boolean {
-        if (!this.comment) return false;
+  deleteComment(): void {
+    if (!this.comment || !confirm('Are you sure you want to delete this comment?')) return;
 
-        const currentUser = this.authService.getCurrentUser();
-        if (!currentUser) return false;
-
-        // Handle complex ID structure from API
-        let currentUserId: string | number | null = null;
-        if (currentUser.id != null) {
-            if (typeof currentUser.id === 'object' && 'timestamp' in currentUser.id) {
-                currentUserId = currentUser.id.timestamp;
-            } else {
-                currentUserId = currentUser.id;
-            }
+    this.commentService.deleteComment(this.comment.id)
+      .subscribe({
+        next: () => {
+          // Emit event to notify parent
+          this.commentDeleted.emit(this.comment?.id);
+        },
+        error: (error) => {
+          console.error('Error deleting comment:', error);
         }
+      });
+  }
 
-        return String(currentUserId) === String(this.comment.authorId) || this.authService.isAdmin();
+  // Voting
+  upvoteComment(): void {
+    if (!this.comment) return;
+
+    this.commentService.voteOnComment(this.comment.id, { isUpvote: true })
+      .subscribe({
+        next: (response: any) => {
+          // Handle the ApiResponse structure
+          if (response && response.success && response.data) {
+            // Update the local comment with new data
+            Object.assign(this.comment as Comment, response.data);
+
+            // Emit event to notify parent
+            this.commentUpdated.emit(response.data);
+          }
+        },
+        error: (error) => {
+          console.error('Error upvoting comment:', error);
+        }
+      });
+  }
+
+  downvoteComment(): void {
+    if (!this.comment) return;
+
+    this.commentService.voteOnComment(this.comment.id, { isUpvote: false })
+      .subscribe({
+        next: (response: any) => {
+          // Handle the ApiResponse structure
+          if (response && response.success && response.data) {
+            // Update the local comment with new data
+            Object.assign(this.comment as Comment, response.data);
+
+            // Emit event to notify parent
+            this.commentUpdated.emit(response.data);
+          }
+        },
+        error: (error) => {
+          console.error('Error downvoting comment:', error);
+        }
+      });
+  }
+
+  // Reply handling
+  toggleReplyForm(): void {
+    this.showReplyForm = !this.showReplyForm;
+
+    if (this.showReplyForm) {
+      this.replyForm.reset();
     }
+  }
 
-    // Comment actions
-    startEditing(): void {
-        if (!this.comment) return;
+  submitReply(): void {
+    if (!this.comment || this.replyForm.invalid) return;
 
-        this.commentForm.patchValue({
-            content: this.comment.content
-        });
+    this.submittingReply = true;
+    const replyData: CommentCreate = {
+      content: this.replyForm.value.content,
+      postId: this.postId
+    };
 
-        this.isEditing = true;
-    }
-
-    cancelEdit(): void {
-        this.isEditing = false;
-    }
-
-    updateComment(): void {
-        if (!this.comment || this.commentForm.invalid) return;
-
-        this.updating = true;
-        const commentUpdate = {
-            content: this.commentForm.value.content
-        };
-
-        this.postService.updateComment(this.postId, this.comment.id, commentUpdate)
-            .subscribe({
-                next: (updatedComment) => {
-                    this.isEditing = false;
-                    this.updating = false;
-
-                    // Update the local comment with new data
-                    Object.assign(this.comment as Comment, updatedComment);
-
-                    // Emit event to notify parent
-                    this.commentUpdated.emit(updatedComment);
-                },
-                error: (error) => {
-                    console.error('Error updating comment:', error);
-                    this.updating = false;
-                }
-            });
-    }
-
-    deleteComment(): void {
-        if (!this.comment || !confirm('Are you sure you want to delete this comment?')) return;
-
-        this.postService.deleteComment(this.postId, this.comment.id)
-            .subscribe({
-                next: () => {
-                    // Emit event to notify parent
-                    this.commentDeleted.emit(this.comment?.id);
-                },
-                error: (error) => {
-                    console.error('Error deleting comment:', error);
-                }
-            });
-    }
-
-    // Voting
-    upvoteComment(): void {
-        if (!this.comment) return;
-
-        this.postService.upvoteComment(this.postId, this.comment.id)
-            .subscribe({
-                next: (updatedComment) => {
-                    // Update the local comment with new data
-                    Object.assign(this.comment as Comment, updatedComment);
-
-                    // Emit event to notify parent
-                    this.commentUpdated.emit(updatedComment);
-                },
-                error: (error) => {
-                    console.error('Error upvoting comment:', error);
-                }
-            });
-    }
-
-    downvoteComment(): void {
-        if (!this.comment) return;
-
-        this.postService.downvoteComment(this.postId, this.comment.id)
-            .subscribe({
-                next: (updatedComment) => {
-                    // Update the local comment with new data
-                    Object.assign(this.comment as Comment, updatedComment);
-
-                    // Emit event to notify parent
-                    this.commentUpdated.emit(updatedComment);
-                },
-                error: (error) => {
-                    console.error('Error downvoting comment:', error);
-                }
-            });
-    }
-
-    // Reply handling
-    toggleReplyForm(): void {
-        this.showReplyForm = !this.showReplyForm;
-
-        if (this.showReplyForm) {
+    this.commentService.addCommentToPost(this.postId, replyData)
+      .subscribe({
+        next: (response: any) => {
+          // Handle the ApiResponse structure
+          if (response && response.success && response.data) {
+            const newReply = response.data;
+            this.submittingReply = false;
+            this.showReplyForm = false;
             this.replyForm.reset();
-        }
-    }
 
-    submitReply(): void {
-        if (!this.comment || this.replyForm.invalid) return;
-
-        this.submittingReply = true;
-        const replyData: CommentCreate = {
-            content: this.replyForm.value.content,
-            parentId: this.comment.id
-        };
-
-        this.postService.createComment(this.postId, replyData)
-            .subscribe({
-                next: (newReply) => {
-                    this.submittingReply = false;
-                    this.showReplyForm = false;
-                    this.replyForm.reset();
-
-                    // Initialize replies array if it doesn't exist
-                    if (!this.comment!.replies) {
-                        this.comment!.replies = [];
-                    }
-
-                    // Add the new reply to the local comment
-                    this.comment!.replies!.push(newReply);
-
-                    // Emit event to notify parent
-                    this.replyAdded.emit(newReply);
-                },
-                error: (error) => {
-                    console.error('Error posting reply:', error);
-                    this.submittingReply = false;
-                }
-            });
-    }
-
-    // Event handlers from child comments
-    onCommentUpdated(updatedComment: Comment): void {
-        // Pass the event up to the parent
-        this.commentUpdated.emit(updatedComment);
-    }
-
-    onCommentDeleted(commentId: string): void {
-        // Remove the deleted comment from the replies
-        if (this.comment?.replies) {
-            const index = this.comment.replies.findIndex(reply => reply.id === commentId);
-            if (index !== -1) {
-                this.comment.replies.splice(index, 1);
+            // Initialize replies array if it doesn't exist
+            // Initialize replies array if it doesn't exist
+            if (!(this.comment as any)!.replies) {
+              (this.comment as any)!.replies = [];
             }
-        }
 
-        // Pass the event up to the parent
-        this.commentDeleted.emit(commentId);
+            // Add the new reply to the local comment
+            (this.comment as any)!.replies!.push(newReply);
+
+            // Emit event to notify parent
+            this.replyAdded.emit(newReply);
+          } else {
+            this.submittingReply = false;
+            console.error('Failed to add reply');
+          }
+        },
+        error: (error) => {
+          console.error('Error posting reply:', error);
+          this.submittingReply = false;
+        }
+      });
+  }
+
+  // Event handlers from child comments
+  onCommentUpdated(updatedComment: Comment): void {
+    // Pass the event up to the parent
+    this.commentUpdated.emit(updatedComment);
+  }
+
+  onCommentDeleted(commentId: string): void {
+    // Remove the deleted comment from the replies
+    if ((this.comment as any)?.replies) {
+      const index = (this.comment as any).replies.findIndex((reply: any) => reply.id === commentId);
+      if (index !== -1) {
+        (this.comment as any).replies.splice(index, 1);
+      }
     }
+
+    // Pass the event up to the parent
+    this.commentDeleted.emit(commentId);
+  }
 }

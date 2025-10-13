@@ -1,61 +1,54 @@
-/** Shared ownership utility for determining if a user owns a post. */
+import { User } from '../models/common.model';
 
-export interface PostOwner {
-    authorId?: string | number | { timestamp: number; date: string };
-    authorName?: string;
-}
-
-export interface UserIdentity {
-    id?: string | number | { timestamp: number; date: string };
-    userName?: string;
-}
-
-export function isPostOwner(
-    post: PostOwner | null | undefined,
-    user: UserIdentity | null | undefined,
-    debugNamespace: string = 'Ownership'
-): boolean {
-    if (!post || !user) return false;
-
-    // Handle complex ID structure from API
-    let currentId: string | null = null;
-    if (user.id != null) {
-        if (typeof user.id === 'object' && 'timestamp' in user.id) {
-            // Complex ID object with timestamp
-            currentId = String(user.id.timestamp);
-        } else {
-            // Simple string or number ID
-            currentId = String(user.id);
-        }
+/**
+ * Check if the current user is the owner of a post
+ * @param post The post to check ownership for
+ * @param currentUser The current authenticated user
+ * @returns boolean indicating if the user owns the post
+ */
+export function isPostOwner(post: any, currentUser: User | null): boolean {
+    if (!post || !currentUser) {
+        return false;
     }
 
-    let authorId: string | null = null;
-    if (post.authorId != null) {
-        if (typeof post.authorId === 'object' && 'timestamp' in post.authorId) {
-            // Complex ID object with timestamp
-            authorId = String(post.authorId.timestamp);
-        } else {
-            // Simple string or number ID
-            authorId = String(post.authorId);
-        }
+    // Check if post has an author field with an id
+    if (post.author && post.author.id) {
+        return post.author.id === currentUser.id;
     }
 
-    if (currentId && authorId && currentId === authorId) return true;
+    // Check if post has an authorId field
+    if (post.authorId) {
+        return post.authorId === currentUser.id;
+    }
 
-    const currentUsername = user.userName ? user.userName.toLowerCase() : null;
-    const authorUsername = post.authorName ? post.authorName.toLowerCase() : null;
-    const usernameMatch = !!currentUsername && !!authorUsername && currentUsername === authorUsername;
+    // Fallback: check if post has an id field that matches currentUser.id
+    if (post.id) {
+        return post.id === currentUser.id;
+    }
 
-    try {
-        if (localStorage.getItem('travner_debug') === 'true' && !usernameMatch && !(currentId && authorId && currentId === authorId)) {
-            console.debug(`[${debugNamespace}] ownership check failed`, {
-                postAuthorId: authorId,
-                postAuthorName: authorUsername,
-                currentUserId: currentId,
-                currentUsername
-            });
-        }
-    } catch { /* ignore */ }
+    return false;
+}
 
-    return usernameMatch;
+/**
+ * Check if the current user is the owner of a comment
+ * @param comment The comment to check ownership for
+ * @param currentUser The current authenticated user
+ * @returns boolean indicating if the user owns the comment
+ */
+export function isCommentOwner(comment: any, currentUser: User | null): boolean {
+    if (!comment || !currentUser) {
+        return false;
+    }
+
+    // Check if comment has a userId field
+    if (comment.userId) {
+        return comment.userId === currentUser.id;
+    }
+
+    // Check if comment has an author field with an id
+    if (comment.author && comment.author.id) {
+        return comment.author.id === currentUser.id;
+    }
+
+    return false;
 }

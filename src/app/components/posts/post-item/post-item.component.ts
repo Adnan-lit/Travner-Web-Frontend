@@ -6,6 +6,9 @@ import { isPostOwner } from '../../../utils/ownership.util';
 import { AuthService } from '../../../services/auth.service';
 import { PostService } from '../../../services/post.service';
 
+// Add a small comment to trigger TypeScript recompilation
+// This component displays a single post item in the post list
+
 @Component({
   selector: 'app-post-item',
   standalone: true,
@@ -14,15 +17,15 @@ import { PostService } from '../../../services/post.service';
     <div class="post-item" *ngIf="post">
       <div class="post-header">
         <div class="post-author">
-          <div class="author-avatar">{{ getInitials(post.author.firstName + ' ' + post.author.lastName) }}</div>
+          <div class="author-avatar">{{ getInitials((post.author?.firstName || '') + ' ' + (post.author?.lastName || '')) }}</div>
           <div class="author-info">
-            <span class="author-name">{{ post.author.firstName }} {{ post.author.lastName }}</span>
+            <span class="author-name">{{ post.author?.firstName }} {{ post.author?.lastName }}</span>
             <span class="post-date">{{ formatDate(post.createdAt) }}</span>
           </div>
         </div>
         
   <div class="ownership-debug" *ngIf="debugMode">
-    UID: {{ currentUserId() || '—' }} | AID: {{ post.author.id.timestamp || post.author.id || '—' }}
+    UID: {{ currentUserId() || '—' }} | AID: {{ post.author?.id || '—' }}
     <button style="margin-left: 10px; font-size: 12px;" (click)="debugOwnership()">🔍 Debug</button>
   </div>
         <div class="post-actions" *ngIf="canModifyPost()">
@@ -97,7 +100,7 @@ import { PostService } from '../../../services/post.service';
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
               </svg>
-              <span>{{ post.upvotes }}</span>
+              <span>{{ post.likes || 0 }}</span>
             </button>
             
             <button
@@ -109,7 +112,7 @@ import { PostService } from '../../../services/post.service';
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
               </svg>
-              <span>{{ post.downvotes }}</span>
+              <span>{{ post.likes || 0 }}</span>
             </button>
           </div>
           
@@ -180,30 +183,30 @@ import { PostService } from '../../../services/post.service';
   styles: [`
     .post-item {
       background-color: white;
-      border-radius: 16px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-card);
       overflow: hidden;
       transition: all 0.3s ease;
-      border: 1px solid rgba(0,0,0,0.05);
+      border: var(--border-width) solid rgba(0,0,0,0.05);
     }
     
     .post-item:hover {
       transform: translateY(-4px);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      box-shadow: var(--shadow-card-hover);
     }
     
     .post-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 20px 20px 16px 20px;
-      border-bottom: 1px solid #f0f0f0;
+      padding: var(--space-4) var(--space-4) var(--space-3) var(--space-4);
+      border-bottom: var(--border-width) solid #f0f0f0;
     }
     
     .post-author {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: var(--space-3);
     }
     
     .author-avatar {
@@ -216,7 +219,7 @@ import { PostService } from '../../../services/post.service';
       align-items: center;
       justify-content: center;
       font-weight: 600;
-      font-size: 16px;
+      font-size: var(--text-base);
     }
     
     .author-info {
@@ -228,25 +231,26 @@ import { PostService } from '../../../services/post.service';
     .author-name {
       font-weight: 600;
       color: #1a1a1a;
-      font-size: 15px;
+      font-size: var(--text-base);
     }
     
     .post-date {
-      font-size: 13px;
+      font-size: var(--text-sm);
       color: #666;
     }
     
     .post-actions {
       display: flex;
-      gap: 10px;
+      gap: var(--space-2);
     }
     
     .edit-btn, .delete-btn {
-      padding: 6px 12px;
+      padding: var(--space-1) var(--space-3);
       border: none;
-      border-radius: 4px;
-      font-size: 12px;
+      border-radius: var(--border-radius);
+      font-size: var(--text-sm);
       cursor: pointer;
+      box-shadow: var(--shadow-sm);
     }
     
     .edit-btn {
@@ -260,12 +264,12 @@ import { PostService } from '../../../services/post.service';
     }
     
     .post-content {
-      padding: 0 20px 20px 20px;
+      padding: 0 var(--space-4) var(--space-4) var(--space-4);
     }
     
     .post-title {
-      margin: 0 0 12px 0;
-      font-size: 20px;
+      margin: 0 0 var(--space-3) 0;
+      font-size: var(--text-2xl);
       font-weight: 700;
       line-height: 1.4;
     }
@@ -283,22 +287,22 @@ import { PostService } from '../../../services/post.service';
     .post-location {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: var(--space-1);
       color: #666;
-      font-size: 14px;
-      margin-bottom: 12px;
+      font-size: var(--text-sm);
+      margin-bottom: var(--space-3);
     }
     
     .post-text {
-      margin-bottom: 20px;
+      margin-bottom: var(--space-4);
       color: #444;
       line-height: 1.6;
-      font-size: 15px;
+      font-size: var(--text-base);
     }
     
     .media-preview {
-      margin-bottom: 15px;
-      border-radius: 12px;
+      margin-bottom: var(--space-3);
+      border-radius: var(--border-radius);
       overflow: hidden;
     }
     
@@ -306,7 +310,7 @@ import { PostService } from '../../../services/post.service';
     .media-main {
       width: 100%;
       height: 300px;
-      border-radius: 12px;
+      border-radius: var(--border-radius);
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -322,11 +326,11 @@ import { PostService } from '../../../services/post.service';
     /* Multiple images - modern grid layout */
     .media-grid {
       display: grid;
-      gap: 8px;
+      gap: var(--space-2);
       grid-template-columns: 2fr 1fr 1fr;
       grid-template-rows: 1fr 1fr;
       height: 300px;
-      border-radius: 12px;
+      border-radius: var(--border-radius);
       overflow: hidden;
     }
     
@@ -380,8 +384,8 @@ import { PostService } from '../../../services/post.service';
       left: 50%;
       transform: translate(-50%, -50%);
       background: rgba(255, 255, 255, 0.9);
-      padding: 12px;
-      border-radius: 8px;
+      padding: var(--space-3);
+      border-radius: var(--radius-lg);
       backdrop-filter: blur(4px);
     }
     
@@ -411,7 +415,7 @@ import { PostService } from '../../../services/post.service';
       align-items: center;
       justify-content: center;
       color: white;
-      font-size: 24px;
+      font-size: var(--text-xl);
       font-weight: 600;
       backdrop-filter: blur(2px);
     }
@@ -419,22 +423,22 @@ import { PostService } from '../../../services/post.service';
     .post-tags {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 16px;
+      gap: var(--space-2);
+      margin-top: var(--space-4);
     }
     
     .tag {
-      padding: 6px 12px;
+      padding: var(--space-1) var(--space-3);
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      border-radius: 20px;
-      font-size: 12px;
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
       font-weight: 500;
     }
     
     .post-footer {
-      padding: 16px 20px;
-      border-top: 1px solid #f0f0f0;
+      padding: var(--space-3) var(--space-4);
+      border-top: var(--border-width) solid #f0f0f0;
       background: #fafafa;
     }
     
@@ -446,19 +450,19 @@ import { PostService } from '../../../services/post.service';
     
     .vote-actions {
       display: flex;
-      gap: 15px;
+      gap: var(--space-3);
     }
     
     .vote-btn {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: var(--space-1);
       background: none;
       border: none;
       color: #666;
       cursor: pointer;
-      padding: 5px;
-      border-radius: 4px;
+      padding: var(--space-1);
+      border-radius: var(--radius-sm);
     }
     
     .vote-btn:hover:not(:disabled) {
@@ -478,7 +482,7 @@ import { PostService } from '../../../services/post.service';
     .comments-link {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: var(--space-1);
       color: #666;
       text-decoration: none;
     }
@@ -496,15 +500,16 @@ import { PostService } from '../../../services/post.service';
     .share-btn {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: var(--space-1);
       background: none;
       border: none;
       color: #666;
       cursor: pointer;
-      padding: 8px 12px;
-      border-radius: 8px;
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-lg);
       transition: all 0.2s ease;
-      font-size: 14px;
+      font-size: var(--text-sm);
+      box-shadow: var(--shadow-sm);
     }
     
     .share-btn:hover {
@@ -523,10 +528,10 @@ import { PostService } from '../../../services/post.service';
       bottom: 100%;
       right: 0;
       background: white;
-      border: 1px solid #e0e0e0;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-      padding: 8px 0;
+      border: var(--border-width) solid #e0e0e0;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-xl);
+      padding: var(--space-2) 0;
       min-width: 180px;
       opacity: 0;
       visibility: hidden;
@@ -545,14 +550,14 @@ import { PostService } from '../../../services/post.service';
     .share-option {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: var(--space-3);
       width: 100%;
-      padding: 12px 16px;
+      padding: var(--space-3) var(--space-4);
       background: none;
       border: none;
       color: #333;
       cursor: pointer;
-      font-size: 14px;
+      font-size: var(--text-sm);
       transition: all 0.2s ease;
       text-align: left;
     }
@@ -575,14 +580,14 @@ import { PostService } from '../../../services/post.service';
     /* Modern post footer with better spacing */
     .post-footer {
       background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-      border-top: 1px solid rgba(0,0,0,0.05);
+      border-top: var(--border-width) solid rgba(0,0,0,0.05);
     }
     
     .post-stats {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 20px;
+      gap: var(--space-4);
     }
     
     /* Responsive improvements */
@@ -595,33 +600,33 @@ import { PostService } from '../../../services/post.service';
       
       .post-stats {
         flex-wrap: wrap;
-        gap: 12px;
+        gap: var(--space-3);
       }
       
       .vote-actions {
-        gap: 10px;
+        gap: var(--space-2);
       }
     }
     
     /* Toast notification */
     .copy-toast {
       position: fixed;
-      top: 20px;
-      right: 20px;
+      top: var(--space-4);
+      right: var(--space-4);
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      padding: var(--space-3) var(--space-5);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xl);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: var(--space-2);
       opacity: 0;
       visibility: hidden;
       transform: translateX(100%);
       transition: all 0.3s ease;
       z-index: 10000;
-      font-size: 14px;
+      font-size: var(--text-sm);
       font-weight: 500;
     }
     
@@ -630,7 +635,7 @@ import { PostService } from '../../../services/post.service';
       visibility: visible;
       transform: translateX(0);
     }
-    .ownership-debug { font-size:10px; opacity:0.6; margin-right:8px; }
+    .ownership-debug { font-size:var(--text-xs); opacity:0.6; margin-right:var(--space-2); }
   `]
 })
 export class PostItemComponent implements OnDestroy {
@@ -659,7 +664,7 @@ export class PostItemComponent implements OnDestroy {
     if (!user || !user.id) return null;
 
     if (typeof user.id === 'object' && 'timestamp' in user.id) {
-      return String(user.id.timestamp);
+      return String(user.id['timestamp']);
     }
     return String(user.id);
   }
@@ -713,13 +718,14 @@ export class PostItemComponent implements OnDestroy {
     this.mediaLoadingStates[mediaUrl] = true;
 
     this.postService.getMediaBlob(mediaUrl).subscribe({
-      next: (blobUrl) => {
+      next: (blob: Blob) => {
         this.mediaLoadingStates[mediaUrl] = false;
-        if (blobUrl) {
+        if (blob) {
+          const blobUrl = URL.createObjectURL(blob);
           this.mediaBlobUrls[mediaUrl] = blobUrl;
         }
       },
-      error: (error) => {
+      error: (error: any) => {
         this.mediaLoadingStates[mediaUrl] = false;
         console.error('Failed to load media blob:', error);
       }
@@ -781,7 +787,7 @@ export class PostItemComponent implements OnDestroy {
       }
     }
 
-    return isPostOwner(postOwner, currentUser, 'PostItem');
+    return isPostOwner(postOwner, currentUser);
   }
 
   onUpvote(): void {

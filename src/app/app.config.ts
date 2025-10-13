@@ -6,7 +6,6 @@ import { routes } from './app.routes';
 import { basicAuthInterceptor } from './core/http/basic-auth.interceptor';
 import { apiEnvelopeInterceptor } from './core/http/api-envelope.interceptor';
 import { noAuthPopupInterceptor } from './core/http/no-auth-popup.interceptor';
-import { corsInterceptor } from './interceptors/cors.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -15,10 +14,9 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withFetch(),
       withInterceptors([
-        corsInterceptor,          // Add CORS interceptor first
+        apiEnvelopeInterceptor,   // Handle API response format
         noAuthPopupInterceptor,   // Prevent browser auth popup on 401s
-        basicAuthInterceptor,     // Then authentication interceptor
-        apiEnvelopeInterceptor    // Finally API envelope interceptor
+        basicAuthInterceptor     // Then authentication interceptor
       ])
     )
   ]

@@ -2,16 +2,16 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { MarketplaceService } from '../../../services/marketplace.service';
-import { AuthService } from '../../../services/auth.service';
-import { Cart } from '../../../models/marketplace.model';
+import { MarketplaceService } from '@services/marketplace.service';
+import { AuthService } from '@services/auth.service';
+import { Cart } from '@app/models/marketplace.model';
 
 @Component({
-    selector: 'app-cart-summary',
-    standalone: true,
-    imports: [CommonModule, RouterModule],
-    template: `
-    <div class="cart-summary-widget" *ngIf="isAuthenticated && cart && cart.items.length > 0">
+  selector: 'app-cart-summary',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  template: `
+    <div class="cart-summary-widget" *ngIf="isAuthenticated && cart && cart.items && cart.items.length > 0">
       <div class="cart-header">
         <h4>Cart ({{ itemCount }})</h4>
         <button class="close-btn" (click)="toggleVisibility()" aria-label="Toggle cart">
@@ -35,7 +35,7 @@ import { Cart } from '../../../models/marketplace.model';
         </div>
         
         <div class="cart-total">
-          <strong>Total: {{ formatPrice(cart.subtotal) }}</strong>
+          <strong>Total: {{ formatPrice(cart.totalAmount) }}</strong>
         </div>
         
         <div class="cart-actions">
@@ -45,7 +45,7 @@ import { Cart } from '../../../models/marketplace.model';
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     .cart-summary-widget {
       position: fixed;
       top: 90px;
@@ -195,65 +195,78 @@ import { Cart } from '../../../models/marketplace.model';
   `]
 })
 export class CartSummaryComponent implements OnInit, OnDestroy {
-    cart: Cart | null = null;
-    isAuthenticated = false;
-    isVisible = true;
-    itemCount = 0;
-    private subscriptions: Subscription[] = [];
+  cart: Cart | null = null;
+  isAuthenticated = false;
+  isVisible = true;
+  itemCount = 0;
+  private subscriptions: Subscription[] = [];
 
-    constructor(
-        private marketplaceService: MarketplaceService,
-        private authService: AuthService
-    ) { }
+  constructor(
+    private marketplaceService: MarketplaceService,
+    private authService: AuthService
+  ) { }
 
-    ngOnInit(): void {
-        // Subscribe to authentication status
-        this.subscriptions.push(
-            this.authService.currentUser$.subscribe(user => {
-                this.isAuthenticated = !!user;
-                if (this.isAuthenticated) {
-                    this.loadCart();
-                } else {
-                    this.cart = null;
-                    this.itemCount = 0;
-                }
-            })
-        );
+  ngOnInit(): void {
+    // Subscribe to authentication status
+    this.subscriptions.push(
+      this.authService.currentUser$.subscribe((user: any) => {
+        this.isAuthenticated = !!user;
+        if (this.isAuthenticated) {
+          this.loadCart();
+        } else {
+          this.cart = null;
+          this.itemCount = 0;
+        }
+      })
+    );
 
-        // Subscribe to cart item count changes
-        this.subscriptions.push(
-            this.marketplaceService.cartItemCount$.subscribe(count => {
-                this.itemCount = count;
-            })
-        );
-    }
+    // Subscribe to cart item count changes
+    this.subscriptions.push(
+      this.marketplaceService.getCartItemCount().subscribe((count: number) => {
+        this.itemCount = count;
+      })
+    );
+  }
 
-    ngOnDestroy(): void {
-        this.subscriptions.forEach(sub => sub.unsubscribe());
-    }
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
 
-    loadCart(): void {
-        if (!this.isAuthenticated) return;
+  loadCart(): void {
+    if (!this.isAuthenticated) return;
 
-        this.marketplaceService.getCart().subscribe({
-            next: (cart) => {
-                this.cart = cart;
-                this.itemCount = cart.items.reduce((total, item) => total + item.quantity, 0);
-            },
-            error: (err) => {
-                console.warn('Failed to load cart for summary:', err);
-            }
-        });
-    }
+    this.marketplaceService.getCart().subscribe({
+      next: (response: any) => {
+        // Handle the ApiResponse structure
+        if (response && response.success && response.data) {
+          this.cart = response.data;
+          // Calculate item count from cart items
+          if (this.cart && this.cart.items) {
+            this.itemCount = this.cart.items.reduce((total: number, item: any) => total + item.quantity, 0);
+          } else {
+            this.itemCount = 0;
+          }
+        } else {
+          this.cart = null;
+          this.itemCount = 0;
+        }
+      },
+      error: (err: any) => {
+        console.warn('Failed to load cart for summary:', err);
+        this.cart = null;
+        this.itemCount = 0;
+      }
+    });
+  }
 
-    toggleVisibility(): void {
-        this.isVisible = !this.isVisible;
-    }
+  toggleVisibility(): void {
+    this.isVisible = !this.isVisible;
+  }
 
-    formatPrice(price: number): string {
-        return new Intl.NumberFormat('bn-BD', {
-            style: 'currency',
-            currency: 'BDT'
-        }).format(price);
-    }
+  formatPrice(price: number): string {
+    return new Intl.NumberFormat('bn-BD', {
+      style: 'currency',
+      currency: 'BDT'
+    }).format(price);
+  }
 }

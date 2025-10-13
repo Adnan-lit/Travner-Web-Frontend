@@ -1,611 +1,133 @@
 <div class="admin-container">
-  <!-- Header -->
-  <header class="admin-header fade-in">
-    <div class="header-content">
-      <div class="header-title">
-        <h1>Admin Dashboard</h1>
-        <p>Manage users and system settings</p>
-      </div>
-      <div class="header-actions">
-        <button class="btn btn-warning" (click)="runDiagnosticTest()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
-          </svg>
-          🔧 Test API
-        </button>
-        <button class="btn btn-info" (click)="forceRefreshUsers()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-          </svg>
-          🔄 Refresh Users
-        </button>
-        <button class="btn btn-primary" (click)="openCreateUserModal()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <line x1="19" y1="8" x2="24" y2="13"></line>
-            <line x1="21.5" y1="10.5" x2="21.5" y2="10.5"></line>
-          </svg>
-          Create User
-        </button>
-        <a routerLink="/dashboard" class="btn btn-secondary">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9,22 9,12 15,12 15,22"></polyline>
-          </svg>
-          Back to Dashboard
-        </a>
-      </div>
-    </div>
-  </header>
+  <div class="admin-header">
+    <h1>Admin Dashboard</h1>
+    <p>Manage your travel community platform</p>
+  </div>
 
-  <!-- Navigation Tabs -->
-  <nav class="admin-nav fade-in">
-    <div class="nav-tabs">
-      <button 
-        class="nav-tab" 
-        [class.active]="activeTab === 'overview'"
-        (click)="setActiveTab('overview')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="9" y1="9" x2="15" y2="9"></line>
-          <line x1="9" y1="15" x2="15" y2="15"></line>
-        </svg>
-        Overview
-      </button>
-      <button 
-        class="nav-tab" 
-        [class.active]="activeTab === 'users'"
-        (click)="setActiveTab('users')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-          <circle cx="9" cy="7" r="4"></circle>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-        </svg>
-        Users
-      </button>
-      <button
-        class="nav-tab"
-        [class.active]="activeTab === 'marketplace'"
-        (click)="setActiveTab('marketplace')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="9" y1="9" x2="15" y2="9"></line>
-          <line x1="9" y1="15" x2="15" y2="15"></line>
-        </svg>
-        Marketplace
-      </button>
-    </div>
-  </nav>
-
-  <!-- Messages -->
-  <div class="messages-container" *ngIf="successMessage || errorMessage">
-    <div class="message success-message" *ngIf="successMessage">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <polyline points="20,6 9,17 4,12"></polyline>
-      </svg>
-      {{ successMessage }}
-    </div>
-    <div class="message error-message" *ngIf="errorMessage">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="15" y1="9" x2="9" y2="15"></line>
-        <line x1="9" y1="9" x2="15" y2="15"></line>
-      </svg>
-      {{ errorMessage }}
+  <div class="user-info" *ngIf="currentUser">
+    <div class="user-card">
+      <div class="user-avatar">
+        <img src="https://ui-avatars.com/api/?name={{currentUser.firstName}}+{{currentUser.lastName}}&background=e74c3c&color=fff&size=100" 
+             alt="{{currentUser.firstName}} {{currentUser.lastName}}" 
+             *ngIf="currentUser.profileImageUrl; else defaultAvatar">
+        <ng-template #defaultAvatar>
+          <div class="avatar-placeholder">
+            {{currentUser.firstName?.charAt(0)}}{{currentUser.lastName?.charAt(0)}}
+          </div>
+        </ng-template>
+      </div>
+      <div class="user-details">
+        <h2>{{currentUser.firstName}} {{currentUser.lastName}}</h2>
+        <p class="username">&#64;<span>{{currentUser.userName}}</span></p>
+        <p class="email">{{currentUser.email}}</p>
+        <p class="role">
+          <i class="fas fa-user-shield"></i> Administrator
+        </p>
+      </div>
     </div>
   </div>
 
-  <!-- Main Content -->
-  <main class="admin-main">
-    <!-- Overview Tab -->
-    <div class="tab-content" *ngIf="activeTab === 'overview'">
-      <div class="stats-grid fade-in">
-        <div class="stat-card" *ngIf="systemStats">
-          <div class="stat-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-          </div>
-          <div class="stat-info">
-            <h3>Total Users</h3>
-            <div class="stat-value">{{ systemStats.totalUsers }}</div>
-          </div>
+  <div class="admin-actions">
+    <div class="action-grid">
+      <a href="/admin/marketplace/products" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-box"></i>
         </div>
+        <h3>Product Management</h3>
+        <p>Manage marketplace products and inventory</p>
+      </a>
 
-        <div class="stat-card" *ngIf="systemStats">
-          <div class="stat-icon admin">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
-            </svg>
-          </div>
-          <div class="stat-info">
-            <h3>Admin Users</h3>
-            <div class="stat-value">{{ systemStats.adminUsers }}</div>
-          </div>
+      <a href="/admin/marketplace/orders" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-shopping-cart"></i>
         </div>
+        <h3>Order Management</h3>
+        <p>View and manage customer orders</p>
+      </a>
 
-        <div class="stat-card" *ngIf="systemStats">
-          <div class="stat-icon regular">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-          </div>
-          <div class="stat-info">
-            <h3>Regular Users</h3>
-            <div class="stat-value">{{ systemStats.regularUsers }}</div>
-          </div>
+      <a href="/community" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-comments"></i>
         </div>
+        <h3>Community Moderation</h3>
+        <p>Monitor and moderate community content</p>
+      </a>
 
-        <div class="stat-card" *ngIf="systemStats">
-          <div class="stat-icon time">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12,6 12,12 16,14"></polyline>
-            </svg>
-          </div>
-          <div class="stat-info">
-            <h3>Last Updated</h3>
-            <div class="stat-value">{{ systemStats.timestamp | date:'short' }}</div>
-          </div>
+      <a href="/users" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-users"></i>
         </div>
-      </div>
+        <h3>User Management</h3>
+        <p>Manage user accounts and permissions</p>
+      </a>
 
-      <!-- Loading state for stats -->
-      <div class="loading-container" *ngIf="isStatsLoading">
-        <div class="loading-spinner"></div>
-        <p>Loading system statistics...</p>
-      </div>
+      <a href="/analytics" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-chart-bar"></i>
+        </div>
+        <h3>Analytics</h3>
+        <p>View platform usage and performance metrics</p>
+      </a>
+
+      <a href="/settings" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-cogs"></i>
+        </div>
+        <h3>Platform Settings</h3>
+        <p>Configure platform-wide settings</p>
+      </a>
     </div>
-
-    <!-- Users Tab -->
-    <div class="tab-content" *ngIf="activeTab === 'users'">
-      <!-- User Controls -->
-      <div class="user-controls fade-in">
-        <div class="search-container">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <circle cx="11" cy="11" r="8"></circle>
-            <path d="m21 21-4.35-4.35"></path>
-          </svg>
-          <input 
-            type="text" 
-            id="userSearch"
-            placeholder="Search users..." 
-            [value]="userFilter.search"
-            (input)="onSearchInputChange($event)"
-            class="search-input">
-        </div>
-        
-        <div class="filter-container">
-          <select 
-            id="roleFilter"
-            [value]="userFilter.role"
-            (change)="onRoleSelectChange($event)"
-            class="filter-select">
-            <option value="">All Roles</option>
-            <option value="USER">Users</option>
-            <option value="ADMIN">Admins</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Users Table -->
-      <div class="table-container fade-in">
-        <div class="table-wrapper">
-          <table class="users-table">
-            <thead>
-              <tr>
-                <th (click)="onSortChange('userName')" class="sortable">
-                  Username
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <polyline points="6,9 12,15 18,9"></polyline>
-                  </svg>
-                </th>
-                <th (click)="onSortChange('firstName')" class="sortable">
-                  Name
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <polyline points="6,9 12,15 18,9"></polyline>
-                  </svg>
-                </th>
-                <th (click)="onSortChange('email')" class="sortable">
-                  Email
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <polyline points="6,9 12,15 18,9"></polyline>
-                  </svg>
-                </th>
-                <th>Roles</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let user of filteredUsers" class="user-row">
-                <td class="username-cell">
-                  <div class="user-avatar">
-                    {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
-                  </div>
-                  {{ user.userName }}
-                </td>
-                <td>{{ user.firstName }} {{ user.lastName }}</td>
-                <td>{{ user.email }}</td>
-                <td>
-                  <div class="roles-container">
-                    <span 
-                      *ngFor="let role of user.roles" 
-                      class="role-badge"
-                      [class.admin-role]="role === 'ADMIN'"
-                      [class.user-role]="role === 'USER'">
-                      {{ role }}
-                    </span>
-                  </div>
-                </td>
-                <td>
-                  <div class="action-buttons">
-                    <button 
-                      class="btn btn-sm btn-outline"
-                      (click)="openEditRolesModal(user)"
-                      title="Edit Roles">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                      </svg>
-                    </button>
-                    <button 
-                      class="btn btn-sm btn-outline"
-                      (click)="openResetPasswordModal(user)"
-                      title="Reset Password">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <circle cx="12" cy="16" r="1"></circle>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                      </svg>
-                    </button>
-                    <button 
-                      *ngIf="!isUserAdmin(user)"
-                      class="btn btn-sm btn-success"
-                      (click)="promoteToAdmin(user)"
-                      title="Promote to Admin">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polyline points="15,3 21,3 21,9"></polyline>
-                        <polyline points="9,21 3,21 3,15"></polyline>
-                        <line x1="21" y1="3" x2="14" y2="10"></line>
-                        <line x1="3" y1="21" x2="10" y2="14"></line>
-                      </svg>
-                    </button>
-                    <button 
-                      *ngIf="user.userName !== getCurrentUser()"
-                      class="btn btn-sm btn-danger"
-                      (click)="openDeleteConfirmModal(user)"
-                      title="Delete User">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polyline points="3,6 5,6 21,6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Empty state -->
-        <div class="empty-state" *ngIf="!isLoading && filteredUsers.length === 0">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-          </svg>
-          <h3>No users found</h3>
-          <p>Try adjusting your search or filter criteria</p>
-        </div>
-      </div>
-
-      <!-- Loading state for users -->
-      <div class="loading-container" *ngIf="isLoading">
-        <div class="loading-spinner"></div>
-        <p>Loading users...</p>
-      </div>
-    </div>
-    
-    <!-- Marketplace Tab -->
-    <div class="tab-content" *ngIf="activeTab === 'marketplace'">
-      <div class="marketplace-info">
-        <h2>Marketplace Management</h2>
-        <p>Manage products and orders in the marketplace.</p>
-        
-        <div class="marketplace-links">
-          <a routerLink="/admin/marketplace/products" class="btn btn-primary">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="9" y1="9" x2="15" y2="9"></line>
-              <line x1="9" y1="15" x2="15" y2="15"></line>
-            </svg>
-            Manage Products
-          </a>
-          <a routerLink="/admin/marketplace/orders" class="btn btn-secondary">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12,6 12,12 16,14"></polyline>
-            </svg>
-            Manage Orders
-          </a>
-        </div>
-        
-        <div class="marketplace-legacy">
-          <h3>Legacy Management</h3>
-          <p>Alternative management interface (legacy):</p>
-          <app-admin-marketplace></app-admin-marketplace>
-        </div>
-      </div>
-    </div>
-  </main>
-</div>
-
-<!-- Create User Modal -->
-<div class="modal-overlay" *ngIf="showCreateUserModal" (click)="closeCreateUserModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2>Create New User</h2>
-      <button class="modal-close" (click)="closeCreateUserModal()">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-    <form [formGroup]="createUserForm" (ngSubmit)="onCreateUser()" class="modal-form">
-      <div class="form-group">
-        <label for="userName">Username</label>
-        <input 
-          type="text" 
-          id="userName"
-          formControlName="userName"
-          [class.error]="isFieldInvalid(createUserForm, 'userName')"
-          placeholder="Enter username">
-        <div class="field-error" *ngIf="isFieldInvalid(createUserForm, 'userName')">
-          {{ getFieldError(createUserForm, 'userName') }}
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="firstName">First Name</label>
-          <input 
-            type="text" 
-            id="firstName"
-            formControlName="firstName"
-            [class.error]="isFieldInvalid(createUserForm, 'firstName')"
-            placeholder="Enter first name">
-          <div class="field-error" *ngIf="isFieldInvalid(createUserForm, 'firstName')">
-            {{ getFieldError(createUserForm, 'firstName') }}
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="lastName">Last Name</label>
-          <input 
-            type="text" 
-            id="lastName"
-            formControlName="lastName"
-            [class.error]="isFieldInvalid(createUserForm, 'lastName')"
-            placeholder="Enter last name">
-          <div class="field-error" *ngIf="isFieldInvalid(createUserForm, 'lastName')">
-            {{ getFieldError(createUserForm, 'lastName') }}
-          </div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input 
-          type="email" 
-          id="email"
-          formControlName="email"
-          [class.error]="isFieldInvalid(createUserForm, 'email')"
-          placeholder="Enter email address">
-        <div class="field-error" *ngIf="isFieldInvalid(createUserForm, 'email')">
-          {{ getFieldError(createUserForm, 'email') }}
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input 
-          type="password" 
-          id="password"
-          formControlName="password"
-          [class.error]="isFieldInvalid(createUserForm, 'password')"
-          placeholder="Enter password">
-        <div class="field-error" *ngIf="isFieldInvalid(createUserForm, 'password')">
-          {{ getFieldError(createUserForm, 'password') }}
-        </div>
-      </div>
-
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" (click)="closeCreateUserModal()">Cancel</button>
-        <button type="submit" class="btn btn-primary" [disabled]="!createUserForm.valid || isLoading">
-          <span *ngIf="!isLoading">Create User</span>
-          <span *ngIf="isLoading">Creating...</span>
-        </button>
-      </div>
-    </form>
   </div>
-</div>
 
-<!-- Edit Roles Modal -->
-<div class="modal-overlay" *ngIf="showEditRolesModal" (click)="closeEditRolesModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2>Edit User Roles</h2>
-      <button class="modal-close" (click)="closeEditRolesModal()">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-    <form [formGroup]="editRolesForm" (ngSubmit)="onUpdateRoles()" class="modal-form">
-      <div class="user-info" *ngIf="selectedUser">
-        <p><strong>User:</strong> {{ selectedUser.userName }}</p>
-        <p><strong>Name:</strong> {{ selectedUser.firstName }} {{ selectedUser.lastName }}</p>
-      </div>
-
-      <div class="form-group">
-        <label>Roles</label>
-        <div class="checkbox-group">
-          <label *ngFor="let role of availableRoles" class="checkbox-label">
-            <input 
-              type="checkbox" 
-              [id]="'role-' + role"
-              [value]="role"
-              [checked]="editRolesForm.value.roles?.includes(role)"
-              (change)="onRoleToggle(role, $event)">
-            <span class="checkmark"></span>
-            {{ role }}
-          </label>
+  <div class="admin-stats">
+    <h3>Platform Overview</h3>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-content">
+          <h4>Total Users</h4>
+          <p class="stat-value">1,234</p>
         </div>
       </div>
 
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" (click)="closeEditRolesModal()">Cancel</button>
-        <button type="submit" class="btn btn-primary" [disabled]="!editRolesForm.valid || isLoading">
-          <span *ngIf="!isLoading">Update Roles</span>
-          <span *ngIf="isLoading">Updating...</span>
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Reset Password Modal -->
-<div class="modal-overlay" *ngIf="showResetPasswordModal" (click)="closeResetPasswordModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2>Reset Password</h2>
-      <button class="modal-close" (click)="closeResetPasswordModal()">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-    <form [formGroup]="resetPasswordForm" (ngSubmit)="onResetPassword()" class="modal-form">
-      <div class="user-info" *ngIf="selectedUser">
-        <p><strong>User:</strong> {{ selectedUser.userName }}</p>
-      </div>
-
-      <div class="form-group">
-        <label for="newPassword">New Password</label>
-        <input 
-          type="password" 
-          id="newPassword"
-          formControlName="newPassword"
-          [class.error]="isFieldInvalid(resetPasswordForm, 'newPassword')"
-          placeholder="Enter new password">
-        <div class="field-error" *ngIf="isFieldInvalid(resetPasswordForm, 'newPassword')">
-          {{ getFieldError(resetPasswordForm, 'newPassword') }}
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-comments"></i>
+        </div>
+        <div class="stat-content">
+          <h4>Community Posts</h4>
+          <p class="stat-value">5,678</p>
         </div>
       </div>
 
-      <div class="form-group">
-        <label for="confirmPassword">Confirm Password</label>
-        <input 
-          type="password" 
-          id="confirmPassword"
-          formControlName="confirmPassword"
-          [class.error]="isFieldInvalid(resetPasswordForm, 'confirmPassword')"
-          placeholder="Confirm new password">
-        <div class="field-error" *ngIf="isFieldInvalid(resetPasswordForm, 'confirmPassword')">
-          {{ getFieldError(resetPasswordForm, 'confirmPassword') }}
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-shopping-bag"></i>
+        </div>
+        <div class="stat-content">
+          <h4>Marketplace Orders</h4>
+          <p class="stat-value">890</p>
         </div>
       </div>
 
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" (click)="closeResetPasswordModal()">Cancel</button>
-        <button type="submit" class="btn btn-primary" [disabled]="!resetPasswordForm.valid || isLoading">
-          <span *ngIf="!isLoading">Reset Password</span>
-          <span *ngIf="isLoading">Resetting...</span>
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div class="modal-overlay" *ngIf="showDeleteConfirmModal" (click)="closeDeleteConfirmModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2>Confirm Delete</h2>
-      <button class="modal-close" (click)="closeDeleteConfirmModal()">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-    <div class="modal-content">
-      <div class="delete-warning" *ngIf="selectedUser">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="15" y1="9" x2="9" y2="15"></line>
-          <line x1="9" y1="9" x2="15" y2="15"></line>
-        </svg>
-        <h3>Delete User</h3>
-        <p>Are you sure you want to delete user <strong>{{ selectedUser.userName }}</strong>?</p>
-        <p class="warning-text">This action cannot be undone.</p>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" (click)="closeDeleteConfirmModal()">Cancel</button>
-        <button type="button" class="btn btn-danger" (click)="onDeleteUser()" [disabled]="isLoading">
-          <span *ngIf="!isLoading">Delete User</span>
-          <span *ngIf="isLoading">Deleting...</span>
-        </button>
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="stat-content">
+          <h4>Active Sessions</h4>
+          <p class="stat-value">123</p>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Diagnostic Results Modal -->
-<div class="modal-overlay" *ngIf="showDiagnosticResults" (click)="closeDiagnosticResults()">
-  <div class="modal-container diagnostic-modal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2>🔧 Frontend Diagnostic Results</h2>
-      <button class="modal-close" (click)="closeDiagnosticResults()">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-    <div class="modal-content" *ngIf="diagnosticResults">
-      <div class="diagnostic-header">
-        <p><strong>Test Status:</strong> {{ diagnosticResults.status }}</p>
-        <p><strong>Timestamp:</strong> {{ diagnosticResults.timestamp | date:'medium' }}</p>
-      </div>
-      
-      <div class="diagnostic-steps">
-        <div class="diagnostic-step" *ngFor="let step of diagnosticResults.steps">
-          <div class="step-header">
-            <h4>{{ step.step }}</h4>
-            <span class="step-status" [innerHTML]="step.status"></span>
-          </div>
-          <div class="step-data" *ngIf="step.data">
-            <pre>{{ step.data | json }}</pre>
-          </div>
-        </div>
-      </div>
-      
-      <div class="modal-actions">
-        <button type="button" class="btn btn-primary" (click)="closeDiagnosticResults()">Close</button>
-        <button type="button" class="btn btn-secondary" (click)="runDiagnosticTest()">Run Again</button>
-      </div>
+  <div class="recent-activity">
+    <h3>Recent Admin Activity</h3>
+    <div class="activity-placeholder">
+      <p>Recent admin activities will appear here...</p>
     </div>
   </div>
 </div>

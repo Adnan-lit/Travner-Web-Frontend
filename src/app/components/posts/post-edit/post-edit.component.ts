@@ -77,7 +77,8 @@ export class PostEditComponent implements OnInit {
 
     private load(): void {
         this.postService.getPostById(this.postId!).subscribe({
-            next: (post) => {
+            next: (response: any) => {
+                const post = response.data;
                 let current = this.auth.getCurrentUser?.();
 
                 // Handle potential JSON string
@@ -93,15 +94,15 @@ export class PostEditComponent implements OnInit {
 
                 // Create a PostOwner-compatible object from the Post
                 const postOwner = {
-                    authorId: post.author?.id,
-                    authorName: post.author?.userName // Use username instead of concatenated names
+                    authorId: post?.author?.id,
+                    authorName: post?.author?.userName // Use username instead of concatenated names
                 };
 
-                const ownershipResult = isPostOwner(postOwner, current, 'PostEdit');
+                const ownershipResult = isPostOwner(postOwner, current);
 
                 if (!ownershipResult) {
                     console.error('🚫 PostEdit ownership check failed:', {
-                        postId: post.id,
+                        postId: post?.['id'],
                         postOwner,
                         currentUser: current,
                         rawCurrentUser: this.auth.getCurrentUser?.(),
@@ -110,10 +111,10 @@ export class PostEditComponent implements OnInit {
                     this.error = 'You are not allowed to edit this post.';
                     return;
                 }
-                this.post = post;
+                this.post = post || null;
                 this.loaded = true;
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Failed to load post', err);
                 this.error = 'Failed to load post';
             }
@@ -125,29 +126,29 @@ export class PostEditComponent implements OnInit {
         const payload = event.data as PostUpdate; // edit mode partial allowed
         this.saving = true;
         this.postService.updatePost(this.postId, payload).subscribe({
-            next: (updated) => {
+            next: (updated: any) => {
                 const files = event.files || [];
                 if (files.length > 0) {
                     this.postService.uploadMedia(this.postId!, files).subscribe({
                         next: () => {
                             this.saving = false;
-                            this.router.navigate(['/community', updated.id]);
+                            this.router.navigate(['/community', updated['id']]);
                             this.toast.success('Post updated');
                         },
-                        error: (err) => {
+                        error: (err: any) => {
                             console.error('Post updated but media upload failed', err);
                             this.saving = false;
-                            this.router.navigate(['/community', updated.id]);
+                            this.router.navigate(['/community', updated['id']]);
                             this.toast.warning('Updated but some media failed');
                         }
                     });
                 } else {
                     this.saving = false;
-                    this.router.navigate(['/community', updated.id]);
+                    this.router.navigate(['/community', updated['id']]);
                     this.toast.success('Post updated');
                 }
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Failed to save post', err);
                 this.saving = false;
                 this.error = 'Failed to save changes';
@@ -163,12 +164,12 @@ export class PostEditComponent implements OnInit {
                 if (this.post) {
                     // Optimistically remove from local list if present
                     if (this.post.mediaUrls) {
-                        this.post.mediaUrls = this.post.mediaUrls.filter(u => !u.includes(mediaId));
+                        this.post.mediaUrls = this.post.mediaUrls.filter((u: string) => !u.includes(mediaId));
                     }
                 }
                 this.toast.success('Media deleted');
             },
-            error: err => {
+            error: (err: any) => {
                 console.error('Failed to delete media', err);
                 this.toast.error('Failed to delete media');
             }
@@ -207,7 +208,7 @@ export class PostEditComponent implements OnInit {
             postOwner,
             currentUser: current,
             rawCurrentUser: this.auth.getCurrentUser?.(),
-            isOwner: this.post ? isPostOwner(postOwner, current, 'PostEditDebug') : 'No post loaded',
+            isOwner: this.post ? isPostOwner(postOwner, current) : 'No post loaded',
             enableDebugMode: 'Run: localStorage.setItem("travner_debug", "true"); then refresh'
         });
     }

@@ -1,37 +1,13 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
-import { AuthService } from './auth.service';
 import { EnvironmentConfig } from '../config/environment.config';
-
-export interface AdminUser {
-    id?: string;
-    userName: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    roles: string[];
-    active: boolean;
-}
-
-export interface SystemStats {
-    totalUsers: number;
-    adminUsers: number;
-    regularUsers: number;
-    timestamp: number;
-}
+import { AdminUserResponse, CreateUserRequest, SystemStats } from '../models/common.model';
+import { ApiResponse, ApiListResponse } from '../models/api-response.model';
 
 export interface AdminResponse {
     message: string;
-}
-
-export interface CreateUserRequest {
-    userName: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    email: string;
 }
 
 export interface UpdateRolesRequest {
@@ -50,111 +26,25 @@ export interface UpdateUserStatusRequest {
     providedIn: 'root'
 })
 export class AdminService {
-    private readonly ADMIN_BASE_URL = this.getAdminBaseUrl();
+    private readonly API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
 
-    constructor(
-        private http: HttpClient,
-        private authService: AuthService
-    ) { }
-
-    /**
-     * Determine the appropriate admin API base URL based on environment
-     */
-    private getAdminBaseUrl(): string {
-        // Use same-origin proxy in production to avoid CORS, direct backend in development
-        if (EnvironmentConfig.isProduction()) {
-            return '/api/admin';
-        }
-        return `${EnvironmentConfig.getApiBaseUrl()}/admin`;
-    }
-
-    /**
-     * Check if we're running in production environment
-     */
-    private isProduction(): boolean {
-        return window.location.hostname !== 'localhost' &&
-            window.location.hostname !== '127.0.0.1' &&
-            !window.location.hostname.includes('localhost');
-    }
-
-    /**
-     * Create HTTP headers for admin requests
-     */
-    private getAdminHeaders(): HttpHeaders {
-        const authData = this.authService.getCurrentUser();
-        if (!authData) {
-            throw new Error('No authentication data found');
-        }
-
-        const stored = localStorage.getItem('travner_auth');
-        if (!stored) {
-            throw new Error('No stored credentials found');
-        }
-
-        const { username, password } = JSON.parse(stored);
-        const credentials = btoa(`${username}:${password}`);
-
-        return new HttpHeaders({
-            'Authorization': `Basic ${credentials}`
-        });
-    }
-
-    /**
-     * Headers for JSON requests (POST/PUT) that require Content-Type
-     */
-    private getJsonAdminHeaders(): HttpHeaders {
-        const base = this.getAdminHeaders();
-        return base.set('Content-Type', 'application/json');
-    }
+    constructor(private http: HttpClient) { }
 
     /**
      * Get all users in the system
      */
-    getAllUsers(): Observable<AdminUser[]> {
-        console.log('🔄 AdminService: Fetching all users from', `${this.ADMIN_BASE_URL}/users`);
-
-        // Enhanced debugging: Check authentication state
-        const currentUser = this.authService.getCurrentUser();
-        console.log('👤 Current user:', currentUser);
-        console.log('🔐 User has ADMIN role:', currentUser?.roles?.includes('ADMIN'));
-
-        // Enhanced debugging: Check stored credentials
-        const stored = localStorage.getItem('travner_auth');
-        if (stored) {
-            const { username } = JSON.parse(stored);
-            console.log('💾 Stored username:', username);
-        } else {
-            console.error('❌ No stored auth credentials found');
-        }
-
-        let headers;
-        try {
-            headers = this.getAdminHeaders();
-            console.log('📤 Request headers prepared successfully');
-            console.log('🔗 Full request URL:', `${this.ADMIN_BASE_URL}/users`);
-        } catch (error) {
-            console.error('❌ Failed to create headers:', error);
-            throw error;
-        }
-
-        return this.http.get<AdminUser[]>(`${this.ADMIN_BASE_URL}/users`, {
-            headers: headers,
-            withCredentials: false
-        }).pipe(
-            tap(users => {
-                console.log('✅ AdminService: Successfully fetched users:', users.length);
-                console.log('📋 Users data:', users);
-                if (users && users.length > 0) {
-                    console.log('👥 First user sample:', users[0]);
-                } else {
-                    console.log('⚠️ No users returned from API');
-                }
+    getAllUsers(page: number = 0, size: number = 20): Observable<ApiListResponse<AdminUserResponse>> {
+        const endpoint = `${this.API_BASE_URL}/api/admin/users`;
+        const params = {
+            page: page.toString(),
+            size: size.toString()
+        };
+        return this.http.get<ApiListResponse<AdminUserResponse>>(endpoint, { params }).pipe(
+            tap(response => {
+                console.log('✅ AdminService: Successfully fetched users:', response.data?.length);
             }),
             catchError(error => {
                 console.error('❌ AdminService: Error fetching users:', error);
-                console.error('🚨 Request failed for URL:', `${this.ADMIN_BASE_URL}/users`);
-                console.error('🚨 Error status:', error.status);
-                console.error('🚨 Error response:', error.error);
                 throw this.handleAdminError(error);
             })
         );
@@ -163,11 +53,9 @@ export class AdminService {
     /**
      * Get user by username
      */
-    getUserByUsername(username: string): Observable<AdminUser> {
-        return this.http.get<AdminUser>(`${this.ADMIN_BASE_URL}/users/${username}`, {
-            headers: this.getAdminHeaders(),
-            withCredentials: false
-        }).pipe(
+    getUserByUsername(username: string): Observable<ApiResponse<AdminUserResponse>> {
+        const endpoint = `${this.API_BASE_URL}/api/admin/users/${username}`;
+        return this.http.get<ApiResponse<AdminUserResponse>>(endpoint).pipe(
             catchError(error => {
                 throw this.handleAdminError(error);
             })
@@ -177,11 +65,9 @@ export class AdminService {
     /**
      * Delete user by username
      */
-    deleteUser(username: string): Observable<AdminResponse> {
-        return this.http.delete<AdminResponse>(`${this.ADMIN_BASE_URL}/users/${username}`, {
-            headers: this.getAdminHeaders(),
-            withCredentials: false
-        }).pipe(
+    deleteUser(username: string): Observable<ApiResponse<void>> {
+        const endpoint = `${this.API_BASE_URL}/api/admin/users/${username}`;
+        return this.http.delete<ApiResponse<void>>(endpoint).pipe(
             catchError(error => {
                 throw this.handleAdminError(error);
             })
@@ -191,13 +77,10 @@ export class AdminService {
     /**
      * Update user roles
      */
-    updateUserRoles(username: string, roles: string[]): Observable<AdminResponse> {
+    updateUserRoles(username: string, roles: string[]): Observable<ApiResponse<void>> {
+        const endpoint = `${this.API_BASE_URL}/api/admin/users/${username}/roles`;
         const requestBody: UpdateRolesRequest = { roles };
-
-        return this.http.put<AdminResponse>(`${this.ADMIN_BASE_URL}/users/${username}/roles`, requestBody, {
-            headers: this.getJsonAdminHeaders(),
-            withCredentials: false
-        }).pipe(
+        return this.http.put<ApiResponse<void>>(endpoint, requestBody).pipe(
             catchError(error => {
                 throw this.handleAdminError(error);
             })
@@ -207,13 +90,10 @@ export class AdminService {
     /**
      * Reset user password
      */
-    resetUserPassword(username: string, newPassword: string): Observable<AdminResponse> {
+    resetUserPassword(username: string, newPassword: string): Observable<ApiResponse<void>> {
+        const endpoint = `${this.API_BASE_URL}/api/admin/users/${username}/password`;
         const requestBody: ResetPasswordRequest = { password: newPassword };
-
-        return this.http.put<AdminResponse>(`${this.ADMIN_BASE_URL}/users/${username}/password`, requestBody, {
-            headers: this.getJsonAdminHeaders(),
-            withCredentials: false
-        }).pipe(
+        return this.http.put<ApiResponse<void>>(endpoint, requestBody).pipe(
             catchError(error => {
                 throw this.handleAdminError(error);
             })
@@ -223,11 +103,9 @@ export class AdminService {
     /**
      * Promote user to admin
      */
-    promoteUserToAdmin(username: string): Observable<AdminResponse> {
-        return this.http.post<AdminResponse>(`${this.ADMIN_BASE_URL}/users/${username}/promote`, {}, {
-            headers: this.getJsonAdminHeaders(),
-            withCredentials: false
-        }).pipe(
+    promoteUserToAdmin(username: string): Observable<ApiResponse<void>> {
+        const endpoint = `${this.API_BASE_URL}/api/admin/users/${username}/promote`;
+        return this.http.post<ApiResponse<void>>(endpoint, {}).pipe(
             catchError(error => {
                 throw this.handleAdminError(error);
             })
@@ -237,11 +115,9 @@ export class AdminService {
     /**
      * Get users by role
      */
-    getUsersByRole(role: string): Observable<AdminUser[]> {
-        return this.http.get<AdminUser[]>(`${this.ADMIN_BASE_URL}/users/role/${role}`, {
-            headers: this.getAdminHeaders(),
-            withCredentials: false
-        }).pipe(
+    getUsersByRole(role: string): Observable<ApiListResponse<AdminUserResponse>> {
+        const endpoint = `${this.API_BASE_URL}/api/admin/users/role/${role}`;
+        return this.http.get<ApiListResponse<AdminUserResponse>>(endpoint).pipe(
             catchError(error => {
                 throw this.handleAdminError(error);
             })
@@ -251,14 +127,10 @@ export class AdminService {
     /**
      * Get system statistics
      */
-    getSystemStats(): Observable<SystemStats> {
-        console.log('🔄 AdminService: Fetching system stats from', `${this.ADMIN_BASE_URL}/stats`);
-
-        return this.http.get<SystemStats>(`${this.ADMIN_BASE_URL}/stats`, {
-            headers: this.getAdminHeaders(),
-            withCredentials: false
-        }).pipe(
-            tap(stats => console.log('✅ AdminService: Successfully fetched stats:', stats)),
+    getSystemStats(): Observable<ApiResponse<SystemStats>> {
+        const endpoint = `${this.API_BASE_URL}/api/admin/stats`;
+        return this.http.get<ApiResponse<SystemStats>>(endpoint).pipe(
+            tap(response => console.log('✅ AdminService: Successfully fetched stats:', response.data)),
             catchError(error => {
                 console.error('❌ AdminService: Error fetching stats:', error);
                 throw this.handleAdminError(error);
@@ -269,11 +141,9 @@ export class AdminService {
     /**
      * Create new admin user
      */
-    createAdminUser(userData: CreateUserRequest): Observable<AdminResponse> {
-        return this.http.post<AdminResponse>(`${this.ADMIN_BASE_URL}/users`, userData, {
-            headers: this.getJsonAdminHeaders(),
-            withCredentials: false
-        }).pipe(
+    createAdminUser(userData: CreateUserRequest): Observable<ApiResponse<void>> {
+        const endpoint = `${this.API_BASE_URL}/api/admin/users`;
+        return this.http.post<ApiResponse<void>>(endpoint, userData).pipe(
             catchError(error => {
                 throw this.handleAdminError(error);
             })
@@ -321,7 +191,8 @@ export class AdminService {
      * Check if current user has admin privileges
      */
     isCurrentUserAdmin(): boolean {
-        const currentUser = this.authService.getCurrentUser();
-        return currentUser && currentUser.roles && currentUser.roles.includes('ADMIN') || false;
+        // This method should be implemented to check if the current user has admin privileges
+        // For now, we'll return false as this would typically be handled by the auth service
+        return false;
     }
 }

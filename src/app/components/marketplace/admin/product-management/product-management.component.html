@@ -239,21 +239,21 @@
         <div class="product-image">
           <img
             [src]="
-              product.imageUrls && product.imageUrls.length > 0
-                ? product.imageUrls[0]
+              product.images && product.images.length > 0
+                ? product.images[0]
                 : getAdminPlaceholder()
             "
-            alt="{{ product.title }}"
+            alt="{{ product.name }}"
             (error)="handleImageError($event)"
           />
         </div>
 
         <div class="product-info">
-          <h3 class="product-title">{{ product.title }}</h3>
+          <h3 class="product-title">{{ product.name }}</h3>
           <p class="product-category">{{ product.category | titlecase }}</p>
           <p class="product-price">{{ formatPrice(product.price) }}</p>
-          <p class="product-stock" [class]="getStockClass(product.stock)">
-            {{ getStockStatus(product.stock) }}
+          <p class="product-stock" [class]="getStockClass(product.stockQuantity)">
+            {{ getStockStatus(product.stockQuantity) }}
           </p>
         </div>
 
@@ -268,10 +268,10 @@
           <button
             class="btn btn-sm btn-outline"
             (click)="toggleProductStatus(product)"
-            [class.btn-danger]="product.active"
-            [class.btn-success]="!product.active"
+            [class.btn-danger]="product.isAvailable"
+            [class.btn-success]="!product.isAvailable"
           >
-            {{ product.active ? "Deactivate" : "Activate" }}
+            {{ product.isAvailable ? "Deactivate" : "Activate" }}
           </button>
 
           <button

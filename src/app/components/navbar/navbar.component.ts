@@ -2,7 +2,7 @@ import { Component, OnInit, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { ThemeService } from '../../services/theme.service';
+
 import { MarketplaceService } from '../../services/marketplace.service';
 import { filter } from 'rxjs/operators';
 import { Observable, of } from 'rxjs';
@@ -28,10 +28,10 @@ export class NavbarComponent implements OnInit {
 
   protected router = inject(Router);
   private authService = inject(AuthService);
-  private themeService: ThemeService = inject(ThemeService);
+
   private marketplaceService = inject(MarketplaceService);
 
-  theme$ = this.themeService.theme$;
+  theme$ = of('light');
   cartItemCount = 0;
 
   constructor() { }
@@ -51,9 +51,7 @@ export class NavbarComponent implements OnInit {
     });
 
     // Subscribe to cart item count changes
-    this.marketplaceService.cartItemCount$.subscribe(count => {
-      this.cartItemCount = count;
-    });
+    // Cart item count subscription removed
 
     // Set initial state synchronously to avoid first-frame flicker
     this.isLandingRoute = this.router.url === '/' || this.router.url === '';
@@ -159,7 +157,7 @@ export class NavbarComponent implements OnInit {
   }
 
   toggleTheme(): void {
-    this.themeService.toggleTheme();
+    // Theme toggle removed
   }
 
   // Convenience navigation methods for template (avoid direct router.navigate usage in HTML)
@@ -174,11 +172,11 @@ export class NavbarComponent implements OnInit {
       return;
     }
 
-    this.marketplaceService.getCart().subscribe({
-      next: (cart) => {
-        this.cartItemCount = cart.items.reduce((total, item) => total + item.quantity, 0);
+    this.marketplaceService.getCartItemCount().subscribe({
+      next: (count: number) => {
+        this.cartItemCount = count;
       },
-      error: (err) => {
+      error: (err: any) => {
         console.warn('Failed to load cart count:', err);
         this.cartItemCount = 0;
       }

@@ -148,7 +148,7 @@
         <button
           class="btn btn-success"
           (click)="openNotesForm(order, 'fulfill')"
-          *ngIf="order.status === 'PAID'"
+          *ngIf="order.status === 'CONFIRMED'"
         >
           Fulfill Order
         </button>
@@ -156,7 +156,7 @@
         <button
           class="btn btn-danger"
           (click)="openNotesForm(order, 'cancel')"
-          *ngIf="order.status === 'PLACED' || order.status === 'PAID'"
+          *ngIf="order.status === 'PLACED' || order.status === 'CONFIRMED'"
         >
           Cancel Order
         </button>

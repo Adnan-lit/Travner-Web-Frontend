@@ -2,8 +2,8 @@ import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
-import { Post, PostCreate, PostUpdate } from '../../../models/post.model';
-import { Media } from '../../../models/media.model';
+import { Post, Media } from '../../../models/post.model';
+import { CreatePostRequest, UpdatePostRequest } from '../../../models/common.model';
 
 export type PostFormMode = 'create' | 'edit';
 
@@ -65,8 +65,8 @@ export type PostFormMode = 'create' | 'edit';
         <div class="media-previews existing">
           <div class="preview" *ngFor="let m of existingMedia">
             <button type="button" class="remove" (click)="deleteMedia.emit(m.id)" aria-label="Delete media">×</button>
-            <img *ngIf="m.fileType?.startsWith('image/') || m.type==='IMAGE'" [src]="m.fileUrl || m.url" [alt]="m.fileName || 'media'" />
-            <video *ngIf="m.fileType?.startsWith('video/') || m.type==='VIDEO'" [src]="m.fileUrl || m.url" muted></video>
+            <img *ngIf="m.type === 'image'" [src]="m.url" [alt]="'media'" />
+            <video *ngIf="m.type === 'video'" [src]="m.url" muted></video>
           </div>
         </div>
       </div>
@@ -483,7 +483,7 @@ export class PostFormComponent implements OnChanges {
   @Input() saving = false;
   @Input() existingMedia: Media[] = [];
   @Input() allowMedia = true;
-  @Output() submitPost = new EventEmitter<{ data: PostCreate | PostUpdate; files: File[] }>();
+  @Output() submitPost = new EventEmitter<{ data: CreatePostRequest | UpdatePostRequest; files: File[] }>();
   @Output() deleteMedia = new EventEmitter<string>();
   @Output() cancel = new EventEmitter<void>();
 
@@ -509,7 +509,7 @@ export class PostFormComponent implements OnChanges {
         title: this.initial.title,
         content: this.initial.content,
         location: this.initial.location,
-        published: this.initial.published ?? true
+        published: 'published' in this.initial ? (this.initial as any).published : true
       });
       this.tags = [...(this.initial.tags || [])];
     }
@@ -544,7 +544,7 @@ export class PostFormComponent implements OnChanges {
       mediaIds: [], // Initialize empty for now, will be updated after media upload
       published: this.form.value.published
     };
-    this.submitPost.emit({ data: base as PostCreate | PostUpdate, files: this.selectedFiles });
+    this.submitPost.emit({ data: base as CreatePostRequest | UpdatePostRequest, files: this.selectedFiles });
   }
 
   onFileInput(e: Event): void {

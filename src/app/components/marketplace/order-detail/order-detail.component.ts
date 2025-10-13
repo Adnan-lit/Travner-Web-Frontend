@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Order, OrderStatus } from '../../../models/marketplace.model';
+import { Order } from '../../../models/marketplace.model';
+import { ApiResponse } from '../../../models/api-response.model';
 import { MarketplaceService } from '../../../services/marketplace.service';
 import { ToastService } from '../../../services/toast.service';
 import { AuthService } from '../../../services/auth.service';
@@ -49,11 +50,11 @@ export class OrderDetailComponent implements OnInit {
         this.error = null;
 
         this.marketplaceService.getOrderById(id).subscribe({
-            next: (order) => {
-                this.order = order;
+            next: (response: ApiResponse<Order>) => {
+                this.order = response.data || null;
                 this.loading = false;
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error loading order:', err);
                 this.error = 'Failed to load order details. Please try again later.';
                 this.loading = false;
@@ -75,33 +76,35 @@ export class OrderDetailComponent implements OnInit {
         }
 
         this.marketplaceService.cancelOrder(this.order.id).subscribe({
-            next: (updatedOrder) => {
-                this.order = updatedOrder;
+            next: (response: ApiResponse<Order>) => {
+                this.order = response.data || null;
                 this.toastService.success('Order canceled successfully');
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error canceling order:', err);
                 this.toastService.error('Failed to cancel order');
             }
         });
     }
 
-    getStatusClass(status: OrderStatus): string {
+    getStatusClass(status: Order['status']): string {
         switch (status) {
             case 'PLACED': return 'status-placed';
-            case 'PAID': return 'status-paid';
-            case 'FULFILLED': return 'status-fulfilled';
-            case 'CANCELED': return 'status-canceled';
+            case 'CONFIRMED': return 'status-confirmed';
+            case 'SHIPPED': return 'status-shipped';
+            case 'DELIVERED': return 'status-delivered';
+            case 'CANCELLED': return 'status-canceled';
             default: return '';
         }
     }
 
-    getStatusText(status: OrderStatus): string {
+    getStatusText(status: Order['status']): string {
         switch (status) {
             case 'PLACED': return 'Placed';
-            case 'PAID': return 'Paid';
-            case 'FULFILLED': return 'Fulfilled';
-            case 'CANCELED': return 'Canceled';
+            case 'CONFIRMED': return 'Confirmed';
+            case 'SHIPPED': return 'Shipped';
+            case 'DELIVERED': return 'Delivered';
+            case 'CANCELLED': return 'Canceled';
             default: return status;
         }
     }

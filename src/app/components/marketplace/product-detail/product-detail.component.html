@@ -7,25 +7,25 @@
     <div class="product-images">
       <div class="main-image">
         <img
-          [src]="product.imageUrls[selectedImageIndex] || getPlaceholderImage()"
-          alt="{{ product.title }}"
+          [src]="product.images[selectedImageIndex] || getPlaceholderImage(product.name)"
+          alt="{{ product.name }}"
           (error)="handleImageError($event)"
         />
       </div>
 
       <div
         class="thumbnail-images"
-        *ngIf="product.imageUrls && product.imageUrls.length > 1"
+        *ngIf="product.images && product.images.length > 1"
       >
         <div
           class="thumbnail"
-          *ngFor="let image of product.imageUrls; let i = index"
+          *ngFor="let image of product.images; let i = index"
           [class.active]="i === selectedImageIndex"
           (click)="selectImage(i)"
         >
           <img
             [src]="image"
-            alt="{{ product.title }} thumbnail"
+            alt="{{ product.name }} thumbnail"
             (error)="handleImageError($event)"
           />
         </div>
@@ -34,14 +34,14 @@
 
     <!-- Product Info -->
     <div class="product-info">
-      <h1 class="product-title">{{ product.title }}</h1>
+      <h1 class="product-title">{{ product.name }}</h1>
 
       <div class="product-price">
         {{ formatPrice(product.price) }}
       </div>
 
-      <div class="product-stock" [class]="getStockClass(product.stock)">
-        {{ getStockStatus(product.stock) }}
+      <div class="product-stock" [class]="getStockClass(product.stockQuantity)">
+        {{ getStockStatus(product.stockQuantity) }}
       </div>
 
       <div class="product-description">
@@ -55,7 +55,7 @@
       </div>
 
       <!-- Quantity Selector -->
-      <div class="quantity-selector" *ngIf="product.stock > 0">
+      <div class="quantity-selector" *ngIf="product.stockQuantity > 0">
         <label for="quantity">Quantity:</label>
         <div class="quantity-controls">
           <button
@@ -70,19 +70,19 @@
             id="quantity"
             [(ngModel)]="quantity"
             min="1"
-            [max]="product.stock"
+            [max]="product.stockQuantity"
             class="quantity-input"
           />
           <button
             class="quantity-btn"
             (click)="increaseQuantity()"
-            [disabled]="quantity >= product.stock || quantity >= 10"
+            [disabled]="quantity >= product.stockQuantity || quantity >= 10"
           >
             +
           </button>
         </div>
-        <span class="max-quantity" *ngIf="product.stock < 10">
-          Max: {{ product.stock }}
+        <span class="max-quantity" *ngIf="product.stockQuantity < 10">
+          Max: {{ product.stockQuantity }}
         </span>
       </div>
 
@@ -91,8 +91,8 @@
         <button
           class="btn btn-primary add-to-cart-btn"
           (click)="addToCart()"
-          [disabled]="product.stock === 0"
-          *ngIf="product.stock > 0"
+          [disabled]="product.stockQuantity === 0"
+          *ngIf="product.stockQuantity > 0"
         >
           Add to Cart
         </button>
@@ -100,13 +100,13 @@
         <button
           class="btn btn-secondary buy-now-btn"
           (click)="buyNow()"
-          [disabled]="product.stock === 0"
-          *ngIf="product.stock > 0"
+          [disabled]="product.stockQuantity === 0"
+          *ngIf="product.stockQuantity > 0"
         >
           Buy Now
         </button>
 
-        <button class="btn btn-disabled" disabled *ngIf="product.stock === 0">
+        <button class="btn btn-disabled" disabled *ngIf="product.stockQuantity === 0">
           Out of Stock
         </button>
       </div>

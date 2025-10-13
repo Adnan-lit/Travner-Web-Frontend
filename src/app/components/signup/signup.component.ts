@@ -4,8 +4,6 @@ import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
-import { ThemeService } from '../../services/theme.service';
-import { CursorService } from '../../services/cursor.service';
 
 @Component({
   selector: 'app-signup',
@@ -23,21 +21,16 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
   private particles: HTMLElement[] = [];
   showHints = false;
 
-  get theme$() { return this.themeService.theme$; }
-
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
     private el: ElementRef,
     private renderer: Renderer2,
-    private authService: AuthService,
-    private cursorService: CursorService,
-    private themeService: ThemeService
+    private authService: AuthService
   ) { }
 
   ngOnInit(): void {
     this.initializeForm();
-    this.cursorService.initializeCursor(this.renderer, this.el);
     this.createParticles();
   }
 
@@ -46,7 +39,6 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy(): void {
-    this.cursorService.cleanup(this.renderer);
     this.removeParticles();
   }
 
@@ -109,11 +101,14 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
         Validators.minLength(6) // Updated to match API requirements
       ]],
       confirmPassword: ['', [Validators.required]],
+      bio: ['', [Validators.maxLength(500)]], // Optional bio with max length
+      location: [''], // Optional location
       acceptTerms: [false, [Validators.requiredTrue]],
       subscribeNewsletter: [false]
     }, {
       validators: this.passwordMatchValidator
     });
+    
   }
 
   // Custom validator to check if passwords match
@@ -155,6 +150,7 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
   get password() {
     return this.signupForm.get('password');
   }
+  
 
   get confirmPassword() {
     return this.signupForm.get('confirmPassword');
@@ -162,6 +158,14 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
 
   get acceptTerms() {
     return this.signupForm.get('acceptTerms');
+  }
+
+  get bio() {
+    return this.signupForm.get('bio');
+  }
+
+  get location() {
+    return this.signupForm.get('location');
   }
 
   togglePassword(): void {
@@ -172,33 +176,6 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
     this.showConfirmPassword = !this.showConfirmPassword;
   }
 
-  toggleTheme(): void { this.themeService.toggleTheme(); }
-
-  getPasswordStrength(): string {
-    const password = this.password?.value || '';
-    let score = 0;
-    if (password.length >= 8) score++;
-    if (password.length >= 12) score++;
-    if (/[a-z]/.test(password)) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/\d/.test(password)) score++;
-    if (/[^\w\s]/.test(password)) score++;
-    if (score <= 2) return 'weak';
-    if (score <= 3) return 'fair';
-    if (score <= 4) return 'good';
-    return 'strong';
-  }
-
-  getPasswordStrengthText(): string {
-    const level = this.getPasswordStrength();
-    switch (level) {
-      case 'weak': return 'Weak';
-      case 'fair': return 'Fair';
-      case 'good': return 'Good';
-      case 'strong': return 'Strong';
-      default: return '';
-    }
-  }
 
   onSubmit(): void {
     if (this.signupForm.valid) {
@@ -212,8 +189,11 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        password: formData.password
+        password: formData.password,
+        bio: formData.bio || "Test user for API testing - exploring the world of travel",
+        location: formData.location || "Test City, USA"
       };
+
 
       this.authService.signup(signupData).subscribe({
         next: (response: any) => {
@@ -227,7 +207,7 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
           setTimeout(() => {
             this.router.navigate(['/signin'], {
               queryParams: {
-                message: `Account created successfully! Please sign in using your username: ${signupData.userName}`
+                message: `Account created successfully! You can now access protected endpoints using your username: ${signupData.userName}`
               }
             });
           }, 2000);
@@ -236,9 +216,12 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
           this.isLoading = false;
           console.error('Signup error:', error);
 
+
           // Handle different error scenarios
           if (error.status === 400) {
             this.errorMessage = 'Invalid data provided. Please check your information.';
+          } else if (error.status === 401) {
+            this.errorMessage = 'Authentication failed. Please check your credentials and try again.';
           } else if (error.status === 409) {
             this.errorMessage = 'An account with this email or username already exists.';
           } else if (error.status === 500) {
@@ -291,4 +274,5 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
       this.successMessage = 'Facebook OAuth integration would redirect to Facebook here';
     }, 1500);
   }
+
 }

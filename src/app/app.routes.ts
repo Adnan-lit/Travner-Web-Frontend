@@ -8,11 +8,11 @@ import { PostListComponent } from './components/posts/post-list.component';
 import { PostDetailComponent } from './components/posts/post-detail/post-detail.component';
 import { PostEditComponent } from './components/posts/post-edit/post-edit.component';
 import { PostCreateComponent } from './components/posts/post-create/post-create.component';
-import { authGuard } from './guards/auth.guard';
-import { adminGuard } from './guards/admin.guard';
-import { noAuthGuard } from './guards/no-auth.guard';
+import { AuthGuard } from './guards/auth.guard';
+import { AdminGuard } from './guards/admin.guard';
+import { NoAuthGuard } from './guards/no-auth.guard';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
-import { postOwnerGuard } from './guards/post-owner.guard';
+import { PostOwnerGuard } from './guards/post-owner.guard';
 import { ChatComponent } from './components/chat/chat.component';
 import { ProductListComponent } from './components/marketplace/product-list/product-list.component';
 
@@ -31,32 +31,32 @@ export const routes: Routes = [
     component: MainLayoutComponent,
     children: [
       { path: '', component: LandingComponent },
-      { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
-      { path: 'admin', component: AdminComponent, canActivate: [adminGuard] },
+      { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
+      { path: 'admin', component: AdminComponent, canActivate: [AdminGuard] },
       { path: 'community', component: PostListComponent },
-      { path: 'community/new', component: PostCreateComponent, canActivate: [authGuard] },
+      { path: 'community/new', component: PostCreateComponent, canActivate: [AuthGuard] },
       { path: 'community/:id', component: PostDetailComponent },
-      { path: 'community/:id/edit', component: PostEditComponent, canActivate: [authGuard, postOwnerGuard] },
+      { path: 'community/:id/edit', component: PostEditComponent, canActivate: [AuthGuard, PostOwnerGuard] },
       { path: 'posts', redirectTo: 'community', pathMatch: 'full' },
       { path: 'posts/:id', redirectTo: 'community/:id', pathMatch: 'full' },
-      { path: 'chat', component: ChatComponent, canActivate: [authGuard] },
-      { path: 'chat/:id', component: ChatComponent, canActivate: [authGuard] },
+      { path: 'chat', component: ChatComponent, canActivate: [AuthGuard] },
+      { path: 'chat/:id', component: ChatComponent, canActivate: [AuthGuard] },
 
       // Marketplace Routes
       { path: 'marketplace', component: ProductListComponent },
       { path: 'marketplace/products', redirectTo: 'marketplace', pathMatch: 'full' },
       { path: 'marketplace/products/:id', component: ProductDetailComponent },
-      { path: 'marketplace/cart', component: CartComponent, canActivate: [authGuard] },
-      { path: 'marketplace/checkout', component: CheckoutComponent, canActivate: [authGuard] },
-      { path: 'marketplace/orders', component: OrderListComponent, canActivate: [authGuard] },
-      { path: 'marketplace/orders/:id', component: OrderDetailComponent, canActivate: [authGuard] },
+      { path: 'marketplace/cart', component: CartComponent, canActivate: [AuthGuard] },
+      { path: 'marketplace/checkout', component: CheckoutComponent, canActivate: [AuthGuard] },
+      { path: 'marketplace/orders', component: OrderListComponent, canActivate: [AuthGuard] },
+      { path: 'marketplace/orders/:id', component: OrderDetailComponent, canActivate: [AuthGuard] },
 
       // Admin Marketplace Routes
-      { path: 'admin/marketplace/products', component: ProductManagementComponent, canActivate: [adminGuard] },
-      { path: 'admin/marketplace/orders', component: OrderManagementComponent, canActivate: [adminGuard] },
+      { path: 'admin/marketplace/products', component: ProductManagementComponent, canActivate: [AdminGuard] },
+      { path: 'admin/marketplace/orders', component: OrderManagementComponent, canActivate: [AdminGuard] },
     ]
   },
-  { path: 'signin', component: SigninComponent, canActivate: [noAuthGuard] },
-  { path: 'signup', component: SignupComponent, canActivate: [noAuthGuard] },
+  { path: 'signin', component: SigninComponent, canActivate: [NoAuthGuard] },
+  { path: 'signup', component: SignupComponent, canActivate: [NoAuthGuard] },
   { path: '**', redirectTo: '' } // Wildcard route for 404 pages
 ];

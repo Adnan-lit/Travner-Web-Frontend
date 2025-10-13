@@ -1,12 +1,12 @@
 .cart-container {
-    max-width: 1200px;
+    max-width: var(--max-content-width);
     margin: 0 auto;
-    padding: 20px;
+    padding: var(--space-4);
 }
 
 .page-title {
-    font-size: 2rem;
-    margin-bottom: 20px;
+    font-size: var(--text-3xl);
+    margin-bottom: var(--space-4);
     color: #333;
 }
 
@@ -73,20 +73,21 @@
 .cart-item {
     display: flex;
     align-items: center;
-    gap: 20px;
-    padding: 20px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    margin-bottom: 15px;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border: var(--border-width) solid #e0e0e0;
+    border-radius: var(--border-radius);
+    margin-bottom: var(--space-3);
     background-color: #fff;
     flex-wrap: wrap;
+    box-shadow: var(--shadow-card);
 }
 
 .item-image img {
     width: 100px;
     height: 100px;
     object-fit: cover;
-    border-radius: 4px;
+    border-radius: var(--border-radius);
 }
 
 .item-details {
@@ -124,9 +125,9 @@
 .quantity-btn {
     width: 30px;
     height: 30px;
-    border: 1px solid #ddd;
+    border: var(--border-width) solid #ddd;
     background-color: #f8f9fa;
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     font-size: 1rem;
     cursor: pointer;
     transition: background-color 0.2s;
@@ -145,8 +146,8 @@
     width: 50px;
     height: 30px;
     text-align: center;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    border: var(--border-width) solid #ddd;
+    border-radius: var(--border-radius);
     font-size: 1rem;
 }
 
@@ -180,14 +181,15 @@
 .cart-summary {
     width: 300px;
     background-color: #f8f9fa;
-    border-radius: 8px;
-    padding: 20px;
+    border-radius: var(--border-radius);
+    padding: var(--space-4);
     align-self: flex-start;
+    box-shadow: var(--shadow-card);
 }
 
 .summary-content h2 {
     margin-top: 0;
-    margin-bottom: 20px;
+    margin-bottom: var(--space-4);
     color: #333;
 }
 
@@ -219,12 +221,13 @@
 .btn {
     padding: 12px 24px;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
     text-align: center;
+    box-shadow: var(--shadow-sm);
 }
 
 .btn-primary {
@@ -256,7 +259,7 @@
 
 .btn-outline {
     background-color: transparent;
-    border: 1px solid #007bff;
+    border: var(--border-width) solid #007bff;
     color: #007bff;
 }
 

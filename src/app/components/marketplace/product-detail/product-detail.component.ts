@@ -7,7 +7,6 @@ import { AuthService } from '../../../services/auth.service';
 import { NgIf, NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
-import { ImageUtil } from '../../../utils/image.util';
 
 @Component({
     selector: 'app-product-detail',
@@ -46,11 +45,16 @@ export class ProductDetailComponent implements OnInit {
         this.error = null;
 
         this.marketplaceService.getProductById(id).subscribe({
-            next: (product) => {
-                this.product = product;
+            next: (response: any) => {
+                // Handle the ApiResponse structure
+                if (response && response.success && response.data) {
+                    this.product = response.data;
+                } else {
+                    this.product = null;
+                }
                 this.loading = false;
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error loading product:', err);
                 this.error = err.message || 'Failed to load product details. Please try again later.';
                 this.loading = false;
@@ -87,13 +91,13 @@ export class ProductDetailComponent implements OnInit {
             return;
         }
 
-        if (this.product.stock === 0) {
+        if (this.product.stockQuantity === 0) {
             this.toastService.error('This product is out of stock');
             return;
         }
 
-        if (this.quantity > this.product.stock) {
-            this.toastService.error(`Only ${this.product.stock} items available in stock`);
+        if (this.quantity > this.product.stockQuantity) {
+            this.toastService.error(`Only ${this.product.stockQuantity} items available in stock`);
             return;
         }
 
@@ -103,7 +107,7 @@ export class ProductDetailComponent implements OnInit {
                 quantity: this.quantity
             }).toPromise();
 
-            this.toastService.success(`${this.product.title} added to cart`);
+            this.toastService.success(`${this.product.name} added to cart`);
             this.quantity = 1; // Reset quantity after adding to cart
         } catch (error: any) {
             console.error('Error adding to cart:', error);
@@ -141,10 +145,13 @@ export class ProductDetailComponent implements OnInit {
     }
 
     handleImageError(event: Event): void {
-        ImageUtil.handleImageError(event, 'IMAGE_NOT_AVAILABLE');
+        const target = event.target as HTMLImageElement;
+        // Use placehold.co as fallback when image fails to load
+        const productName = target.alt || 'Product';
+        target.src = `https://placehold.co/400x400/ff0000/ffffff?text=${encodeURIComponent('Image+Error+' + productName)}`;
     }
 
-    getPlaceholderImage(): string {
-        return ImageUtil.getPlaceholder('product-detail');
+    getPlaceholderImage(productName: string = 'Product'): string {
+        return `https://placehold.co/400x400/cccccc/969696?text=${encodeURIComponent(productName)}`;
     }
 }

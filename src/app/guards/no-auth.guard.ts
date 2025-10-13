@@ -1,17 +1,27 @@
-import { inject } from '@angular/core';
-import { CanActivateFn, Router, UrlTree } from '@angular/router';
+import { Injectable } from '@angular/core';
+import { CanActivate, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 
-/**
- * Guard to prevent authenticated users from accessing auth pages (signin/signup).
- */
-export const noAuthGuard: CanActivateFn = (route, state): boolean | UrlTree => {
-    const auth = inject(AuthService);
-    const router = inject(Router);
-    if (auth.isAuthenticated()) {
-        // Redirect authenticated user trying to access signin/signup
-        const returnUrl = route.queryParams['returnUrl'] || '/dashboard';
-        return router.createUrlTree([returnUrl]);
+@Injectable({
+  providedIn: 'root'
+})
+export class NoAuthGuard implements CanActivate {
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  canActivate(): Observable<boolean> {
+    // Check if user is authenticated
+    if (this.authService.isAuthenticated()) {
+      // If authenticated, redirect to dashboard
+      this.router.navigate(['/dashboard']);
+      return of(false);
     }
-    return true;
-};
+
+    // If not authenticated, allow access
+    return of(true);
+  }
+}

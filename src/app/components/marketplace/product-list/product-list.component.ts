@@ -9,7 +9,6 @@ import { MarketplaceService } from '../../../services/marketplace.service';
 import { ToastService } from '../../../services/toast.service';
 import { AuthService } from '../../../services/auth.service';
 import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
-import { ImageUtil } from '../../../utils/image.util';
 
 @Component({
   selector: 'app-product-list',
@@ -110,7 +109,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
     const params: ProductSearchParams = {
       page: this.currentPage,
       size: this.pageSize,
-      q: this.currentQuery || undefined,
+      query: this.currentQuery || undefined,
       category: this.currentCategory || undefined
     };
 
@@ -120,8 +119,15 @@ export class ProductListComponent implements OnInit, OnDestroy {
     // but we still need to update pagination when data arrives
     this.products$.subscribe({
       next: (response) => {
-        this.totalPages = response.totalPages;
-        this.totalElements = response.totalElements;
+        // Handle the ApiResponse structure properly
+        if (response && response.pagination) {
+          this.totalPages = response.pagination.totalPages;
+          this.totalElements = response.pagination.totalElements;
+        } else {
+          // Fallback values if pagination info is missing
+          this.totalPages = 0;
+          this.totalElements = 0;
+        }
         this.loading = false;
       },
       error: (err) => {
@@ -186,9 +192,16 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   getProductImage(product: Product): string {
-    return product.imageUrls && product.imageUrls.length > 0
-      ? product.imageUrls[0]
-      : ImageUtil.getPlaceholder('product-list');
+    if (product.images && product.images.length > 0) {
+      // If the image is already a full URL, use it directly
+      if (product.images[0].startsWith('http')) {
+        return product.images[0];
+      }
+      // Otherwise, assume it's a local image
+      return product.images[0];
+    }
+    // Use placehold.co for placeholder images with product-specific dimensions and text
+    return `https://placehold.co/300x300/cccccc/969696?text=${encodeURIComponent(product.name || 'Product')}`;
   }
 
   formatPrice(price: number): string {
@@ -218,11 +231,15 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   async addToCart(product: any): Promise<void> {
-    if (this.isAddingToCart || product.stock === 0) return;
+    if (this.isAddingToCart || product.stockQuantity === 0) return;
 
     // Check if user is authenticated
     if (!this.auth.isAuthenticated()) {
-      this.toastService.error('Please sign in to add items to cart');
+      if (this.toastService) {
+        this.toastService.error('Please sign in to add items to cart');
+      } else {
+        console.error('Please sign in to add items to cart');
+      }
       this.router.navigate(['/signin'], {
         queryParams: { returnUrl: this.router.url }
       });
@@ -237,21 +254,32 @@ export class ProductListComponent implements OnInit, OnDestroy {
         quantity: 1
       }).toPromise();
 
-      this.toastService.success(`${product.title} added to cart`);
+      if (this.toastService) {
+        this.toastService.success(`${product.name} added to cart`);
 
-      // Show option to view cart
-      setTimeout(() => {
-        this.toastService.info('Item added to cart! Click here to view cart.');
-      }, 1000);
+        // Show option to view cart
+        setTimeout(() => {
+          this.toastService.info('Item added to cart! Click here to view cart.');
+        }, 1000);
+      } else {
+        console.log(`${product.name} added to cart`);
+      }
     } catch (error) {
       console.error('Error adding to cart:', error);
-      this.toastService.error('Failed to add item to cart');
+      if (this.toastService) {
+        this.toastService.error('Failed to add item to cart');
+      } else {
+        console.error('Failed to add item to cart');
+      }
     } finally {
       this.isAddingToCart = false;
     }
   }
 
   handleImageError(event: Event): void {
-    ImageUtil.handleImageError(event, 'IMAGE_NOT_AVAILABLE');
+    const target = event.target as HTMLImageElement;
+    // Use placehold.co as fallback when image fails to load
+    const productName = target.alt || 'Product';
+    target.src = `https://placehold.co/300x300/ff0000/ffffff?text=${encodeURIComponent('Image+Error+' + productName)}`;
   }
 }

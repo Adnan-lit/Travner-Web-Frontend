@@ -3,9 +3,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
-import { AuthService, User } from '../../services/auth.service';
-import { ThemeService } from '../../services/theme.service';
-import { CursorService } from '../../services/cursor.service';
+import { AuthService } from '../../services/auth.service';
+import { User } from '../../models/common.model';
 
 @Component({
   selector: 'app-signin',
@@ -21,22 +20,17 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
   successMessage = '';
   private particles: HTMLElement[] = [];
 
-  get theme$() { return this.themeService.theme$; }
-
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
     private el: ElementRef,
     private renderer: Renderer2,
-    private authService: AuthService,
-    private cursorService: CursorService,
-    private themeService: ThemeService
+    private authService: AuthService
   ) { }
 
   ngOnInit(): void {
     this.initializeForm();
-    this.cursorService.initializeCursor(this.renderer, this.el);
     this.createParticles();
 
     // Check for success message from route params (e.g., after successful signup)
@@ -56,7 +50,6 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy(): void {
-    this.cursorService.cleanup(this.renderer);
     this.removeParticles();
   }
 
@@ -128,7 +121,6 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
     this.showPassword = !this.showPassword;
   }
 
-  toggleTheme(): void { this.themeService.toggleTheme(); }
 
   onSubmit(): void {
     if (this.signinForm.valid) {
@@ -137,14 +129,19 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
       this.successMessage = '';
 
       const formData = this.signinForm.value;
-      console.log('Attempting signin with:', { username: formData.username });
+      console.log('Testing authentication with:', { username: formData.username });
 
-      this.authService.signin(formData.username, formData.password).subscribe({
-        next: (user: User) => {
+
+      this.authService.testAuthentication(formData.username, formData.password).subscribe({
+        next: (response: any) => {
           this.isLoading = false;
-          console.log('Sign in successful:', user);
+          console.log('Authentication test successful:', response);
 
-          // Navigate to dashboard after successful signin
+          // Verify authentication was properly set up
+          const isAuthVerified = this.authService.verifyAuthentication();
+          console.log('Authentication verification result:', isAuthVerified);
+
+          // Navigate to dashboard after successful authentication test
           this.router.navigate(['/dashboard']);
         },
         error: (error) => {
@@ -162,23 +159,26 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
           if (error.status === 0) {
             this.errorMessage = error.message || 'Network Error: Unable to connect to the backend server. Please check if the server is running.';
           } else if (error.status === 401) {
-            this.errorMessage = error.message || 'Invalid username or password. Please check your credentials and try again.';
+            this.errorMessage = 'Invalid username or password. Please check your credentials and try again.';
           } else if (error.status === 403) {
             this.errorMessage = 'Access denied. Please check your username and password.';
           } else if (error.status === 404) {
             this.errorMessage = 'Username not found. Please check your username or create a new account.';
+          } else if (error.status === 429) {
+            this.errorMessage = 'Too many requests. Please try again later.';
           } else if (error.status === 500) {
             this.errorMessage = 'Server error. Please try again later.';
           } else {
-            this.errorMessage = error.message || `Sign in failed. Please check your credentials and try again.`;
+            this.errorMessage = error.message || `Sign in failed with status ${error.status}. Please check your credentials and try again.`;
           }
 
           // Log debugging information for developers
           console.log('🔍 Debugging Information:');
           console.log(`  - Frontend Origin: ${window.location.origin}`);
-          console.log(`  - Backend URL: ${this.authService['API_BASE_URL']}`);
+          console.log(`  - Backend URL: ${this.authService['API_BASE_URL'] || 'Proxy to backend (empty string in dev mode)'}`);
           console.log(`  - Error Status: ${error.status}`);
           console.log(`  - Error Message: ${error.message}`);
+
         }
       });
     } else {
@@ -211,7 +211,7 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
       this.errorMessage = 'Please enter your username first';
       return;
     }
-    
+
     // Placeholder for forgot password functionality
     console.log('Forgot password requested for:', username);
     this.showSuccessMessage('Password reset functionality coming soon!');

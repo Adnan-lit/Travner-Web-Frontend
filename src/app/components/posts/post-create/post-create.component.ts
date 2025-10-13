@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { PostService } from '../../../services/post.service';
 import { PostCreate, PostUpdate } from '../../../models/post.model';
+import { CreatePostRequest } from '../../../models/common.model';
 import { PostFormComponent } from '../post-form/post-form.component';
 import { AuthService } from '../../../services/auth.service';
 import { ToastService } from '../../../services/toast.service';
@@ -127,7 +128,7 @@ export class PostCreateComponent {
 
   onCreate(event: { data: PostCreate | PostUpdate; files: File[] }): void {
     // Narrow type (create mode always supplies full required fields)
-    const payload = event.data as PostCreate;
+    const payload = { ...event.data, published: true } as CreatePostRequest;
     console.log('🚀 Starting post creation:', { payload, fileCount: event.files?.length || 0 });
 
     if (!this.auth.isAuthenticated()) {
@@ -137,33 +138,41 @@ export class PostCreateComponent {
     }
     this.saving = true;
     this.postService.createPost(payload).subscribe({
-      next: (created) => {
-        console.log('✅ Post created successfully:', created);
-        const postId = created.id;
-        const files = event.files || [];
-        console.log('📁 Files to upload:', files.map(f => ({ name: f.name, size: f.size, type: f.type })));
+      next: (response: any) => {
+        // Handle the ApiResponse structure
+        if (response && response.success && response.data) {
+          console.log('✅ Post created successfully:', response.data);
+          const postId = response.data['id'];
+          const files = event.files || [];
+          console.log('📁 Files to upload:', files.map(f => ({ name: f.name, size: f.size, type: f.type })));
 
-        if (files.length > 0) {
-          console.log('📤 Starting media upload for post:', postId);
-          this.postService.uploadMedia(postId, files).subscribe({
-            next: (uploadResult) => {
-              console.log('✅ Media upload completed:', uploadResult);
-              this.saving = false;
-              this.router.navigate(['/community', postId]);
-              this.toast.success('Post created');
-            },
-            error: (err) => {
-              console.error('❌ Media upload failed for post:', postId, err);
-              this.saving = false;
-              // Proceed to post anyway; could add toast later
-              this.router.navigate(['/community', postId]);
-              this.toast.warning('Created, some media failed');
-            }
-          });
+          if (files.length > 0) {
+            console.log('📤 Starting media upload for post:', postId);
+            this.postService.uploadMedia(postId, files).subscribe({
+              next: (uploadResult) => {
+                console.log('✅ Media upload completed:', uploadResult);
+                this.saving = false;
+                this.router.navigate(['/community', postId]);
+                this.toast.success('Post created');
+              },
+              error: (err) => {
+                console.error('❌ Media upload failed for post:', postId, err);
+                this.saving = false;
+                // Proceed to post anyway; could add toast later
+                this.router.navigate(['/community', postId]);
+                this.toast.warning('Created, some media failed');
+              }
+            });
+          } else {
+            this.saving = false;
+            this.router.navigate(['/community', postId]);
+            this.toast.success('Post created');
+          }
         } else {
+          console.error('❌ Post creation failed: Invalid response structure');
           this.saving = false;
-          this.router.navigate(['/community', postId]);
-          this.toast.success('Post created');
+          this.error = 'Failed to create post. Invalid response from server.';
+          this.toast.error('Failed to create post. Invalid response from server.');
         }
       },
       error: (err) => {

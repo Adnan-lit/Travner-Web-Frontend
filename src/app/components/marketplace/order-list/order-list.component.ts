@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { Order, OrderListResponse, OrderSearchParams, OrderStatus } from '../../../models/marketplace.model';
+import { Order, OrderListResponse } from '../../../models/marketplace.model';
 import { MarketplaceService } from '../../../services/marketplace.service';
 import { ToastService } from '../../../services/toast.service';
 import { AuthService } from '../../../services/auth.service';
@@ -26,7 +26,7 @@ export class OrderListComponent implements OnInit {
     totalElements = 0;
 
     // Status filter
-    statusFilter: OrderStatus | 'ALL' = 'ALL';
+    statusFilter: Order['status'] | 'ALL' = 'ALL';
 
     constructor(
         private marketplaceService: MarketplaceService,
@@ -50,7 +50,7 @@ export class OrderListComponent implements OnInit {
         this.loading = true;
         this.error = null;
 
-        const params: OrderSearchParams = {
+        const params: any = {
             page: this.currentPage,
             size: this.pageSize
         };
@@ -59,14 +59,14 @@ export class OrderListComponent implements OnInit {
             params.status = this.statusFilter;
         }
 
-        this.marketplaceService.getOrders(params).subscribe({
+        this.marketplaceService.getAdminOrders(params).subscribe({
             next: (response: OrderListResponse) => {
-                this.orders = response.content;
-                this.totalPages = response.totalPages;
-                this.totalElements = response.totalElements;
+                this.orders = response['content'];
+                this.totalPages = response['totalPages'];
+                this.totalElements = response['totalElements'];
                 this.loading = false;
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error loading orders:', err);
                 this.error = 'Failed to load orders. Please try again later.';
                 this.loading = false;
@@ -100,37 +100,41 @@ export class OrderListComponent implements OnInit {
         }
 
         this.marketplaceService.cancelOrder(order.id).subscribe({
-            next: (updatedOrder) => {
+            next: (response: any) => {
+                // Handle the ApiResponse structure
+                const updatedOrder = response && response.success ? response.data : null;
                 // Update the order in the list
                 const index = this.orders.findIndex(o => o.id === order.id);
-                if (index !== -1) {
+                if (index !== -1 && updatedOrder) {
                     this.orders[index] = updatedOrder;
                 }
                 this.toastService.success('Order canceled successfully');
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error canceling order:', err);
                 this.toastService.error('Failed to cancel order');
             }
         });
     }
 
-    getStatusClass(status: OrderStatus): string {
+    getStatusClass(status: Order['status']): string {
         switch (status) {
             case 'PLACED': return 'status-placed';
-            case 'PAID': return 'status-paid';
-            case 'FULFILLED': return 'status-fulfilled';
-            case 'CANCELED': return 'status-canceled';
+            case 'CONFIRMED': return 'status-confirmed';
+            case 'SHIPPED': return 'status-shipped';
+            case 'DELIVERED': return 'status-delivered';
+            case 'CANCELLED': return 'status-canceled';
             default: return '';
         }
     }
 
-    getStatusText(status: OrderStatus): string {
+    getStatusText(status: Order['status']): string {
         switch (status) {
             case 'PLACED': return 'Placed';
-            case 'PAID': return 'Paid';
-            case 'FULFILLED': return 'Fulfilled';
-            case 'CANCELED': return 'Canceled';
+            case 'CONFIRMED': return 'Confirmed';
+            case 'SHIPPED': return 'Shipped';
+            case 'DELIVERED': return 'Delivered';
+            case 'CANCELLED': return 'Canceled';
             default: return status;
         }
     }

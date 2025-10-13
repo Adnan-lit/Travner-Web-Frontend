@@ -1,85 +1,46 @@
-/**
- * Lightweight image utility for placeholder generation
- */
 export class ImageUtil {
+    static handleImageError(event: Event, type: string = 'default'): void {
+        const target = event.target as HTMLImageElement;
 
-    /**
-     * Generate a minimal SVG placeholder
-     */
-    static generatePlaceholder(
-        width: number = 300,
-        height: number = 200,
-        text: string = 'No Image',
-        bgColor: string = '#f1f5f9',
-        textColor: string = '#64748b'
-    ): string {
-        // Minified SVG for smaller bundle size
-        const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="${bgColor}"/><text x="50%" y="50%" font-family="Arial,sans-serif" font-size="16" fill="${textColor}" text-anchor="middle" dy=".3em">${text}</text></svg>`;
-        return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-    }
-
-    /**
-     * Lazy-loaded placeholders to reduce initial bundle size
-     */
-    private static _placeholders: Record<string, string> | null = null;
-
-    static get PLACEHOLDERS(): Record<string, string> {
-        if (!this._placeholders) {
-            this._placeholders = {
-                PRODUCT_LIST: this.generatePlaceholder(300, 200, 'Product Image'),
-                PRODUCT_DETAIL: this.generatePlaceholder(400, 300, 'Product Image'),
-                CART_ITEM: this.generatePlaceholder(100, 100, 'Item'),
-                ADMIN_PRODUCT: this.generatePlaceholder(200, 150, 'Product'),
-                NO_IMAGE: this.generatePlaceholder(300, 200, 'No Image Available'),
-                IMAGE_NOT_AVAILABLE: this.generatePlaceholder(300, 200, 'Image Not Available'),
-                LOADING: this.generatePlaceholder(300, 200, 'Loading...', '#e2e8f0', '#94a3b8')
-            };
-        }
-        return this._placeholders;
-    }
-
-    /**
-     * Handle image error by setting fallback placeholder
-     */
-    static handleImageError(event: Event, fallbackType: string = 'NO_IMAGE'): void {
-        const img = event.target as HTMLImageElement;
-        if (img) {
-            img.src = this.PLACEHOLDERS[fallbackType] || this.PLACEHOLDERS['NO_IMAGE'];
-        }
-    }
-
-    /**
-     * Get appropriate placeholder for different contexts
-     */
-    static getPlaceholder(context: 'product-list' | 'product-detail' | 'cart' | 'admin' = 'product-list'): string {
-        switch (context) {
+        // Set appropriate placeholder based on type
+        switch (type) {
             case 'product-list':
-                return this.PLACEHOLDERS['PRODUCT_LIST'];
+                target.src = 'https://placehold.co/300x300/ff0000/ffffff?text=Product+List+Image+Error';
+                break;
             case 'product-detail':
-                return this.PLACEHOLDERS['PRODUCT_DETAIL'];
+                target.src = 'https://placehold.co/400x400/ff0000/ffffff?text=Product+Detail+Image+Error';
+                break;
+            case 'profile':
+                target.src = 'https://placehold.co/200x200/ff0000/ffffff?text=Profile+Image+Error';
+                break;
+            case 'post':
+                target.src = 'https://placehold.co/500x300/ff0000/ffffff?text=Post+Image+Error';
+                break;
             case 'cart':
-                return this.PLACEHOLDERS['CART_ITEM'];
-            case 'admin':
-                return this.PLACEHOLDERS['ADMIN_PRODUCT'];
+                target.src = 'https://placehold.co/100x100/ff0000/ffffff?text=Cart+Image+Error';
+                break;
             default:
-                return this.PLACEHOLDERS['NO_IMAGE'];
+                target.src = 'https://placehold.co/200x200/ff0000/ffffff?text=Image+Error';
         }
+
+        // Prevent infinite loop if placeholder also fails
+        target.onerror = null;
     }
 
-    /**
-     * Create sample product images with different themes (optimized)
-     */
-    static createSampleProductImage(productName: string, size: { width: number, height: number } = { width: 300, height: 200 }): string {
-        // Reduced color palette for smaller bundle
-        const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
-        const colorIndex = productName.length % colors.length;
-
-        return this.generatePlaceholder(
-            size.width,
-            size.height,
-            productName,
-            colors[colorIndex],
-            '#ffffff'
-        );
+    static getPlaceholder(type: string = 'default'): string {
+        switch (type) {
+            case 'product-list':
+                return 'https://placehold.co/300x300/cccccc/969696?text=Product+Image';
+            case 'product-detail':
+                return 'https://placehold.co/400x400/cccccc/969696?text=Product+Detail';
+            case 'profile':
+                return 'https://placehold.co/200x200/cccccc/969696?text=Profile';
+            case 'post':
+                return 'https://placehold.co/500x300/cccccc/969696?text=Post+Image';
+            case 'cart':
+                return 'https://placehold.co/100x100/cccccc/969696?text=Cart+Item';
+            default:
+                return 'https://placehold.co/200x200/cccccc/969696?text=Placeholder';
+        }
     }
 }
