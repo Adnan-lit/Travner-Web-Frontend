@@ -18,6 +18,7 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
   showPassword = false;
   errorMessage = '';
   successMessage = '';
+  returnUrl = '/dashboard';
   private particles: HTMLElement[] = [];
 
   constructor(
@@ -33,7 +34,7 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
     this.initializeForm();
     this.createParticles();
 
-    // Check for success message from route params (e.g., after successful signup)
+    // Check for success message and return URL from route params
     this.route.queryParams.subscribe(params => {
       if (params['message']) {
         this.successMessage = params['message'];
@@ -41,6 +42,10 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
         setTimeout(() => {
           this.successMessage = '';
         }, 5000);
+      }
+      if (params['returnUrl']) {
+        this.returnUrl = params['returnUrl'];
+        console.log('🔐 Signin: Return URL set to:', this.returnUrl);
       }
     });
   }
@@ -141,8 +146,14 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
           const isAuthVerified = this.authService.verifyAuthentication();
           console.log('Authentication verification result:', isAuthVerified);
 
-          // Navigate to dashboard after successful authentication test
-          this.router.navigate(['/dashboard']);
+          // Show success message
+          this.successMessage = 'Login successful! Redirecting...';
+
+          // Navigate to return URL or dashboard after successful authentication test
+          setTimeout(() => {
+            this.router.navigate([this.returnUrl]);
+            console.log('🔐 Signin: Redirecting to:', this.returnUrl);
+          }, 1000);
         },
         error: (error) => {
           this.isLoading = false;
@@ -155,13 +166,13 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
             fullError: error
           });
 
-          // Handle different error scenarios
+          // Handle different error scenarios with improved error messages
           if (error.status === 0) {
-            this.errorMessage = error.message || 'Network Error: Unable to connect to the backend server. Please check if the server is running.';
+            this.errorMessage = 'Network Error: Unable to connect to the backend server. Please check if the server is running on port 8080.';
           } else if (error.status === 401) {
             this.errorMessage = 'Invalid username or password. Please check your credentials and try again.';
           } else if (error.status === 403) {
-            this.errorMessage = 'Access denied. Please check your username and password.';
+            this.errorMessage = 'Access denied. Your account may be disabled. Please contact support.';
           } else if (error.status === 404) {
             this.errorMessage = 'Username not found. Please check your username or create a new account.';
           } else if (error.status === 429) {

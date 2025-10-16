@@ -430,6 +430,17 @@
   margin-top: 40px;
 }
 
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+}
+
 .pagination-button {
   padding: 10px 20px;
   background-color: #007bff;

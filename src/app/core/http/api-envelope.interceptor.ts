@@ -1,7 +1,7 @@
 import { HttpInterceptorFn, HttpResponse, HttpErrorResponse } from '@angular/common/http';
 import { map, catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
-import { ApiResponse } from '../../models/api-response.model';
+import { ApiResponse, ApiErrorResponse } from '../../models/api-response.model';
 
 /**
  * API Envelope Interceptor
@@ -19,6 +19,7 @@ export const apiEnvelopeInterceptor: HttpInterceptorFn = (req, next) => {
                 if (isBinaryResponse) {
                     return event;
                 }
+                
                 // Check if response is HTML, which indicates an error page
                 const contentType = event.headers.get('content-type');
                 if (contentType?.includes('text/html')) {
@@ -34,6 +35,7 @@ export const apiEnvelopeInterceptor: HttpInterceptorFn = (req, next) => {
 
                     return event.clone({ body: errorResponse });
                 }
+                
                 // If content type is clearly binary, do not wrap
                 const isClearlyBinary = !!contentType && (
                     contentType.startsWith('image/') ||
@@ -70,21 +72,46 @@ export const apiEnvelopeInterceptor: HttpInterceptorFn = (req, next) => {
             if (req.responseType === 'blob' || req.responseType === 'arraybuffer') {
                 return throwError(() => error);
             }
+            
             let errorMessage = '';
+            let errorDetails: any = error.error;
+
+            // Check if the error is already in our API format
+            if (error.error && typeof error.error === 'object' && 'success' in error.error) {
+                // It's already our API error format
+                return throwError(() => error);
+            }
 
             // Check if we received an HTML error page
             const contentType = error.headers?.get('content-type');
             if (contentType?.includes('text/html')) {
                 console.error('Received HTML error response:', error.url);
                 errorMessage = 'Server returned an error page. Please check the URL and try again.';
+                errorDetails = error.error;
             } else {
                 // Map HTTP error codes to descriptive messages
                 switch (error.status) {
                     case 400:
                         errorMessage = 'Bad Request: The request could not be understood by the server.';
+                        // Try to extract validation error details
+                        if (error.error && typeof error.error === 'object') {
+                            if (error.error.message) {
+                                errorMessage = error.error.message;
+                            }
+                            if (error.error.errors) {
+                                errorDetails = error.error.errors;
+                            }
+                        }
                         break;
                     case 401:
                         errorMessage = 'Unauthorized: Please sign in to continue.';
+                        // Don't automatically trigger logout for cart endpoints - they might be failing due to other issues
+                        if (typeof window !== 'undefined' && !req.url.includes('/api/cart')) {
+                            console.warn('🚫 Received 401 Unauthorized - triggering logout for:', req.url);
+                            // You might want to dispatch an auth logout action here
+                        } else if (req.url.includes('/api/cart')) {
+                            console.warn('🚫 Received 401 for cart endpoint - not triggering logout, might be a temporary issue');
+                        }
                         break;
                     case 403:
                         errorMessage = 'Forbidden: You do not have permission to perform this action.';
@@ -92,14 +119,29 @@ export const apiEnvelopeInterceptor: HttpInterceptorFn = (req, next) => {
                     case 404:
                         errorMessage = 'Not Found: The requested resource could not be found.';
                         break;
+                    case 422:
+                        errorMessage = 'Validation Error: The request contains invalid data.';
+                        if (error.error && typeof error.error === 'object') {
+                            errorDetails = error.error;
+                        }
+                        break;
+                    case 429:
+                        errorMessage = 'Too Many Requests: Please try again later.';
+                        break;
                     case 500:
                         errorMessage = 'Internal Server Error: Please try again later.';
+                        break;
+                    case 502:
+                        errorMessage = 'Bad Gateway: The server received an invalid response.';
+                        break;
+                    case 503:
+                        errorMessage = 'Service Unavailable: The server is temporarily unavailable.';
                         break;
                     case 0:
                         errorMessage = 'Network Error: Please check your connection and try again.';
                         break;
                     default:
-                        errorMessage = error.message || 'An unknown error occurred.';
+                        errorMessage = error.message || `An error occurred (${error.status}).`;
                 }
             }
 
@@ -108,8 +150,9 @@ export const apiEnvelopeInterceptor: HttpInterceptorFn = (req, next) => {
                 success: false,
                 message: errorMessage,
                 data: null,
-                error: error.error,
-                status: error.status
+                error: errorDetails,
+                status: error.status,
+                timestamp: new Date().toISOString()
             };
 
             return throwError(() => new HttpErrorResponse({

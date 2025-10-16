@@ -3,7 +3,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AsyncPipe, NgIf, NgFor, NgClass } from '@angular/common';
 import { Observable, Subscription } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, tap, catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { Product, ProductListResponse, ProductSearchParams } from '../../../models/marketplace.model';
 import { MarketplaceService } from '../../../services/marketplace.service';
 import { ToastService } from '../../../services/toast.service';
@@ -25,7 +26,7 @@ import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
   styleUrls: ['./product-list.component.css']
 })
 export class ProductListComponent implements OnInit, OnDestroy {
-  products$!: Observable<ProductListResponse>;
+  products$!: Observable<Product[]>;
   loading = false;
   error: string | null = null;
   searchForm: FormGroup;
@@ -113,12 +114,9 @@ export class ProductListComponent implements OnInit, OnDestroy {
       category: this.currentCategory || undefined
     };
 
-    this.products$ = this.marketplaceService.getProducts(params);
-
-    // The marketplace service already handles errors gracefully,
-    // but we still need to update pagination when data arrives
-    this.products$.subscribe({
-      next: (response) => {
+    this.products$ = this.marketplaceService.getProducts(params).pipe(
+      tap((response: any) => {
+        console.log('Products response:', response);
         // Handle the ApiResponse structure properly
         if (response && response.pagination) {
           this.totalPages = response.pagination.totalPages;
@@ -129,15 +127,15 @@ export class ProductListComponent implements OnInit, OnDestroy {
           this.totalElements = 0;
         }
         this.loading = false;
-      },
-      error: (err) => {
-        // This error case should be rare since the service handles errors gracefully
+      }),
+      catchError((err) => {
+        console.error('Error loading products:', err);
         this.error = 'Failed to load products. Please try again later.';
         this.loading = false;
-        this.toastService.error('Failed to load products');
-        console.error('Error loading products:', err);
-      }
-    });
+        this.toastService.error('Failed to load products', '');
+        return of([]); // Return empty array on error
+      })
+    );
   }
 
   onPageChange(page: number): void {
@@ -236,7 +234,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
     // Check if user is authenticated
     if (!this.auth.isAuthenticated()) {
       if (this.toastService) {
-        this.toastService.error('Please sign in to add items to cart');
+        this.toastService.error('Please sign in to add items to cart', '');
       } else {
         console.error('Please sign in to add items to cart');
       }
@@ -255,11 +253,11 @@ export class ProductListComponent implements OnInit, OnDestroy {
       }).toPromise();
 
       if (this.toastService) {
-        this.toastService.success(`${product.name} added to cart`);
+        this.toastService.success('${product.name} added to cart', '');
 
         // Show option to view cart
         setTimeout(() => {
-          this.toastService.info('Item added to cart! Click here to view cart.');
+          this.toastService.info('Item added to cart! Click here to view cart.', '');
         }, 1000);
       } else {
         console.log(`${product.name} added to cart`);
@@ -267,7 +265,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error adding to cart:', error);
       if (this.toastService) {
-        this.toastService.error('Failed to add item to cart');
+        this.toastService.error('Failed to add item to cart', '');
       } else {
         console.error('Failed to add item to cart');
       }

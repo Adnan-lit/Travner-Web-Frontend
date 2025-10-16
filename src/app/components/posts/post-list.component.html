@@ -1,85 +1,265 @@
 <div class="posts-container">
+  <!-- Header Section -->
   <div class="posts-header">
-    <h1>Travel Community</h1>
-    <p>Share your travel experiences and discover new adventures</p>
+    <div class="header-content">
+      <h1 class="page-title">
+        <i class="fas fa-globe-americas"></i>
+        Travel Community
+      </h1>
+      <p class="page-subtitle">Share your adventures, discover new destinations, and connect with fellow travelers</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/community/new" class="btn btn-primary btn-lg" *ngIf="isAuthenticated">
+        <i class="fas fa-plus-circle"></i>
+        Share Your Story
+      </a>
+      <div class="search-box">
+        <input type="text" 
+               placeholder="Search posts, destinations, or tags..." 
+               [(ngModel)]="searchQuery"
+               (input)="onSearch()"
+               class="search-input">
+        <i class="fas fa-search search-icon"></i>
+      </div>
+    </div>
   </div>
 
-  <div class="posts-actions">
-    <a href="/community/new" class="btn btn-primary">
-      <i class="fas fa-plus"></i> Create New Post
-    </a>
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filter-tabs">
+      <button class="filter-tab" 
+              [class.active]="activeFilter === 'all'" 
+              (click)="setFilter('all')">
+        <i class="fas fa-th"></i> All Posts
+      </button>
+      <button class="filter-tab" 
+              [class.active]="activeFilter === 'trending'" 
+              (click)="setFilter('trending')">
+        <i class="fas fa-fire"></i> Trending
+      </button>
+      <button class="filter-tab" 
+              [class.active]="activeFilter === 'recent'" 
+              (click)="setFilter('recent')">
+        <i class="fas fa-clock"></i> Recent
+      </button>
+      <button class="filter-tab" 
+              [class.active]="activeFilter === 'popular'" 
+              (click)="setFilter('popular')">
+        <i class="fas fa-heart"></i> Popular
+      </button>
+    </div>
+    
+    <div class="filter-options">
+      <select [(ngModel)]="selectedLocation" (change)="onLocationFilter()" class="filter-select">
+        <option value="">All Locations</option>
+        <option value="europe">Europe</option>
+        <option value="asia">Asia</option>
+        <option value="americas">Americas</option>
+        <option value="africa">Africa</option>
+        <option value="oceania">Oceania</option>
+      </select>
+      
+      <select [(ngModel)]="selectedCategory" (change)="onCategoryFilter()" class="filter-select">
+        <option value="">All Categories</option>
+        <option value="adventure">Adventure</option>
+        <option value="culture">Culture</option>
+        <option value="food">Food & Dining</option>
+        <option value="nature">Nature</option>
+        <option value="city">City Life</option>
+        <option value="beach">Beach & Relaxation</option>
+      </select>
+    </div>
   </div>
 
-  <div class="posts-list" *ngIf="!isLoading && !errorMessage">
-    <div class="post-item" *ngFor="let post of posts">
+  <!-- Dynamic Components Section -->
+  <div class="dynamic-components" *ngIf="!isLoading && !errorMessage">
+    <div class="components-grid">
+      <!-- Activity Feed -->
+      <div class="component-card activity-card">
+        <app-activity-feed [maxActivities]="5"></app-activity-feed>
+      </div>
+      
+      <!-- Trending Posts -->
+      <div class="component-card trending-card">
+        <app-trending-posts [maxPosts]="5"></app-trending-posts>
+      </div>
+    </div>
+  </div>
+
+  <!-- Posts Grid -->
+  <div class="posts-grid" *ngIf="!isLoading && !errorMessage">
+    <div class="post-card" *ngFor="let post of filteredPosts; let i = index" [style.animation-delay]="(i * 0.1) + 's'">
+      <!-- Post Header -->
       <div class="post-header">
-        <div class="post-avatar">
-          <img src="https://ui-avatars.com/api/?name={{post.author?.firstName}}+{{post.author?.lastName}}&background=3498db&color=fff&size=40" 
-               alt="{{post.author?.firstName}} {{post.author?.lastName}}" 
-               *ngIf="post.author?.profileImageUrl; else defaultAvatar">
-          <ng-template #defaultAvatar>
-            <div class="avatar-placeholder-small">
-              {{post.author?.firstName?.charAt(0)}}{{post.author?.lastName?.charAt(0)}}
-            </div>
-          </ng-template>
+        <div class="post-author">
+          <div class="author-avatar">
+            <img src="https://ui-avatars.com/api/?name={{post.author?.firstName}}+{{post.author?.lastName}}&background=random&size=50" 
+                 alt="{{post.author?.firstName}} {{post.author?.lastName}}" 
+                 *ngIf="post.author?.profileImageUrl; else defaultAvatar">
+            <ng-template #defaultAvatar>
+              <div class="avatar-placeholder">
+                {{post.author?.firstName?.charAt(0)}}{{post.author?.lastName?.charAt(0)}}
+              </div>
+            </ng-template>
+          </div>
+          <div class="author-info">
+            <h3 class="author-name">{{post.author?.firstName}} {{post.author?.lastName}}</h3>
+            <p class="post-meta">
+              <span class="post-time">{{formatDate(post.createdAt)}}</span>
+              <span class="post-location" *ngIf="post.location">
+                <i class="fas fa-map-marker-alt"></i> {{post.location}}
+              </span>
+            </p>
+          </div>
         </div>
-        <div class="post-meta">
-          <h3><a [routerLink]="['/community', post.id]">{{post.title}}</a></h3>
-          <div class="post-info">
-            <span class="author">
-              by {{post.author?.firstName}} {{post.author?.lastName}}
-            </span>
-            <span class="date">{{post.createdAt | date:'short'}}</span>
+        <div class="post-menu">
+          <button class="menu-btn" (click)="togglePostMenu(post.id)">
+            <i class="fas fa-ellipsis-v"></i>
+          </button>
+          <div class="menu-dropdown" *ngIf="post.showMenu">
+            <a routerLink="/community/{{post.id}}/edit" *ngIf="canEditPost(post)">Edit Post</a>
+            <a (click)="sharePost(post)">Share Post</a>
+            <a (click)="reportPost(post)" class="danger">Report</a>
           </div>
         </div>
       </div>
-      
+
+      <!-- Post Content -->
       <div class="post-content">
-        <p>{{post.content}}</p>
+        <h2 class="post-title">
+          <a routerLink="/community/{{post.id}}">{{post.title}}</a>
+        </h2>
+        <div class="post-text">
+          <p>{{post.content | slice:0:200}}{{post.content.length > 200 ? '...' : ''}}</p>
+        </div>
+        
+      <!-- Post Media -->
+      <div class="post-media" *ngIf="post.mediaUrls && post.mediaUrls.length > 0 && processMediaUrls(post).length > 0">
+        <div class="media-grid" [class.single]="processMediaUrls(post).length === 1">
+          <div class="media-item" *ngFor="let mediaUrl of processMediaUrls(post).slice(0, 4); let i = index">
+            <img [src]="mediaUrl" [alt]="post.title" (click)="openMediaViewer({url: mediaUrl, index: i})" 
+                 (error)="handleImageError($event, mediaUrl)"
+                 loading="lazy">
+          </div>
+          <div class="media-more" *ngIf="processMediaUrls(post).length > 4">
+            +{{processMediaUrls(post).length - 4}} more
+          </div>
+        </div>
+      </div>
+
+        <!-- Post Tags -->
         <div class="post-tags" *ngIf="post.tags && post.tags.length > 0">
-          <span class="tag" *ngFor="let tag of post.tags">{{tag}}</span>
+          <span class="tag" *ngFor="let tag of post.tags.slice(0, 5)" (click)="filterByTag(tag)">
+            #{{tag}}
+          </span>
         </div>
       </div>
-      
-      <div class="post-footer">
+
+      <!-- Post Actions -->
+      <div class="post-actions">
+        <div class="action-buttons">
+          <button class="action-btn like-btn" 
+                  [class.liked]="post.isLiked" 
+                  (click)="toggleLike(post)">
+            <i class="fas fa-heart"></i>
+            <span>{{post.likes || 0}}</span>
+          </button>
+          
+          <button class="action-btn comment-btn" (click)="focusComments(post)">
+            <i class="fas fa-comment"></i>
+            <span>{{post.commentCount || 0}}</span>
+          </button>
+          
+          <button class="action-btn share-btn" (click)="sharePost(post)">
+            <i class="fas fa-share"></i>
+            <span>Share</span>
+          </button>
+          
+          <button class="action-btn save-btn" 
+                  [class.saved]="post.isSaved" 
+                  (click)="toggleSave(post)">
+            <i class="fas fa-bookmark"></i>
+          </button>
+        </div>
+        
         <div class="post-stats">
-          <span class="stat">
-            <i class="fas fa-heart"></i> {{post.likes || 0}}
+          <span class="stat" *ngIf="(post.likes || 0) > 0">
+            <i class="fas fa-heart"></i> {{post.likes || 0}} likes
           </span>
-          <span class="stat">
-            <i class="fas fa-comment"></i> {{post.comments?.length || 0}}
+          <span class="stat" *ngIf="post.commentCount > 0">
+            <i class="fas fa-comment"></i> {{post.commentCount}} comments
           </span>
-          <span class="stat">
-            <i class="fas fa-eye"></i> {{post.views || 0}}
+          <span class="stat" *ngIf="(post.shares || 0) > 0">
+            <i class="fas fa-share"></i> {{post.shares || 0}} shares
           </span>
         </div>
-        <div class="post-actions">
-          <a [routerLink]="['/community', post.id]" class="btn btn-sm btn-outline">
-            Read More
-          </a>
+      </div>
+
+      <!-- Comments Preview -->
+      <div class="comments-preview" *ngIf="post.recentComments && post.recentComments.length > 0">
+        <div class="comment-item" *ngFor="let comment of post.recentComments.slice(0, 2)">
+          <div class="comment-author">
+            <span class="comment-author-name">{{comment.author.firstName}} {{comment.author.lastName}}</span>
+            <span class="comment-text">{{comment.content}}</span>
+          </div>
         </div>
+        <a routerLink="/community/{{post.id}}" class="view-comments" *ngIf="post.commentCount > 2">
+          View all {{post.commentCount}} comments
+        </a>
       </div>
     </div>
   </div>
 
-  <div class="loading" *ngIf="isLoading">
-    <div class="spinner"></div>
-    <p>Loading posts...</p>
-  </div>
-
-  <div class="error" *ngIf="errorMessage">
-    <p>{{errorMessage}}</p>
-    <button class="btn btn-primary" (click)="loadPosts()">Try Again</button>
-  </div>
-
-  <div class="no-posts" *ngIf="!isLoading && posts.length === 0 && !errorMessage">
-    <div class="no-posts-icon">
-      <i class="fas fa-comments"></i>
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="loading-spinner">
+      <div class="spinner"></div>
     </div>
-    <h3>No Posts Yet</h3>
-    <p>Be the first to share your travel experience!</p>
-    <a href="/community/new" class="btn btn-primary">
-      Create Your First Post
-    </a>
+    <p>Loading amazing travel stories...</p>
   </div>
+
+  <!-- Error State -->
+  <div class="error-state" *ngIf="errorMessage">
+    <div class="error-icon">
+      <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <h3>Oops! Something went wrong</h3>
+    <p>{{errorMessage}}</p>
+    <button class="btn btn-primary" (click)="loadPosts()">
+      <i class="fas fa-refresh"></i> Try Again
+    </button>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!isLoading && filteredPosts.length === 0 && !errorMessage">
+    <div class="empty-icon">
+      <i class="fas fa-compass"></i>
+    </div>
+    <h3>No posts found</h3>
+    <p *ngIf="searchQuery">No posts match your search for "{{searchQuery}}"</p>
+    <p *ngIf="!searchQuery">Be the first to share your travel experience!</p>
+    <div class="empty-actions">
+      <a routerLink="/community/new" class="btn btn-primary" *ngIf="isAuthenticated">
+        <i class="fas fa-plus-circle"></i> Create Your First Post
+      </a>
+      <button class="btn btn-outline" (click)="clearFilters()" *ngIf="hasActiveFilters()">
+        <i class="fas fa-times"></i> Clear Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Load More Button -->
+  <div class="load-more-section" *ngIf="hasMorePosts && !isLoading">
+    <button class="btn btn-outline btn-lg load-more-btn" (click)="loadMorePosts()">
+      <i class="fas fa-plus"></i> Load More Posts
+    </button>
+  </div>
+
+  <!-- Media Viewer -->
+  <app-media-viewer 
+    [isOpen]="showMediaViewer"
+    [mediaItems]="mediaViewerItems"
+    [initialIndex]="mediaViewerIndex"
+    (closed)="closeMediaViewer()">
+  </app-media-viewer>
 </div>

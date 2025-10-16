@@ -1,0 +1,211 @@
+<div class="local-guide-list-container">
+  <!-- Header -->
+  <div class="header">
+    <h1>Local Guides</h1>
+    <button class="btn btn-primary" (click)="createLocalGuide()">
+      <i class="fas fa-plus"></i> Become a Guide
+    </button>
+  </div>
+
+  <!-- Search and Filters -->
+  <div class="filters-section">
+    <div class="search-bar">
+      <input 
+        type="text" 
+        placeholder="Search guides..." 
+        [(ngModel)]="searchParams.query"
+        (keyup.enter)="onSearch()"
+        class="form-control"
+      >
+      <button class="btn btn-secondary" (click)="onSearch()">
+        <i class="fas fa-search"></i> Search
+      </button>
+    </div>
+
+    <div class="filters">
+      <div class="filter-group">
+        <label>Location:</label>
+        <select [(ngModel)]="selectedLocation" (change)="onFilterChange()" class="form-control">
+          <option value="">All Locations</option>
+          <option *ngFor="let location of locations" [value]="location">{{ location }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Price Range:</label>
+        <div class="price-range">
+          <input 
+            type="number" 
+            [(ngModel)]="priceRange.min" 
+            (change)="onFilterChange()"
+            placeholder="Min"
+            class="form-control"
+          >
+          <span>-</span>
+          <input 
+            type="number" 
+            [(ngModel)]="priceRange.max" 
+            (change)="onFilterChange()"
+            placeholder="Max"
+            class="form-control"
+          >
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Rating:</label>
+        <div class="rating-range">
+          <input 
+            type="number" 
+            [(ngModel)]="ratingRange.min" 
+            (change)="onFilterChange()"
+            placeholder="Min"
+            min="0"
+            max="5"
+            step="0.1"
+            class="form-control"
+          >
+          <span>-</span>
+          <input 
+            type="number" 
+            [(ngModel)]="ratingRange.max" 
+            (change)="onFilterChange()"
+            placeholder="Max"
+            min="0"
+            max="5"
+            step="0.1"
+            class="form-control"
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading local guides...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error">
+    <p>{{ error }}</p>
+    <button class="btn btn-secondary" (click)="loadLocalGuides()">Retry</button>
+  </div>
+
+  <!-- Local Guides Grid -->
+  <div *ngIf="!loading && !error" class="local-guides-grid">
+    <div *ngFor="let guide of localGuides" class="local-guide-card" (click)="viewLocalGuide(guide.id)">
+      <div class="card-header">
+        <div class="availability-badge" [ngClass]="getAvailabilityClass(guide.isAvailable)">
+          {{ getAvailabilityText(guide.isAvailable) }}
+        </div>
+        <h3>{{ guide.location }}</h3>
+        <div class="card-meta">
+          <span class="price">{{ formatPrice(guide.hourlyRate, guide.currency) }}</span>
+          <div class="rating">
+            <div class="stars">
+              <i *ngFor="let star of getRatingStars(guide.rating)" 
+                 [class]="'fas fa-star ' + star"></i>
+            </div>
+            <span class="rating-text">{{ guide.rating.toFixed(1) }} ({{ guide.reviewCount }} reviews)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <p class="bio">{{ guide.bio }}</p>
+        
+        <div class="specialties" *ngIf="guide.specialties && guide.specialties.length > 0">
+          <h4>Specialties:</h4>
+          <div class="specialty-tags">
+            <span *ngFor="let specialty of guide.specialties" class="specialty-tag">{{ specialty }}</span>
+          </div>
+        </div>
+
+        <div class="languages" *ngIf="guide.languages && guide.languages.length > 0">
+          <h4>Languages:</h4>
+          <div class="language-tags">
+            <span *ngFor="let language of guide.languages" class="language-tag">{{ language }}</span>
+          </div>
+        </div>
+
+        <div class="experience" *ngIf="guide.experience && guide.experience.length > 0">
+          <h4>Experience:</h4>
+          <ul class="experience-list">
+            <li *ngFor="let exp of guide.experience">{{ exp }}</li>
+          </ul>
+        </div>
+
+        <div class="certifications" *ngIf="guide.certifications && guide.certifications.length > 0">
+          <h4>Certifications:</h4>
+          <div class="certification-tags">
+            <span *ngFor="let cert of guide.certifications" class="certification-tag">{{ cert }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <div class="stats">
+          <div class="stat">
+            <i class="fas fa-star"></i>
+            <span>{{ guide.rating.toFixed(1) }}</span>
+          </div>
+          <div class="stat">
+            <i class="fas fa-comments"></i>
+            <span>{{ guide.reviewCount }}</span>
+          </div>
+          <div class="stat">
+            <i class="fas fa-calendar-check"></i>
+            <span>{{ guide.totalBookings }}</span>
+          </div>
+        </div>
+        
+        <div class="action-buttons">
+          <button class="btn btn-sm btn-primary" (click)="viewLocalGuide(guide.id); $event.stopPropagation()">
+            View Profile
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && localGuides.length === 0" class="empty-state">
+    <i class="fas fa-map-marker-alt"></i>
+    <h3>No local guides found</h3>
+    <p>Try adjusting your search criteria or become a local guide yourself.</p>
+    <button class="btn btn-primary" (click)="createLocalGuide()">Become a Guide</button>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="!loading && !error && totalPages > 1" class="pagination">
+    <button 
+      class="btn btn-secondary" 
+      [disabled]="currentPage === 0"
+      (click)="onPageChange(currentPage - 1)"
+    >
+      Previous
+    </button>
+    
+    <div class="page-numbers">
+      <button 
+        *ngFor="let page of getPageNumbers()" 
+        class="btn"
+        [class.btn-primary]="page === currentPage"
+        [class.btn-secondary]="page !== currentPage"
+        (click)="onPageChange(page)"
+      >
+        {{ page + 1 }}
+      </button>
+    </div>
+    
+    <button 
+      class="btn btn-secondary" 
+      [disabled]="currentPage >= totalPages - 1"
+      (click)="onPageChange(currentPage + 1)"
+    >
+      Next
+    </button>
+  </div>
+</div>

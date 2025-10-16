@@ -211,6 +211,7 @@ export class CartSummaryComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.authService.currentUser$.subscribe((user: any) => {
         this.isAuthenticated = !!user;
+        console.log('🛒 CartSummary: Authentication status changed:', this.isAuthenticated);
         if (this.isAuthenticated) {
           this.loadCart();
         } else {
@@ -220,12 +221,24 @@ export class CartSummaryComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Subscribe to cart item count changes
-    this.subscriptions.push(
-      this.marketplaceService.getCartItemCount().subscribe((count: number) => {
-        this.itemCount = count;
-      })
-    );
+    // Only subscribe to cart item count if authenticated
+    if (this.isAuthenticated && this.authService.isAuthenticated()) {
+      this.subscriptions.push(
+        this.marketplaceService.getCartItemCount().subscribe({
+          next: (response: any) => {
+            this.itemCount = response?.data || 0;
+            console.log('🛒 CartSummary: Cart item count updated:', this.itemCount);
+          },
+          error: (error: any) => {
+            console.warn('🛒 CartSummary: Failed to get cart count:', error);
+            if (error.status === 401) {
+              console.log('🛒 CartSummary: Authentication failed, clearing cart count');
+            }
+            this.itemCount = 0;
+          }
+        })
+      );
+    }
   }
 
   ngOnDestroy(): void {
@@ -233,7 +246,11 @@ export class CartSummaryComponent implements OnInit, OnDestroy {
   }
 
   loadCart(): void {
-    if (!this.isAuthenticated) return;
+    if (!this.isAuthenticated || !this.authService.isAuthenticated()) {
+      this.cart = null;
+      this.itemCount = 0;
+      return;
+    }
 
     this.marketplaceService.getCart().subscribe({
       next: (response: any) => {
@@ -252,7 +269,10 @@ export class CartSummaryComponent implements OnInit, OnDestroy {
         }
       },
       error: (err: any) => {
-        console.warn('Failed to load cart for summary:', err);
+        console.warn('🛒 CartSummary: Failed to load cart for summary:', err);
+        if (err.status === 401) {
+          console.log('🛒 CartSummary: Authentication failed, clearing cart');
+        }
         this.cart = null;
         this.itemCount = 0;
       }

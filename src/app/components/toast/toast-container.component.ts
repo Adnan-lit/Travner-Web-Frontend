@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ToastService, Toast } from '../../services/toast.service';
+import { ToastService, ToastMessage } from '../../services/toast.service';
 
 @Component({
     selector: 'app-toast-container',
@@ -11,7 +11,7 @@ import { ToastService, Toast } from '../../services/toast.service';
       <div
         *ngFor="let toast of toasts"
         class="toast toast-{{ toast.type }}"
-        [class.show]="toast.show"
+        [class.show]="true"
         (click)="removeToast(toast.id)"
       >
         <div class="toast-content">
@@ -121,7 +121,7 @@ import { ToastService, Toast } from '../../services/toast.service';
   `]
 })
 export class ToastContainerComponent implements OnInit {
-    toasts: Toast[] = [];
+    toasts: ToastMessage[] = [];
 
     constructor(private toastService: ToastService) { }
 
@@ -134,8 +134,8 @@ export class ToastContainerComponent implements OnInit {
         });
     }
 
-    removeToast(id: number): void {
-        this.toastService.remove(id);
+    removeToast(id: string): void {
+        this.toastService.removeToast(id);
     }
 
     getIconClass(type: string): string {
@@ -153,7 +153,7 @@ export class ToastContainerComponent implements OnInit {
         }
     }
 
-    getProgressStyle(toast: Toast): any {
+    getProgressStyle(toast: ToastMessage): any {
         if (toast.duration && toast.duration > 0) {
             return {
                 'animation-duration': `${toast.duration}ms`

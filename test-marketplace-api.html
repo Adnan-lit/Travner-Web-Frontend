@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Marketplace API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .product-card { border: 1px solid #ccc; margin: 10px; padding: 15px; display: inline-block; width: 300px; vertical-align: top; }
+        .product-image { width: 100%; height: 200px; object-fit: cover; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Marketplace API Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Test Products API (No Auth Required)</h2>
+        <button onclick="testProductsAPI()">Test Products API</button>
+        <div id="products-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Create Sample Product (Auth Required)</h2>
+        <button onclick="createSampleProduct()">Create Sample Product</button>
+        <div id="create-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Test Cart API (Auth Required)</h2>
+        <button onclick="testCartAPI()">Test Cart API</button>
+        <div id="cart-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Add Item to Cart (Auth Required)</h2>
+        <button onclick="addToCart()">Add Item to Cart</button>
+        <div id="add-cart-result"></div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8080';
+        const AUTH_HEADER = 'Basic ' + btoa('testuser:password');
+        
+        async function testProductsAPI() {
+            const resultDiv = document.getElementById('products-result');
+            resultDiv.innerHTML = '<p class="info">Loading products...</p>';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/market/products?page=0&size=10`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Products API working</p>
+                        <p>Found ${data.data.length} products</p>
+                        <div class="products-grid">
+                            ${data.data.map(product => `
+                                <div class="product-card">
+                                    <img src="${product.images && product.images[0] ? product.images[0] : 'https://via.placeholder.com/300x200'}" 
+                                         alt="${product.name}" class="product-image" />
+                                    <h3>${product.name}</h3>
+                                    <p>$${product.price}</p>
+                                    <p>Category: ${product.category}</p>
+                                    <p>Stock: ${product.stockQuantity}</p>
+                                    <p>Location: ${product.location}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ API Error: ${data.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function createSampleProduct() {
+            const resultDiv = document.getElementById('create-result');
+            resultDiv.innerHTML = '<p class="info">Creating sample product...</p>';
+            
+            try {
+                const productData = {
+                    name: "Test Travel Backpack",
+                    description: "A high-quality travel backpack perfect for backpacking and hiking. Waterproof material with multiple compartments.",
+                    price: 89.99,
+                    category: "electronics",
+                    stockQuantity: 15,
+                    location: "Dhaka, Bangladesh",
+                    tags: ["backpack", "travel", "hiking", "waterproof"],
+                    images: ["https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500"]
+                };
+                
+                const response = await fetch(`${BASE_URL}/api/market/products`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': AUTH_HEADER
+                    },
+                    body: JSON.stringify(productData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Product created successfully</p>
+                        <p>Product ID: ${data.data.id}</p>
+                        <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testCartAPI() {
+            const resultDiv = document.getElementById('cart-result');
+            resultDiv.innerHTML = '<p class="info">Testing cart API...</p>';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/cart`, {
+                    headers: {
+                        'Authorization': AUTH_HEADER
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Cart API working</p>
+                        <p>Cart ID: ${data.data.id}</p>
+                        <p>Total Items: ${data.data.totalItems}</p>
+                        <p>Total Amount: $${data.data.totalAmount}</p>
+                        <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ API Error: ${data.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function addToCart() {
+            const resultDiv = document.getElementById('add-cart-result');
+            resultDiv.innerHTML = '<p class="info">Adding item to cart...</p>';
+            
+            try {
+                // First, get products to find a product ID
+                const productsResponse = await fetch(`${BASE_URL}/api/market/products?page=0&size=1`);
+                const productsData = await productsResponse.json();
+                
+                if (!productsData.success || productsData.data.length === 0) {
+                    resultDiv.innerHTML = '<p class="error">❌ No products available to add to cart</p>';
+                    return;
+                }
+                
+                const product = productsData.data[0];
+                const cartData = {
+                    productId: product.id,
+                    quantity: 1
+                };
+                
+                const response = await fetch(`${BASE_URL}/api/cart/items`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': AUTH_HEADER
+                    },
+                    body: JSON.stringify(cartData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Item added to cart successfully</p>
+                        <p>Product: ${product.name}</p>
+                        <p>Quantity: 1</p>
+                        <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
+

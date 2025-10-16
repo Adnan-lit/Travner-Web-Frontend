@@ -12,470 +12,95 @@ export type PostFormMode = 'create' | 'edit';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   template: `
-  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="post-form-root" novalidate>
-    <div class="field">
-      <label>Title <span>*</span></label>
-      <input type="text" formControlName="title" />
-  <div class="err" *ngIf="submitted && form.get('title')?.invalid">Title required (min 3)</div>
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="post-form" novalidate>
+    <!-- Title Field -->
+    <div class="form-group">
+      <label for="title" class="form-label">Title *</label>
+      <input
+        type="text"
+        id="title"
+        formControlName="title"
+        class="form-input"
+        placeholder="Enter a compelling title for your post"
+        [class.error]="submitted && form.get('title')?.invalid"
+      />
+      <div class="form-error" *ngIf="submitted && form.get('title')?.invalid">
+        <span *ngIf="form.get('title')?.errors?.['required']">Title is required</span>
+        <span *ngIf="form.get('title')?.errors?.['minlength']">Title must be at least 3 characters</span>
+        <span *ngIf="form.get('title')?.errors?.['maxlength']">Title must be less than 100 characters</span>
+    </div>
     </div>
 
-    <div class="field">
-      <label>Content <span>*</span></label>
-      <textarea rows="6" formControlName="content"></textarea>
-  <div class="err" *ngIf="submitted && form.get('content')?.invalid">Content required (min 10)</div>
+    <!-- Content Field -->
+    <div class="form-group">
+      <label for="content" class="form-label">Content *</label>
+      <textarea
+        id="content"
+        formControlName="content"
+        class="form-textarea"
+        placeholder="Share your travel story, tips, or experiences..."
+        rows="6"
+        [class.error]="submitted && form.get('content')?.invalid"
+      ></textarea>
+      <div class="form-error" *ngIf="submitted && form.get('content')?.invalid">
+        <span *ngIf="form.get('content')?.errors?.['required']">Content is required</span>
+        <span *ngIf="form.get('content')?.errors?.['minlength']">Content must be at least 10 characters</span>
+      </div>
     </div>
 
-    <div class="field">
-      <label>Location <span>*</span></label>
-      <input type="text" formControlName="location" />
-  <div class="err" *ngIf="submitted && form.get('location')?.invalid">Location required</div>
+    <!-- Location Field -->
+    <div class="form-group">
+      <label for="location" class="form-label">Location</label>
+      <input
+        type="text"
+        id="location"
+        formControlName="location"
+        class="form-input"
+        placeholder="Where did this happen? (e.g., Paris, France)"
+      />
     </div>
 
-    <div class="field">
-      <label>Tags</label>
-      <div class="tags-box" (click)="focusTagInput()">
-        <span class="chip" *ngFor="let t of tags; let i = index">
-          {{ t }}
-          <button type="button" (click)="removeTag(i)" aria-label="Remove tag">×</button>
+    <!-- Tags Field -->
+    <div class="form-group">
+      <label for="tags" class="form-label">Tags</label>
+      <input
+        type="text"
+        id="tags"
+        formControlName="tags"
+        class="form-input"
+        placeholder="Enter tags separated by commas (e.g., adventure, hiking, nature)"
+      />
+      <div class="form-hint">Separate multiple tags with commas</div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="cancel.emit()"
+        [disabled]="saving"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="form.invalid || saving"
+      >
+        <span *ngIf="!saving">{{ mode === 'create' ? 'Create Post' : 'Save Changes' }}</span>
+        <span *ngIf="saving" class="loading">
+          <svg class="spinner" width="16" height="16" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" opacity="0.25"/>
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="4" fill="none"/>
+          </svg>
+          {{ mode === 'create' ? 'Creating...' : 'Saving...' }}
         </span>
-        <input #tagInputRef type="text" [(ngModel)]="tagInput" [ngModelOptions]="{standalone: true}" name="tagInput" (keydown)="onTagKey($event)" placeholder="Add tag & Enter" />
-      </div>
-      <div class="hint">Press Enter to add. Max 10 tags. Lowercase only.</div>
-    </div>
-
-    <div class="field inline">
-      <label><input type="checkbox" formControlName="published" /> Published</label>
-    </div>
-
-    <div class="field" *ngIf="allowMedia">
-      <label>Media</label>
-      <div class="media-uploader" (dragover)="onDragOver($event)" (drop)="onFileDrop($event)">
-        <input type="file" multiple (change)="onFileInput($event)" accept="image/*,video/*" />
-        <p>Drag & drop or click to select images/videos</p>
-      </div>
-      <div class="media-previews" *ngIf="previews.length > 0">
-        <div class="preview" *ngFor="let p of previews; let i = index">
-          <button type="button" class="remove" (click)="removeNewFile(i)" aria-label="Remove media">×</button>
-          <img *ngIf="p.type==='image'" [src]="p.url" alt="preview" />
-          <video *ngIf="p.type==='video'" [src]="p.url" muted></video>
-        </div>
-      </div>
-  <div class="existing-media" *ngIf="existingMedia && existingMedia.length > 0">
-        <h4>Existing Media</h4>
-        <div class="media-previews existing">
-          <div class="preview" *ngFor="let m of existingMedia">
-            <button type="button" class="remove" (click)="deleteMedia.emit(m.id)" aria-label="Delete media">×</button>
-            <img *ngIf="m.type === 'image'" [src]="m.url" [alt]="'media'" />
-            <video *ngIf="m.type === 'video'" [src]="m.url" muted></video>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="actions">
-      <button type="submit" class="primary" [disabled]="saving">{{ saving ? (mode==='create' ? 'Creating...' : 'Saving...') : (mode==='create' ? 'Create Post' : 'Save Changes') }}</button>
-      <button type="button" (click)="cancel.emit()" [disabled]="saving">Cancel</button>
+      </button>
     </div>
   </form>
   `,
-  styles: [`
-    .post-form-root { 
-      display: flex; 
-      flex-direction: column; 
-      gap: 1.5rem; 
-      max-width: 100%;
-      background: rgba(255,255,255,0.02);
-      padding: 2rem;
-      border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.08);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-    }
-    
-    html[data-theme='light'] .post-form-root { 
-      background: rgba(255,255,255,0.85); 
-      border-color: rgba(0,0,0,0.08);
-    }
-    
-    .field { 
-      display: flex; 
-      flex-direction: column; 
-      gap: 0.5rem; 
-    }
-    
-    .field label { 
-      font-weight: 600; 
-      font-size: 0.9rem; 
-      letter-spacing: 0.5px; 
-      display: flex; 
-      gap: 0.35rem; 
-      align-items: center; 
-      color: rgba(255,255,255,0.9);
-      margin-bottom: 0.25rem;
-    }
-    
-    html[data-theme='light'] .field label { 
-      color: rgba(0,0,0,0.8); 
-    }
-    
-    .field label span { 
-      color: var(--accent-400); 
-      font-weight: 700;
-    }
-    
-    input[type=text], textarea { 
-      width: 100%; 
-      padding: 1rem 1.25rem; 
-      border-radius: 16px; 
-      border: 1px solid rgba(255,255,255,0.12); 
-      background: rgba(15,23,42,0.6); 
-      color: #fff; 
-      font: inherit; 
-      font-size: 0.95rem;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
-    input[type=text]:focus, textarea:focus {
-      outline: none;
-      border-color: var(--primary-400);
-      background: rgba(15,23,42,0.8);
-      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1), 0 4px 12px rgba(0,0,0,0.15);
-    }
-    
-    html[data-theme='light'] input[type=text], 
-    html[data-theme='light'] textarea { 
-      background: rgba(255,255,255,0.95); 
-      color: #0f172a; 
-      border-color: rgba(0,0,0,0.12); 
-    }
-    
-    html[data-theme='light'] input[type=text]:focus, 
-    html[data-theme='light'] textarea:focus { 
-      background: rgba(255,255,255,1); 
-      border-color: var(--primary-500);
-      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1), 0 4px 12px rgba(0,0,0,0.08);
-    }
-    
-    textarea { 
-      resize: vertical; 
-      min-height: 120px;
-      line-height: 1.6;
-    }
-    
-    .tags-box { 
-      display: flex; 
-      flex-wrap: wrap; 
-      gap: 0.6rem; 
-      padding: 0.8rem 1rem; 
-      border: 1px solid rgba(255,255,255,0.12); 
-      border-radius: 16px; 
-      background: rgba(15,23,42,0.6); 
-      cursor: text; 
-      min-height: 56px;
-      align-items: center;
-      transition: all 0.3s ease;
-    }
-    
-    .tags-box:focus-within {
-      border-color: var(--primary-400);
-      background: rgba(15,23,42,0.8);
-      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
-    }
-    
-    html[data-theme='light'] .tags-box { 
-      background: rgba(255,255,255,0.95); 
-      border-color: rgba(0,0,0,0.12);
-    }
-    
-    html[data-theme='light'] .tags-box:focus-within { 
-      background: rgba(255,255,255,1); 
-      border-color: var(--primary-500);
-    }
-    
-    .tags-box input { 
-      flex: 1; 
-      min-width: 140px; 
-      border: none; 
-      background: transparent; 
-      padding: 0.5rem; 
-      color: inherit; 
-      font: inherit; 
-      font-size: 0.9rem;
-    }
-    
-    .tags-box input:focus { 
-      outline: none; 
-    }
-    
-    .tags-box input::placeholder {
-      color: rgba(255,255,255,0.5);
-    }
-    
-    html[data-theme='light'] .tags-box input::placeholder {
-      color: rgba(0,0,0,0.4);
-    }
-    
-    .chip { 
-      display: inline-flex; 
-      align-items: center; 
-      gap: 0.4rem; 
-      padding: 0.5rem 0.8rem; 
-      background: linear-gradient(135deg, var(--primary-500), var(--accent-500)); 
-      color: #fff; 
-      border-radius: 999px; 
-      font-size: 0.75rem; 
-      font-weight: 600; 
-      letter-spacing: 0.5px; 
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      animation: chipSlideIn 0.2s ease-out;
-    }
-    
-    @keyframes chipSlideIn {
-      from { opacity: 0; transform: scale(0.8); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    
-    .chip button { 
-      background: rgba(255,255,255,0.25); 
-      border: none; 
-      color: #fff; 
-      width: 18px; 
-      height: 18px; 
-      border-radius: 50%; 
-      cursor: pointer; 
-      font-size: 0.7rem; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      transition: all 0.2s ease;
-    }
-    
-    .chip button:hover { 
-      background: rgba(255,255,255,0.4); 
-      transform: scale(1.1);
-    }
-    
-    .actions { 
-      display: flex; 
-      gap: 1rem; 
-      margin-top: 1rem;
-      justify-content: flex-end;
-    }
-    
-    button.primary { 
-      background: linear-gradient(135deg, var(--primary-500), var(--accent-500)); 
-      color: #fff; 
-      padding: 1rem 2rem; 
-      border: none; 
-      border-radius: 16px; 
-      font-weight: 600; 
-      font-size: 0.9rem;
-      cursor: pointer; 
-      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3); 
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    button.primary:hover:not(:disabled) { 
-      transform: translateY(-2px); 
-      box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4); 
-    }
-    
-    button.primary:active:not(:disabled) { 
-      transform: translateY(0); 
-      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3); 
-    }
-    
-    button.primary:disabled { 
-      opacity: 0.6; 
-      cursor: not-allowed; 
-      transform: none;
-      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2); 
-    }
-    
-    button:not(.primary) {
-      background: rgba(255,255,255,0.08);
-      color: rgba(255,255,255,0.8);
-      padding: 1rem 1.5rem;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 16px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    
-    button:not(.primary):hover:not(:disabled) {
-      background: rgba(255,255,255,0.12);
-      color: rgba(255,255,255,0.9);
-    }
-    
-    html[data-theme='light'] button:not(.primary) {
-      background: rgba(0,0,0,0.05);
-      color: rgba(0,0,0,0.7);
-      border-color: rgba(0,0,0,0.12);
-    }
-    
-    html[data-theme='light'] button:not(.primary):hover:not(:disabled) {
-      background: rgba(0,0,0,0.08);
-      color: rgba(0,0,0,0.8);
-    }
-    
-    .err { 
-      color: #ef4444; 
-      font-size: 0.8rem; 
-      font-weight: 600; 
-      margin-top: 0.25rem; 
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    
-    .err::before {
-      content: "⚠";
-      font-size: 0.9rem;
-    }
-    
-    .hint { 
-      opacity: 0.6; 
-      font-size: 0.75rem; 
-      margin-top: 0.4rem; 
-      color: rgba(255,255,255,0.7);
-    }
-    
-    html[data-theme='light'] .hint { 
-      color: rgba(0,0,0,0.5); 
-    }
-    
-    .media-uploader { 
-      margin-top: 0.5rem; 
-      border: 2px dashed rgba(255,255,255,0.2); 
-      border-radius: 20px; 
-      padding: 2rem; 
-      text-align: center; 
-      font-size: 0.85rem; 
-      cursor: pointer; 
-      background: rgba(15,23,42,0.3); 
-      position: relative; 
-      transition: all 0.3s ease;
-      color: rgba(255,255,255,0.8);
-    }
-    
-    .media-uploader:hover { 
-      background: rgba(15,23,42,0.5); 
-      border-color: rgba(255,255,255,0.3);
-    }
-    
-    html[data-theme='light'] .media-uploader { 
-      background: rgba(255,255,255,0.7); 
-      border-color: rgba(0,0,0,0.15); 
-      color: rgba(0,0,0,0.7);
-    }
-    
-    html[data-theme='light'] .media-uploader:hover { 
-      background: rgba(255,255,255,0.9); 
-      border-color: rgba(0,0,0,0.2);
-    }
-    
-    .media-uploader input[type=file] { 
-      position: absolute; 
-      inset: 0; 
-      width: 100%; 
-      height: 100%; 
-      opacity: 0; 
-      cursor: pointer; 
-    }
-    
-    .media-previews { 
-      display: flex; 
-      flex-wrap: wrap; 
-      gap: 1rem; 
-      margin-top: 1rem; 
-    }
-    
-    .media-previews.existing { 
-      margin-top: 0.75rem; 
-    }
-    
-    .preview { 
-      width: 120px; 
-      height: 120px; 
-      position: relative; 
-      border-radius: 16px; 
-      overflow: hidden; 
-      background: #0f172a; 
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
-      transition: all 0.3s ease;
-    }
-    
-    .preview:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-    }
-    
-    .preview img, .preview video { 
-      width: 100%; 
-      height: 100%; 
-      object-fit: cover; 
-      display: block; 
-    }
-    
-    .preview button.remove { 
-      position: absolute; 
-      top: 6px; 
-      right: 6px; 
-      background: rgba(239, 68, 68, 0.9); 
-      border: none; 
-      width: 28px; 
-      height: 28px; 
-      border-radius: 50%; 
-      color: #fff; 
-      cursor: pointer; 
-      font-size: 1rem; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    }
-    
-    .preview button.remove:hover { 
-      background: rgba(239, 68, 68, 1); 
-      transform: scale(1.1);
-    }
-    
-    h4 { 
-      margin: 1rem 0 0.5rem; 
-      font-size: 0.8rem; 
-      letter-spacing: 1px; 
-      text-transform: uppercase; 
-      opacity: 0.7; 
-      font-weight: 600;
-    }
-    
-    .field.inline {
-      flex-direction: row;
-      align-items: center;
-      gap: 0.75rem;
-    }
-    
-    .field.inline label {
-      margin: 0;
-      font-size: 0.9rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    
-    input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--primary-500);
-      cursor: pointer;
-    }
-  `]
+  styleUrls: ['../post-create/post-create.component.css']
 })
 export class PostFormComponent implements OnChanges {
   @Input() mode: PostFormMode = 'create';
@@ -496,10 +121,10 @@ export class PostFormComponent implements OnChanges {
 
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
-      title: ['', [Validators.required, Validators.minLength(3)]],
+      title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
       content: ['', [Validators.required, Validators.minLength(10)]],
-      location: ['', [Validators.required]],
-      published: [true]
+      location: [''],
+      tags: ['']
     });
   }
 
@@ -509,9 +134,8 @@ export class PostFormComponent implements OnChanges {
         title: this.initial.title,
         content: this.initial.content,
         location: this.initial.location,
-        published: 'published' in this.initial ? (this.initial as any).published : true
+        tags: this.initial.tags ? this.initial.tags.join(', ') : ''
       });
-      this.tags = [...(this.initial.tags || [])];
     }
   }
 
@@ -536,13 +160,18 @@ export class PostFormComponent implements OnChanges {
     this.submitted = true;
     if (this.form.invalid) return;
 
+    // Parse tags from comma-separated string
+    const tags = this.form.value.tags 
+      ? this.form.value.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag)
+      : [];
+
     const base = {
       title: this.form.value.title,
       content: this.form.value.content,
       location: this.form.value.location,
-      tags: this.tags,
+      tags: tags,
       mediaIds: [], // Initialize empty for now, will be updated after media upload
-      published: this.form.value.published
+      published: true
     };
     this.submitPost.emit({ data: base as CreatePostRequest | UpdatePostRequest, files: this.selectedFiles });
   }

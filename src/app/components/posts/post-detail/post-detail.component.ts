@@ -760,7 +760,7 @@ export class PostDetailComponent implements OnInit {
     // Show feedback when redirected from guard
     const denied = this.route.snapshot.queryParamMap.get('denied');
     if (denied === 'not-owner') {
-      this.toast.info('You are not allowed to edit that post.');
+      this.toast.info('You are not allowed to edit that post.', '');
     }
     // Get post ID from route
     this.route.paramMap.subscribe(params => {

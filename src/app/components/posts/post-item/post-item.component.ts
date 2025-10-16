@@ -691,11 +691,18 @@ export class PostItemComponent implements OnDestroy {
       return {};
     }
 
+    // Check if it's already a blob URL or direct URL
+    if (mediaUrl.startsWith('blob:') || mediaUrl.startsWith('http') || mediaUrl.startsWith('data:')) {
+      return { 'background-image': `url(${mediaUrl})` };
+    }
+
     const blobUrl = this.getMediaBlobUrl(mediaUrl);
     if (blobUrl && blobUrl.startsWith('blob:')) {
       return { 'background-image': `url(${blobUrl})` };
     }
-    return {};
+    
+    // Fallback to direct URL
+    return { 'background-image': `url(${mediaUrl})` };
   }
 
   /**

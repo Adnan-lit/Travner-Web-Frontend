@@ -1,6 +1,201 @@
-<div class="landing-container">
-  <div class="hero-section">
-    <h1>Welcome to Travner</h1>
-    <p>Your travel community platform</p>
+<div class="landing-page">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="particles" id="particles"></div>
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1 class="hero-title">
+          <span class="gradient-text">Discover</span> the World,
+          <span class="gradient-text">Connect</span> with Travelers
+        </h1>
+        <p class="hero-subtitle">
+          Join the ultimate social platform for travelers. Share your adventures, 
+          find travel buddies, discover local guides, and explore the world together.
+        </p>
+        <div class="hero-actions">
+          <a routerLink="/signup" class="btn btn-primary btn-lg">
+            <i class="fas fa-rocket"></i>
+            Start Your Journey
+          </a>
+          <a routerLink="/community" class="btn btn-outline btn-lg">
+            <i class="fas fa-users"></i>
+            Explore Community
+          </a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="floating-cards">
+          <div class="floating-card card-1">
+            <i class="fas fa-map-marked-alt"></i>
+            <span>Plan Trips</span>
+          </div>
+          <div class="floating-card card-2">
+            <i class="fas fa-camera"></i>
+            <span>Share Photos</span>
+          </div>
+          <div class="floating-card card-3">
+            <i class="fas fa-heart"></i>
+            <span>Make Friends</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section section">
+    <div class="container">
+      <div class="section-header text-center">
+        <h2>Why Choose Travner?</h2>
+        <p>Everything you need to make your travel dreams come true</p>
+      </div>
+      
+      <div class="features-grid grid grid-cols-3">
+        <div class="feature-card card">
+          <div class="feature-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <h3>Travel Buddies</h3>
+          <p>Find like-minded travelers to explore destinations together. Connect with people who share your passion for adventure.</p>
+        </div>
+        
+        <div class="feature-card card">
+          <div class="feature-icon">
+            <i class="fas fa-map"></i>
+          </div>
+          <h3>Local Guides</h3>
+          <p>Connect with experienced local guides who know the hidden gems and can show you the authentic side of any destination.</p>
+        </div>
+        
+        <div class="feature-card card">
+          <div class="feature-icon">
+            <i class="fas fa-store"></i>
+          </div>
+          <h3>Travel Marketplace</h3>
+          <p>Buy and sell travel gear, book experiences, and discover unique products from fellow travelers around the world.</p>
+        </div>
+        
+        <div class="feature-card card">
+          <div class="feature-icon">
+            <i class="fas fa-comments"></i>
+          </div>
+          <h3>Community Stories</h3>
+          <p>Share your travel experiences, get advice, and inspire others with your adventures through our vibrant community.</p>
+        </div>
+        
+        <div class="feature-card card">
+          <div class="feature-icon">
+            <i class="fas fa-route"></i>
+          </div>
+          <h3>Itinerary Planning</h3>
+          <p>Create and share detailed travel itineraries. Get recommendations and plan your perfect trip with community insights.</p>
+        </div>
+        
+        <div class="feature-card card">
+          <div class="feature-icon">
+            <i class="fas fa-mobile-alt"></i>
+          </div>
+          <h3>Real-time Chat</h3>
+          <p>Stay connected with fellow travelers through our instant messaging system. Plan trips, share updates, and make friends.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="stats-section">
+    <div class="container">
+      <div class="stats-grid grid grid-cols-4">
+        <div class="stat-item">
+          <div class="stat-number">10K+</div>
+          <div class="stat-label">Active Travelers</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">50+</div>
+          <div class="stat-label">Countries</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">1M+</div>
+          <div class="stat-label">Stories Shared</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">500+</div>
+          <div class="stat-label">Local Guides</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="testimonials-section section">
+    <div class="container">
+      <div class="section-header text-center">
+        <h2>What Our Travelers Say</h2>
+        <p>Real stories from real travelers</p>
+      </div>
+      
+      <div class="testimonials-grid grid grid-cols-3">
+        <div class="testimonial-card card">
+          <div class="testimonial-content">
+            <p>"Travner helped me find amazing travel buddies for my Southeast Asia trip. The community is incredible!"</p>
+          </div>
+          <div class="testimonial-author">
+            <div class="author-avatar">
+              <img src="https://ui-avatars.com/api/?name=Sarah+Johnson&background=0ea5e9&color=fff" alt="Sarah Johnson">
+            </div>
+            <div class="author-info">
+              <h4>Sarah Johnson</h4>
+              <span>Adventure Traveler</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="testimonial-card card">
+          <div class="testimonial-content">
+            <p>"I've discovered so many hidden gems through local guides on Travner. It's changed how I travel completely!"</p>
+          </div>
+          <div class="testimonial-author">
+            <div class="author-avatar">
+              <img src="https://ui-avatars.com/api/?name=Mike+Chen&background=22c55e&color=fff" alt="Mike Chen">
+            </div>
+            <div class="author-info">
+              <h4>Mike Chen</h4>
+              <span>Culture Explorer</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="testimonial-card card">
+          <div class="testimonial-content">
+            <p>"The marketplace feature is fantastic! I've bought and sold so much travel gear. It's like a travel community store."</p>
+          </div>
+          <div class="testimonial-author">
+            <div class="author-avatar">
+              <img src="https://ui-avatars.com/api/?name=Emma+Wilson&background=eab308&color=fff" alt="Emma Wilson">
+            </div>
+            <div class="author-info">
+              <h4>Emma Wilson</h4>
+              <span>Budget Backpacker</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-content text-center">
+        <h2>Ready to Start Your Adventure?</h2>
+        <p>Join thousands of travelers who are already exploring the world together</p>
+        <div class="cta-actions">
+          <a routerLink="/signup" class="btn btn-primary btn-xl">
+            <i class="fas fa-rocket"></i>
+            Join Travner Today
+          </a>
+        </div>
+      </div>
   </div>
+  </section>
 </div>

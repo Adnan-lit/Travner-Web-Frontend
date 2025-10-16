@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Marketplace Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .product-card { border: 1px solid #ccc; margin: 10px; padding: 15px; display: inline-block; width: 300px; vertical-align: top; }
+        .product-image { width: 100%; height: 200px; object-fit: cover; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+        .auth-section { background: #f0f8ff; padding: 10px; margin: 10px 0; }
+        .admin-section { background: #fff0f0; padding: 10px; margin: 10px 0; }
+        .user-section { background: #f0fff0; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Complete Marketplace Test</h1>
+    
+    <div class="auth-section">
+        <h2>Authentication Test</h2>
+        <button onclick="testAuth()">Test Authentication</button>
+        <div id="auth-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>1. Test Products API (Public)</h2>
+        <button onclick="testProducts()">Test Products</button>
+        <div id="products-result"></div>
+    </div>
+    
+    <div class="admin-section">
+        <h2>2. Admin Product Management</h2>
+        <button onclick="testAdminProductCreation()">Test Admin Product Creation</button>
+        <button onclick="testNonAdminProductCreation()">Test Non-Admin Product Creation (Should Fail)</button>
+        <div id="admin-product-result"></div>
+    </div>
+    
+    <div class="user-section">
+        <h2>3. User Cart Functionality</h2>
+        <button onclick="testCartOperations()">Test Cart Operations</button>
+        <div id="cart-result"></div>
+    </div>
+    
+    <div class="user-section">
+        <h2>4. Order System</h2>
+        <button onclick="testOrderCreation()">Test Order Creation</button>
+        <div id="order-result"></div>
+    </div>
+    
+    <div class="admin-section">
+        <h2>5. Admin Order Management</h2>
+        <button onclick="testAdminOrderManagement()">Test Admin Order Management</button>
+        <div id="admin-order-result"></div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8080';
+        const ADMIN_AUTH = 'Basic ' + btoa('admin:password');
+        const USER_AUTH = 'Basic ' + btoa('testuser:password');
+        
+        let currentProducts = [];
+        let currentCart = null;
+        let currentOrders = [];
+        
+        async function testAuth() {
+            const resultDiv = document.getElementById('auth-result');
+            resultDiv.innerHTML = '<p class="info">Testing authentication...</p>';
+            
+            try {
+                // Test admin auth
+                const adminResponse = await fetch(`${BASE_URL}/api/user/profile`, {
+                    headers: { 'Authorization': ADMIN_AUTH }
+                });
+                
+                // Test user auth
+                const userResponse = await fetch(`${BASE_URL}/api/user/profile`, {
+                    headers: { 'Authorization': USER_AUTH }
+                });
+                
+                if (adminResponse.ok && userResponse.ok) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Authentication working</p>
+                        <p>Admin auth: ${adminResponse.status}</p>
+                        <p>User auth: ${userResponse.status}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Authentication failed</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Auth Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testProducts() {
+            const resultDiv = document.getElementById('products-result');
+            resultDiv.innerHTML = '<p class="info">Loading products...</p>';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/market/products?page=0&size=10`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentProducts = data.data;
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Products API working</p>
+                        <p>Found ${data.data.length} products</p>
+                        <div class="products-grid">
+                            ${data.data.map(product => `
+                                <div class="product-card">
+                                    <img src="${product.images && product.images[0] ? product.images[0] : 'https://via.placeholder.com/300x200'}" 
+                                         alt="${product.name}" class="product-image" />
+                                    <h3>${product.name}</h3>
+                                    <p>$${product.price}</p>
+                                    <p>Category: ${product.category}</p>
+                                    <p>Stock: ${product.stockQuantity}</p>
+                                    <button onclick="addToCart('${product.id}')">Add to Cart</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ API Error: ${data.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testAdminProductCreation() {
+            const resultDiv = document.getElementById('admin-product-result');
+            resultDiv.innerHTML = '<p class="info">Testing admin product creation...</p>';
+            
+            try {
+                const productData = {
+                    name: "Admin Test Product",
+                    description: "A product created by admin for testing",
+                    price: 49.99,
+                    category: "electronics",
+                    stockQuantity: 10,
+                    location: "Test City",
+                    tags: ["test", "admin", "electronics"],
+                    images: ["https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500"]
+                };
+                
+                const response = await fetch(`${BASE_URL}/api/market/products`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': ADMIN_AUTH
+                    },
+                    body: JSON.stringify(productData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Admin product creation successful</p>
+                        <p>Product ID: ${data.data.id}</p>
+                        <button onclick="testProducts()">Refresh Products</button>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Admin Error: ${data.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testNonAdminProductCreation() {
+            const resultDiv = document.getElementById('admin-product-result');
+            resultDiv.innerHTML = '<p class="info">Testing non-admin product creation (should fail)...</p>';
+            
+            try {
+                const productData = {
+                    name: "User Test Product",
+                    description: "A product created by regular user (should fail)",
+                    price: 29.99,
+                    category: "electronics",
+                    stockQuantity: 5,
+                    location: "Test City",
+                    tags: ["test", "user", "electronics"],
+                    images: ["https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500"]
+                };
+                
+                const response = await fetch(`${BASE_URL}/api/market/products`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': USER_AUTH
+                    },
+                    body: JSON.stringify(productData)
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success && data.message.includes("administrators")) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Non-admin product creation correctly blocked</p>
+                        <p>Error: ${data.message}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Non-admin should not be able to create products</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testCartOperations() {
+            const resultDiv = document.getElementById('cart-result');
+            resultDiv.innerHTML = '<p class="info">Testing cart operations...</p>';
+            
+            try {
+                // Get cart
+                const cartResponse = await fetch(`${BASE_URL}/api/cart`, {
+                    headers: { 'Authorization': USER_AUTH }
+                });
+                
+                if (cartResponse.ok) {
+                    const cartData = await cartResponse.json();
+                    currentCart = cartData.data;
+                    
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Cart API working</p>
+                        <p>Cart ID: ${currentCart.id}</p>
+                        <p>Items: ${currentCart.totalItems}</p>
+                        <p>Total: $${currentCart.totalAmount}</p>
+                        <button onclick="addSampleToCart()">Add Sample Product to Cart</button>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Cart Error: ${cartResponse.status}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function addSampleToCart() {
+            if (currentProducts.length === 0) {
+                alert('No products available. Please load products first.');
+                return;
+            }
+            
+            const product = currentProducts[0];
+            const resultDiv = document.getElementById('cart-result');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/cart/items`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': USER_AUTH
+                    },
+                    body: JSON.stringify({
+                        productId: product.id,
+                        quantity: 1
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Item added to cart successfully</p>
+                        <p>Product: ${product.name}</p>
+                        <p>Quantity: 1</p>
+                        <button onclick="testCartOperations()">Refresh Cart</button>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testOrderCreation() {
+            const resultDiv = document.getElementById('order-result');
+            resultDiv.innerHTML = '<p class="info">Testing order creation...</p>';
+            
+            try {
+                const orderData = {
+                    customerInfo: {
+                        fullName: "Test User",
+                        email: "test@example.com",
+                        phone: "1234567890",
+                        addressLine1: "123 Test Street",
+                        city: "Test City",
+                        state: "Test State",
+                        postalCode: "12345",
+                        country: "BD"
+                    }
+                };
+                
+                const response = await fetch(`${BASE_URL}/api/market/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': USER_AUTH
+                    },
+                    body: JSON.stringify(orderData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Order created successfully</p>
+                        <p>Order ID: ${data.data.id}</p>
+                        <p>Status: ${data.data.status}</p>
+                        <p>Total: $${data.data.amountTotal}</p>
+                        <button onclick="testOrderCreation()">Create Another Order</button>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ Order creation failed: ${data.message}</p>
+                        <p>This might be because cart is empty</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testAdminOrderManagement() {
+            const resultDiv = document.getElementById('admin-order-result');
+            resultDiv.innerHTML = '<p class="info">Testing admin order management...</p>';
+            
+            try {
+                // Get all orders (admin)
+                const response = await fetch(`${BASE_URL}/api/market/orders/admin`, {
+                    headers: { 'Authorization': ADMIN_AUTH }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentOrders = data.data;
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Admin order management working</p>
+                        <p>Found ${data.data.length} orders</p>
+                        ${data.data.map(order => `
+                            <div style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
+                                <h4>Order ${order.id}</h4>
+                                <p>Status: ${order.status}</p>
+                                <p>Total: $${order.amountTotal}</p>
+                                <p>Items: ${order.itemCount}</p>
+                                <button onclick="updateOrderStatus('${order.id}', 'CONFIRMED')">Mark as Confirmed</button>
+                                <button onclick="updateOrderStatus('${order.id}', 'SHIPPED')">Mark as Shipped</button>
+                                <button onclick="updateOrderStatus('${order.id}', 'DELIVERED')">Mark as Delivered</button>
+                            </div>
+                        `).join('')}
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Admin Error: ${data.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function updateOrderStatus(orderId, status) {
+            const resultDiv = document.getElementById('admin-order-result');
+            resultDiv.innerHTML = '<p class="info">Updating order status...</p>';
+            
+            try {
+                let endpoint = '';
+                if (status === 'CONFIRMED') {
+                    endpoint = `${BASE_URL}/api/market/orders/${orderId}/pay`;
+                } else if (status === 'SHIPPED') {
+                    endpoint = `${BASE_URL}/api/market/orders/${orderId}/fulfill`;
+                } else if (status === 'DELIVERED') {
+                    endpoint = `${BASE_URL}/api/market/orders/${orderId}/fulfill`;
+                }
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Authorization': ADMIN_AUTH }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Order status updated to ${status}</p>
+                        <button onclick="testAdminOrderManagement()">Refresh Orders</button>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
+

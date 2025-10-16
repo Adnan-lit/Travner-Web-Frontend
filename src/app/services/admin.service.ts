@@ -1,198 +1,375 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import { EnvironmentConfig } from '../config/environment.config';
-import { AdminUserResponse, CreateUserRequest, SystemStats } from '../models/common.model';
 import { ApiResponse, ApiListResponse } from '../models/api-response.model';
-
-export interface AdminResponse {
-    message: string;
-}
-
-export interface UpdateRolesRequest {
-    roles: string[];
-}
-
-export interface ResetPasswordRequest {
-    password: string;
-}
-
-export interface UpdateUserStatusRequest {
-    active: boolean;
-}
+import { User, AdminUser, SystemStats, AdminPost, AdminProduct } from '../models/common.model';
 
 @Injectable({
-    providedIn: 'root'
+  providedIn: 'root'
 })
 export class AdminService {
-    private readonly API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
+  private readonly API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
 
-    constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) { }
 
-    /**
-     * Get all users in the system
-     */
-    getAllUsers(page: number = 0, size: number = 20): Observable<ApiListResponse<AdminUserResponse>> {
-        const endpoint = `${this.API_BASE_URL}/api/admin/users`;
-        const params = {
-            page: page.toString(),
-            size: size.toString()
-        };
-        return this.http.get<ApiListResponse<AdminUserResponse>>(endpoint, { params }).pipe(
-            tap(response => {
-                console.log('✅ AdminService: Successfully fetched users:', response.data?.length);
-            }),
-            catchError(error => {
-                console.error('❌ AdminService: Error fetching users:', error);
-                throw this.handleAdminError(error);
-            })
-        );
+  // User Management
+
+  /**
+   * Get all users with pagination and filtering
+   */
+  getUsers(page: number = 0, size: number = 20, search?: string, role?: string): Observable<ApiListResponse<AdminUser>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/users`;
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    if (search) {
+      params = params.set('search', search);
+    }
+    if (role) {
+      params = params.set('role', role);
     }
 
-    /**
-     * Get user by username
-     */
-    getUserByUsername(username: string): Observable<ApiResponse<AdminUserResponse>> {
-        const endpoint = `${this.API_BASE_URL}/api/admin/users/${username}`;
-        return this.http.get<ApiResponse<AdminUserResponse>>(endpoint).pipe(
-            catchError(error => {
-                throw this.handleAdminError(error);
-            })
-        );
+    return this.http.get<ApiListResponse<AdminUser>>(endpoint, { params }).pipe(
+      catchError(error => {
+        console.error('Error fetching users:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Get user by ID
+   */
+  getUserById(userId: string): Observable<ApiResponse<AdminUser>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/users/${userId}`;
+    return this.http.get<ApiResponse<AdminUser>>(endpoint).pipe(
+      catchError(error => {
+        console.error(`Error fetching user ${userId}:`, error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Update user role
+   */
+  updateUserRole(userId: string, role: string): Observable<ApiResponse<AdminUser>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/users/${userId}/role`;
+    return this.http.put<ApiResponse<AdminUser>>(endpoint, { role }).pipe(
+      catchError(error => {
+        console.error(`Error updating role for user ${userId}:`, error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Activate user
+   */
+  activateUser(userId: string): Observable<ApiResponse<AdminUser>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/users/${userId}/activate`;
+    return this.http.put<ApiResponse<AdminUser>>(endpoint, {}).pipe(
+      catchError(error => {
+        console.error(`Error activating user ${userId}:`, error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Deactivate user
+   */
+  deactivateUser(userId: string): Observable<ApiResponse<AdminUser>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/users/${userId}/deactivate`;
+    return this.http.put<ApiResponse<AdminUser>>(endpoint, {}).pipe(
+      catchError(error => {
+        console.error(`Error deactivating user ${userId}:`, error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Delete user
+   */
+  deleteUser(userId: string): Observable<ApiResponse<void>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/users/${userId}`;
+    return this.http.delete<ApiResponse<void>>(endpoint).pipe(
+      catchError(error => {
+        console.error(`Error deleting user ${userId}:`, error);
+        throw error;
+      })
+    );
+  }
+
+  // Content Management
+
+  /**
+   * Get all posts with admin details
+   */
+  getAdminPosts(page: number = 0, size: number = 20, search?: string, status?: string): Observable<ApiListResponse<AdminPost>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/posts`;
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    if (search) {
+      params = params.set('search', search);
+    }
+    if (status) {
+      params = params.set('status', status);
     }
 
-    /**
-     * Delete user by username
-     */
-    deleteUser(username: string): Observable<ApiResponse<void>> {
-        const endpoint = `${this.API_BASE_URL}/api/admin/users/${username}`;
-        return this.http.delete<ApiResponse<void>>(endpoint).pipe(
-            catchError(error => {
-                throw this.handleAdminError(error);
-            })
-        );
+    return this.http.get<ApiListResponse<AdminPost>>(endpoint, { params }).pipe(
+      catchError(error => {
+        console.error('Error fetching admin posts:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Delete post (admin)
+   */
+  deletePost(postId: string): Observable<ApiResponse<void>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/posts/${postId}`;
+    return this.http.delete<ApiResponse<void>>(endpoint).pipe(
+      catchError(error => {
+        console.error(`Error deleting post ${postId}:`, error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Get all products with admin details
+   */
+  getAdminProducts(page: number = 0, size: number = 20, search?: string, status?: string): Observable<ApiListResponse<AdminProduct>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/products`;
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    if (search) {
+      params = params.set('search', search);
+    }
+    if (status) {
+      params = params.set('status', status);
     }
 
-    /**
-     * Update user roles
-     */
-    updateUserRoles(username: string, roles: string[]): Observable<ApiResponse<void>> {
-        const endpoint = `${this.API_BASE_URL}/api/admin/users/${username}/roles`;
-        const requestBody: UpdateRolesRequest = { roles };
-        return this.http.put<ApiResponse<void>>(endpoint, requestBody).pipe(
-            catchError(error => {
-                throw this.handleAdminError(error);
-            })
-        );
+    return this.http.get<ApiListResponse<AdminProduct>>(endpoint, { params }).pipe(
+      catchError(error => {
+        console.error('Error fetching admin products:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Delete product (admin)
+   */
+  deleteProduct(productId: string): Observable<ApiResponse<void>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/products/${productId}`;
+    return this.http.delete<ApiResponse<void>>(endpoint).pipe(
+      catchError(error => {
+        console.error(`Error deleting product ${productId}:`, error);
+        throw error;
+      })
+    );
+  }
+
+  // Statistics and Analytics
+
+  /**
+   * Get system statistics
+   */
+  getSystemStats(): Observable<ApiResponse<SystemStats>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/stats`;
+    return this.http.get<ApiResponse<SystemStats>>(endpoint).pipe(
+      catchError(error => {
+        console.error('Error fetching system stats:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Get user activity statistics
+   */
+  getUserActivityStats(period: 'day' | 'week' | 'month' | 'year' = 'week'): Observable<ApiResponse<{
+    activeUsers: number;
+    newUsers: number;
+    totalSessions: number;
+    averageSessionDuration: number;
+  }>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/stats/user-activity`;
+    const params = new HttpParams().set('period', period);
+
+    return this.http.get<ApiResponse<{
+      activeUsers: number;
+      newUsers: number;
+      totalSessions: number;
+      averageSessionDuration: number;
+    }>>(endpoint, { params }).pipe(
+      catchError(error => {
+        console.error('Error fetching user activity stats:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Get content statistics
+   */
+  getContentStats(period: 'day' | 'week' | 'month' | 'year' = 'week'): Observable<ApiResponse<{
+    totalPosts: number;
+    newPosts: number;
+    totalComments: number;
+    newComments: number;
+    totalProducts: number;
+    newProducts: number;
+  }>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/stats/content`;
+    const params = new HttpParams().set('period', period);
+
+    return this.http.get<ApiResponse<{
+      totalPosts: number;
+      newPosts: number;
+      totalComments: number;
+      newComments: number;
+      totalProducts: number;
+      newProducts: number;
+    }>>(endpoint, { params }).pipe(
+      catchError(error => {
+        console.error('Error fetching content stats:', error);
+        throw error;
+      })
+    );
+  }
+
+  // System Management
+
+  /**
+   * Get system health status
+   */
+  getSystemHealth(): Observable<ApiResponse<{
+    status: string;
+    database: boolean;
+    storage: boolean;
+    cache: boolean;
+    uptime: number;
+    version: string;
+  }>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/system/health`;
+    return this.http.get<ApiResponse<{
+      status: string;
+      database: boolean;
+      storage: boolean;
+      cache: boolean;
+      uptime: number;
+      version: string;
+    }>>(endpoint).pipe(
+      catchError(error => {
+        console.error('Error fetching system health:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Clear system cache
+   */
+  clearCache(): Observable<ApiResponse<{ message: string }>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/system/cache/clear`;
+    return this.http.post<ApiResponse<{ message: string }>>(endpoint, {}).pipe(
+      catchError(error => {
+        console.error('Error clearing cache:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Get system logs
+   */
+  getSystemLogs(page: number = 0, size: number = 50, level?: string): Observable<ApiListResponse<{
+    id: string;
+    level: string;
+    message: string;
+    timestamp: string;
+    source: string;
+  }>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/system/logs`;
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    if (level) {
+      params = params.set('level', level);
     }
 
-    /**
-     * Reset user password
-     */
-    resetUserPassword(username: string, newPassword: string): Observable<ApiResponse<void>> {
-        const endpoint = `${this.API_BASE_URL}/api/admin/users/${username}/password`;
-        const requestBody: ResetPasswordRequest = { password: newPassword };
-        return this.http.put<ApiResponse<void>>(endpoint, requestBody).pipe(
-            catchError(error => {
-                throw this.handleAdminError(error);
-            })
-        );
-    }
+    return this.http.get<ApiListResponse<{
+      id: string;
+      level: string;
+      message: string;
+      timestamp: string;
+      source: string;
+    }>>(endpoint, { params }).pipe(
+      catchError(error => {
+        console.error('Error fetching system logs:', error);
+        throw error;
+      })
+    );
+  }
 
-    /**
-     * Promote user to admin
-     */
-    promoteUserToAdmin(username: string): Observable<ApiResponse<void>> {
-        const endpoint = `${this.API_BASE_URL}/api/admin/users/${username}/promote`;
-        return this.http.post<ApiResponse<void>>(endpoint, {}).pipe(
-            catchError(error => {
-                throw this.handleAdminError(error);
-            })
-        );
-    }
+  // Reports
 
-    /**
-     * Get users by role
-     */
-    getUsersByRole(role: string): Observable<ApiListResponse<AdminUserResponse>> {
-        const endpoint = `${this.API_BASE_URL}/api/admin/users/role/${role}`;
-        return this.http.get<ApiListResponse<AdminUserResponse>>(endpoint).pipe(
-            catchError(error => {
-                throw this.handleAdminError(error);
-            })
-        );
-    }
+  /**
+   * Generate user report
+   */
+  generateUserReport(startDate: string, endDate: string): Observable<ApiResponse<{
+    reportId: string;
+    downloadUrl: string;
+  }>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/reports/users`;
+    const params = new HttpParams()
+      .set('startDate', startDate)
+      .set('endDate', endDate);
 
-    /**
-     * Get system statistics
-     */
-    getSystemStats(): Observable<ApiResponse<SystemStats>> {
-        const endpoint = `${this.API_BASE_URL}/api/admin/stats`;
-        return this.http.get<ApiResponse<SystemStats>>(endpoint).pipe(
-            tap(response => console.log('✅ AdminService: Successfully fetched stats:', response.data)),
-            catchError(error => {
-                console.error('❌ AdminService: Error fetching stats:', error);
-                throw this.handleAdminError(error);
-            })
-        );
-    }
+    return this.http.get<ApiResponse<{
+      reportId: string;
+      downloadUrl: string;
+    }>>(endpoint, { params }).pipe(
+      catchError(error => {
+        console.error('Error generating user report:', error);
+        throw error;
+      })
+    );
+  }
 
-    /**
-     * Create new admin user
-     */
-    createAdminUser(userData: CreateUserRequest): Observable<ApiResponse<void>> {
-        const endpoint = `${this.API_BASE_URL}/api/admin/users`;
-        return this.http.post<ApiResponse<void>>(endpoint, userData).pipe(
-            catchError(error => {
-                throw this.handleAdminError(error);
-            })
-        );
-    }
+  /**
+   * Generate content report
+   */
+  generateContentReport(startDate: string, endDate: string): Observable<ApiResponse<{
+    reportId: string;
+    downloadUrl: string;
+  }>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/reports/content`;
+    const params = new HttpParams()
+      .set('startDate', startDate)
+      .set('endDate', endDate);
 
-    /**
-     * Handle admin API errors and provide user-friendly messages
-     */
-    private handleAdminError(error: any): Error {
-        console.error('🚨 AdminService Error Details:', {
-            status: error.status,
-            statusText: error.statusText,
-            url: error.url,
-            error: error.error,
-            message: error.message
-        });
-
-        let errorMessage = 'An error occurred';
-
-        if (error.status === 401) {
-            errorMessage = 'Authentication required. Please sign in as an admin.';
-        } else if (error.status === 403) {
-            errorMessage = 'Access denied. You need admin privileges to perform this action.';
-        } else if (error.status === 404) {
-            errorMessage = 'Resource not found.';
-        } else if (error.status === 409) {
-            errorMessage = 'Resource already exists.';
-        } else if (error.status === 0) {
-            errorMessage = 'Network error. Please check your connection and try again.';
-        } else if (error.error && error.error.error) {
-            errorMessage = error.error.error;
-        } else if (error.message) {
-            errorMessage = error.message;
-        }
-
-        console.error('🚨 Final error message:', errorMessage);
-
-        const customError = new Error(errorMessage);
-        (customError as any).status = error.status;
-        return customError;
-    }
-
-    /**
-     * Check if current user has admin privileges
-     */
-    isCurrentUserAdmin(): boolean {
-        // This method should be implemented to check if the current user has admin privileges
-        // For now, we'll return false as this would typically be handled by the auth service
-        return false;
-    }
+    return this.http.get<ApiResponse<{
+      reportId: string;
+      downloadUrl: string;
+    }>>(endpoint, { params }).pipe(
+      catchError(error => {
+        console.error('Error generating content report:', error);
+        throw error;
+      })
+    );
+  }
 }

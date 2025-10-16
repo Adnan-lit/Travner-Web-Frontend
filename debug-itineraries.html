@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Itineraries</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+        .error {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧳 Debug Itineraries</h1>
+        <p>Testing the itinerary API and frontend integration</p>
+        
+        <button onclick="testApi()">Test API</button>
+        <button onclick="testFrontend()">Test Frontend</button>
+        <button onclick="clearResults()">Clear</button>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        function showResult(content, isError = false) {
+            const element = document.getElementById('result');
+            element.style.display = 'block';
+            element.textContent = content;
+            element.className = 'result ' + (isError ? 'error' : 'success');
+        }
+
+        async function testApi() {
+            try {
+                const response = await fetch('http://localhost:8080/api/itineraries?page=0&size=5');
+                const data = await response.json();
+                
+                let result = `API Test Results:\n`;
+                result += `Status: ${response.status}\n`;
+                result += `URL: http://localhost:8080/api/itineraries\n`;
+                result += `Response: ${JSON.stringify(data, null, 2)}\n\n`;
+                
+                if (data.data && data.data.length > 0) {
+                    result += `Found ${data.data.length} itineraries:\n`;
+                    data.data.forEach((itinerary, index) => {
+                        result += `${index + 1}. ${itinerary.title}\n`;
+                    });
+                } else {
+                    result += `No itineraries found. Database is empty.\n`;
+                }
+                
+                showResult(result, response.status !== 200);
+            } catch (error) {
+                showResult(`API Error: ${error.message}`, true);
+            }
+        }
+
+        async function testFrontend() {
+            try {
+                const response = await fetch('http://localhost:4200/itineraries');
+                const html = await response.text();
+                
+                let result = `Frontend Test Results:\n`;
+                result += `Status: ${response.status}\n`;
+                result += `URL: http://localhost:4200/itineraries\n`;
+                result += `Content Length: ${html.length} characters\n`;
+                result += `Content Type: ${response.headers.get('content-type')}\n\n`;
+                
+                if (html.includes('itinerary-list-container')) {
+                    result += `✅ Itinerary list component found in HTML\n`;
+                } else {
+                    result += `❌ Itinerary list component not found in HTML\n`;
+                }
+                
+                if (html.includes('Travel Itineraries')) {
+                    result += `✅ "Travel Itineraries" heading found\n`;
+                } else {
+                    result += `❌ "Travel Itineraries" heading not found\n`;
+                }
+                
+                showResult(result, response.status !== 200);
+            } catch (error) {
+                showResult(`Frontend Error: ${error.message}`, true);
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('result').style.display = 'none';
+        }
+
+        // Auto-test on page load
+        window.onload = function() {
+            console.log('🧳 Debug Itineraries Page Loaded');
+            testApi();
+        };
+    </script>
+</body>
+</html>
+

@@ -398,7 +398,7 @@ export class CommentComponent {
       content: this.commentForm.value.content
     };
 
-    this.commentService.updateComment(this.comment.id, commentUpdate.content)
+    this.commentService.updateComment(this.postId, this.comment.id, commentUpdate.content)
       .subscribe({
         next: (response: any) => {
           // Handle the ApiResponse structure
@@ -426,7 +426,7 @@ export class CommentComponent {
   deleteComment(): void {
     if (!this.comment || !confirm('Are you sure you want to delete this comment?')) return;
 
-    this.commentService.deleteComment(this.comment.id)
+    this.commentService.deleteComment(this.postId, this.comment.id)
       .subscribe({
         next: () => {
           // Emit event to notify parent
@@ -442,7 +442,7 @@ export class CommentComponent {
   upvoteComment(): void {
     if (!this.comment) return;
 
-    this.commentService.voteOnComment(this.comment.id, { isUpvote: true })
+    this.commentService.voteComment(this.postId, this.comment.id, true)
       .subscribe({
         next: (response: any) => {
           // Handle the ApiResponse structure
@@ -463,7 +463,7 @@ export class CommentComponent {
   downvoteComment(): void {
     if (!this.comment) return;
 
-    this.commentService.voteOnComment(this.comment.id, { isUpvote: false })
+    this.commentService.voteComment(this.postId, this.comment.id, false)
       .subscribe({
         next: (response: any) => {
           // Handle the ApiResponse structure
@@ -499,7 +499,7 @@ export class CommentComponent {
       postId: this.postId
     };
 
-    this.commentService.addCommentToPost(this.postId, replyData)
+    this.commentService.createComment(this.postId, replyData)
       .subscribe({
         next: (response: any) => {
           // Handle the ApiResponse structure

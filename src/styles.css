@@ -2,6 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 @import './app/shared/styles/shared-animations.css';
 @import './app/shared/styles/shared-components.css';
+@import './app/shared/styles/cursor-fix.css';
 
 /* Modern Design System - CSS Custom Properties */
 :root {
@@ -153,7 +154,7 @@ body {
   background: var(--neutral-50);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  cursor: none;
+  /* cursor: none; */ /* Disabled custom cursor to fix transparency issue */
   margin: 0;
   padding: 0;
   min-height: 100vh;
@@ -167,8 +168,21 @@ button,
 [role="button"],
 input[type="submit"],
 input[type="button"],
-.clickable {
-  cursor: pointer;
+.clickable,
+.btn,
+.clickable-element {
+  cursor: pointer !important;
+}
+
+/* Ensure all interactive elements have proper cursor */
+a:hover,
+button:hover,
+.btn:hover,
+[role="button"]:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover,
+.clickable:hover {
+  cursor: pointer !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -424,7 +438,7 @@ html {
   font-weight: 600;
   text-decoration: none;
   border: none;
-  cursor: none;
+  /* cursor: none; */ /* Disabled custom cursor to fix transparency issue */
   transition: var(--transition-all);
   position: relative;
   overflow: hidden;

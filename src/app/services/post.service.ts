@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { EnvironmentConfig } from '../config/environment.config';
 import { Post, CreatePostRequest, UpdatePostRequest, VoteRequest } from '../models/common.model';
 import { ApiResponse, ApiListResponse } from '../models/api-response.model';
 import { Comment, CommentListResponse } from '../models/post.model';
+import { MediaService, MediaFile } from './media.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,10 @@ import { Comment, CommentListResponse } from '../models/post.model';
 export class PostService {
   private readonly API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private mediaService: MediaService
+  ) { }
 
   /**
    * Get all published posts with pagination and sorting
@@ -29,7 +33,20 @@ export class PostService {
     return this.http.get<ApiListResponse<Post>>(endpoint, { params }).pipe(
       catchError(error => {
         console.error('Error fetching posts:', error);
-        throw error;
+        // Return empty response on error to prevent app crashes
+        return of({
+          success: false,
+          message: 'Failed to load posts',
+          data: [],
+          pagination: {
+            page: 0,
+            size: 10,
+            totalElements: 0,
+            totalPages: 0,
+            first: true,
+            last: true
+          }
+        });
       })
     );
   }
@@ -253,17 +270,6 @@ export class PostService {
     );
   }
 
-  /**
-   * Get media blob for display
-   */
-  getMediaBlob(mediaUrl: string): Observable<Blob> {
-    return this.http.get(mediaUrl, { responseType: 'blob' }).pipe(
-      catchError(error => {
-        console.error(`Error fetching media blob from ${mediaUrl}:`, error);
-        throw error;
-      })
-    );
-  }
 
   /**
    * Create a comment on a post
@@ -306,5 +312,63 @@ export class PostService {
         throw error;
       })
     );
+  }
+
+  /**
+   * Get media files for a post using the media service
+   */
+  getPostMedia(postId: string): Observable<MediaFile[]> {
+    return this.mediaService.getMediaForPost(postId);
+  }
+
+  /**
+   * Upload media files for a post using the media service
+   */
+  uploadPostMedia(postId: string, files: File[]): Observable<MediaFile[]> {
+    const uploadObservables = files.map(file => 
+      this.mediaService.uploadMedia(file, 'post', postId)
+    );
+    
+    return new Observable(observer => {
+      const uploadedMedia: MediaFile[] = [];
+      let completed = 0;
+      
+      uploadObservables.forEach(obs => {
+        obs.subscribe({
+          next: (media) => {
+            uploadedMedia.push(media);
+            completed++;
+            if (completed === files.length) {
+              observer.next(uploadedMedia);
+              observer.complete();
+            }
+          },
+          error: (error) => {
+            observer.error(error);
+          }
+        });
+      });
+    });
+  }
+
+  /**
+   * Delete media from a post using the media service
+   */
+  deletePostMedia(mediaId: string): Observable<void> {
+    return this.mediaService.deleteMedia(mediaId);
+  }
+
+  /**
+   * Get media URL for display
+   */
+  getMediaUrl(mediaId: string): string {
+    return this.mediaService.getMediaUrl(mediaId);
+  }
+
+  /**
+   * Get media blob for display
+   */
+  getMediaBlob(mediaUrl: string): Observable<Blob> {
+    return this.mediaService.getMediaBlob(mediaUrl);
   }
 }

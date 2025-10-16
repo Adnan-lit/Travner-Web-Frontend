@@ -63,11 +63,11 @@
   <div *ngIf="!loading && !error" class="products-grid">
     <div *ngIf="products$ | async as products">
       <div
-        *ngIf="products && products['data'] && products['data'].length > 0"
+        *ngIf="products && products.length > 0"
         class="grid"
       >
         <div
-          *ngFor="let product of products['data']"
+          *ngFor="let product of products"
           class="product-card"
           [ngClass]="getStockClass(product.stockQuantity)"
         >
@@ -149,8 +149,8 @@
 
   <!-- Pagination -->
   <div *ngIf="!loading && !error" class="pagination">
-    <div *ngIf="products$ | async as products">
-      <div *ngIf="products && products['pagination'] && products['pagination']['totalPages'] > 1">
+    <div *ngIf="totalPages > 1">
+      <div class="pagination-container">
         <button
           *ngIf="currentPage > 0"
           (click)="onPageChange(currentPage - 1)"
@@ -161,12 +161,12 @@
         </button>
 
         <div class="pagination-info">
-          Page {{ currentPage + 1 }} of {{ products['pagination']['totalPages'] }}
-          <span *ngIf="products['pagination']['totalElements'] > 0">({{ products['pagination']['totalElements'] }} products)</span>
+          Page {{ currentPage + 1 }} of {{ totalPages }}
+          <span *ngIf="totalElements > 0">({{ totalElements }} products)</span>
         </div>
 
         <button
-          *ngIf="currentPage < products['pagination']['totalPages'] - 1"
+          *ngIf="currentPage < totalPages - 1"
           (click)="onPageChange(currentPage + 1)"
           class="pagination-button"
           [disabled]="loading"

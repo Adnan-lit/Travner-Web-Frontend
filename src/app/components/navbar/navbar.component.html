@@ -38,6 +38,24 @@
           >Marketplace</a
         >
         <a
+          routerLink="/itineraries"
+          routerLinkActive="active"
+          (click)="closeMobileMenu()"
+          >Itineraries</a
+        >
+        <a
+          routerLink="/travel-buddies"
+          routerLinkActive="active"
+          (click)="closeMobileMenu()"
+          >Travel Buddies</a
+        >
+        <a
+          routerLink="/local-guides"
+          routerLinkActive="active"
+          (click)="closeMobileMenu()"
+          >Local Guides</a
+        >
+        <a
           routerLink="/chat"
           routerLinkActive="active"
           (click)="closeMobileMenu()"
@@ -176,6 +194,9 @@
           >
             Cart
           </button>
+          <button (click)="go('/itineraries'); closeUserMenu()">Itineraries</button>
+          <button (click)="go('/travel-buddies'); closeUserMenu()">Travel Buddies</button>
+          <button (click)="go('/local-guides'); closeUserMenu()">Local Guides</button>
           <button (click)="go('/chat'); closeUserMenu()">Chat</button>
           <button *ngIf="isAdmin()" (click)="go('/admin'); closeUserMenu()">
             Admin Panel
@@ -233,6 +254,24 @@
         >Cart</a
       >
       <a
+        routerLink="/itineraries"
+        routerLinkActive="active"
+        (click)="closeMobileMenu()"
+        >Itineraries</a
+      >
+      <a
+        routerLink="/travel-buddies"
+        routerLinkActive="active"
+        (click)="closeMobileMenu()"
+        >Travel Buddies</a
+      >
+      <a
+        routerLink="/local-guides"
+        routerLinkActive="active"
+        (click)="closeMobileMenu()"
+        >Local Guides</a
+      >
+      <a
         routerLink="/chat"
         routerLinkActive="active"
         (click)="closeMobileMenu()"
@@ -270,6 +309,9 @@
       <button (click)="go('/marketplace'); closeMobileMenu()">
         Marketplace
       </button>
+      <button (click)="go('/itineraries'); closeMobileMenu()">Itineraries</button>
+      <button (click)="go('/travel-buddies'); closeMobileMenu()">Travel Buddies</button>
+      <button (click)="go('/local-guides'); closeMobileMenu()">Local Guides</button>
       <button (click)="go('/chat'); closeMobileMenu()">Chat</button>
       <button *ngIf="isAdmin()" (click)="go('/admin'); closeMobileMenu()">
         Admin Panel

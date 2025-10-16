@@ -29,8 +29,8 @@ export class EnvironmentConfig {
         if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app')) {
             return 'wss://travner-web-backend-production.up.railway.app/ws';
         } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
-            // Development: use WebSocket to backend on port 8080
-            return 'ws://localhost:8080/ws';
+            // Development: use HTTP for SockJS handshake, proxy will handle WebSocket upgrade
+            return '/ws';
         } else {
             return 'wss://travner-web-backend-production.up.railway.app/ws';
         }

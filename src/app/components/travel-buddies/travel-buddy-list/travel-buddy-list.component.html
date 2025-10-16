@@ -1,0 +1,173 @@
+<div class="travel-buddy-list-container">
+  <!-- Header -->
+  <div class="header">
+    <h1>Find Travel Buddies</h1>
+    <button class="btn btn-primary" (click)="createTravelBuddy()">
+      <i class="fas fa-plus"></i> Find Travel Buddies
+    </button>
+  </div>
+
+  <!-- Search and Filters -->
+  <div class="filters-section">
+    <div class="search-bar">
+      <input 
+        type="text" 
+        placeholder="Search destinations..." 
+        [(ngModel)]="searchParams.query"
+        (keyup.enter)="onSearch()"
+        class="form-control"
+      >
+      <button class="btn btn-secondary" (click)="onSearch()">
+        <i class="fas fa-search"></i> Search
+      </button>
+    </div>
+
+    <div class="filters">
+      <div class="filter-group">
+        <label>Destination:</label>
+        <select [(ngModel)]="selectedDestination" (change)="onFilterChange()" class="form-control">
+          <option value="">All Destinations</option>
+          <option *ngFor="let dest of destinations" [value]="dest">{{ dest }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Age Range:</label>
+        <div class="age-range">
+          <input 
+            type="number" 
+            [(ngModel)]="ageRange.min" 
+            (change)="onFilterChange()"
+            placeholder="Min"
+            class="form-control"
+          >
+          <span>-</span>
+          <input 
+            type="number" 
+            [(ngModel)]="ageRange.max" 
+            (change)="onFilterChange()"
+            placeholder="Max"
+            class="form-control"
+          >
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Gender:</label>
+        <select [(ngModel)]="preferredGender" (change)="onFilterChange()" class="form-control">
+          <option value="">Any</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading travel buddies...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error">
+    <p>{{ error }}</p>
+    <button class="btn btn-secondary" (click)="loadTravelBuddies()">Retry</button>
+  </div>
+
+  <!-- Travel Buddies Grid -->
+  <div *ngIf="!loading && !error" class="travel-buddies-grid">
+    <div *ngFor="let buddy of travelBuddies" class="travel-buddy-card" (click)="viewTravelBuddy(buddy.id)">
+      <div class="card-header">
+        <div class="status-badge" [ngClass]="getStatusClass(buddy.status)">
+          {{ getStatusText(buddy.status) }}
+        </div>
+        <h3>{{ buddy.destination }}</h3>
+        <div class="card-meta">
+          <span class="dates">{{ formatDate(buddy.startDate) }} - {{ formatDate(buddy.endDate) }}</span>
+          <span class="duration">{{ getDuration(buddy.startDate, buddy.endDate) }}</span>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="interests" *ngIf="buddy.interests && buddy.interests.length > 0">
+          <h4>Interests:</h4>
+          <div class="interest-tags">
+            <span *ngFor="let interest of buddy.interests" class="interest-tag">{{ interest }}</span>
+          </div>
+        </div>
+
+        <div class="preferences" *ngIf="buddy.maxAge || buddy.minAge || buddy.preferredGender">
+          <h4>Preferences:</h4>
+          <div class="preference-list">
+            <span *ngIf="buddy.minAge || buddy.maxAge" class="preference">
+              <i class="fas fa-birthday-cake"></i>
+              Age: {{ buddy.minAge || 'Any' }} - {{ buddy.maxAge || 'Any' }}
+            </span>
+            <span *ngIf="buddy.preferredGender" class="preference">
+              <i class="fas fa-user"></i>
+              Gender: {{ buddy.preferredGender }}
+            </span>
+            <span *ngIf="buddy.budgetRange" class="preference">
+              <i class="fas fa-dollar-sign"></i>
+              Budget: {{ buddy.budgetRange }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <div class="expiry-info">
+          <i class="fas fa-clock"></i>
+          <span>Expires: {{ formatDate(buddy.expiryDate) }}</span>
+        </div>
+        
+        <div class="action-buttons">
+          <button class="btn btn-sm btn-primary" (click)="viewTravelBuddy(buddy.id); $event.stopPropagation()">
+            View Details
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && travelBuddies.length === 0" class="empty-state">
+    <i class="fas fa-users"></i>
+    <h3>No travel buddies found</h3>
+    <p>Try adjusting your search criteria or create a new travel buddy request.</p>
+    <button class="btn btn-primary" (click)="createTravelBuddy()">Find Travel Buddies</button>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="!loading && !error && totalPages > 1" class="pagination">
+    <button 
+      class="btn btn-secondary" 
+      [disabled]="currentPage === 0"
+      (click)="onPageChange(currentPage - 1)"
+    >
+      Previous
+    </button>
+    
+    <div class="page-numbers">
+      <button 
+        *ngFor="let page of getPageNumbers()" 
+        class="btn"
+        [class.btn-primary]="page === currentPage"
+        [class.btn-secondary]="page !== currentPage"
+        (click)="onPageChange(page)"
+      >
+        {{ page + 1 }}
+      </button>
+    </div>
+    
+    <button 
+      class="btn btn-secondary" 
+      [disabled]="currentPage >= totalPages - 1"
+      (click)="onPageChange(currentPage + 1)"
+    >
+      Next
+    </button>
+  </div>
+</div>

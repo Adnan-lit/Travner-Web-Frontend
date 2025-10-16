@@ -58,7 +58,7 @@ export class ProductDetailComponent implements OnInit {
                 console.error('Error loading product:', err);
                 this.error = err.message || 'Failed to load product details. Please try again later.';
                 this.loading = false;
-                this.toastService.error(this.error || 'Failed to load product details');
+                this.toastService.error('Failed to load product details', this.error || '');
             }
         });
     }
@@ -84,7 +84,7 @@ export class ProductDetailComponent implements OnInit {
 
         // Check if user is authenticated
         if (!this.authService.isAuthenticated()) {
-            this.toastService.error('Please sign in to add items to cart');
+            this.toastService.error('Please sign in to add items to cart', '');
             this.router.navigate(['/signin'], {
                 queryParams: { returnUrl: this.router.url }
             });
@@ -92,12 +92,12 @@ export class ProductDetailComponent implements OnInit {
         }
 
         if (this.product.stockQuantity === 0) {
-            this.toastService.error('This product is out of stock');
+            this.toastService.error('This product is out of stock', '');
             return;
         }
 
         if (this.quantity > this.product.stockQuantity) {
-            this.toastService.error(`Only ${this.product.stockQuantity} items available in stock`);
+            this.toastService.error('Only ${this.product.stockQuantity} items available in stock', '');
             return;
         }
 
@@ -107,12 +107,12 @@ export class ProductDetailComponent implements OnInit {
                 quantity: this.quantity
             }).toPromise();
 
-            this.toastService.success(`${this.product.name} added to cart`);
+            this.toastService.success('${this.product.name} added to cart', '');
             this.quantity = 1; // Reset quantity after adding to cart
         } catch (error: any) {
             console.error('Error adding to cart:', error);
             const errorMessage = error.message || 'Failed to add item to cart';
-            this.toastService.error(errorMessage);
+            this.toastService.error('Error', errorMessage);
         }
     }
 

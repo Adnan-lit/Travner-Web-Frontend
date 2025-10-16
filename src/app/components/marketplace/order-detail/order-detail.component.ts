@@ -58,7 +58,7 @@ export class OrderDetailComponent implements OnInit {
                 console.error('Error loading order:', err);
                 this.error = 'Failed to load order details. Please try again later.';
                 this.loading = false;
-                this.toastService.error('Failed to load order details');
+                this.toastService.error('Failed to load order details', '');
             }
         });
     }
@@ -67,7 +67,7 @@ export class OrderDetailComponent implements OnInit {
         if (!this.order) return;
 
         if (this.order.status !== 'PLACED') {
-            this.toastService.error('Only orders with PLACED status can be canceled');
+            this.toastService.error('Only orders with PLACED status can be canceled', '');
             return;
         }
 
@@ -78,11 +78,11 @@ export class OrderDetailComponent implements OnInit {
         this.marketplaceService.cancelOrder(this.order.id).subscribe({
             next: (response: ApiResponse<Order>) => {
                 this.order = response.data || null;
-                this.toastService.success('Order canceled successfully');
+                this.toastService.success('Order canceled successfully', '');
             },
             error: (err: any) => {
                 console.error('Error canceling order:', err);
-                this.toastService.error('Failed to cancel order');
+                this.toastService.error('Failed to cancel order', '');
             }
         });
     }

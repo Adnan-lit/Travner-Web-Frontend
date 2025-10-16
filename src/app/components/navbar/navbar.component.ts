@@ -41,6 +41,7 @@ export class NavbarComponent implements OnInit {
     this.authService.currentUser$.subscribe(user => {
       this.isAuthenticated = !!user;
       this.currentUser = user;
+      console.log('🧭 Navbar: Authentication status changed:', this.isAuthenticated);
 
       // Only load cart count if user is authenticated AND on marketplace page
       if (this.isAuthenticated && this.isMarketplacePage()) {
@@ -172,13 +173,27 @@ export class NavbarComponent implements OnInit {
       return;
     }
 
+    // Double-check authentication before making the request
+    if (!this.authService.isAuthenticated()) {
+      console.log('🧭 Navbar: User not authenticated, skipping cart count load');
+      this.cartItemCount = 0;
+      return;
+    }
+
     this.marketplaceService.getCartItemCount().subscribe({
-      next: (count: number) => {
-        this.cartItemCount = count;
+      next: (response: any) => {
+        this.cartItemCount = response?.data || 0;
+        console.log('🧭 Navbar: Cart count loaded successfully:', this.cartItemCount);
       },
       error: (err: any) => {
-        console.warn('Failed to load cart count:', err);
-        this.cartItemCount = 0;
+        console.warn('🧭 Navbar: Failed to load cart count:', err);
+        if (err.status === 401) {
+          console.log('🧭 Navbar: Authentication failed, clearing cart count');
+          // If we get a 401, the user is not properly authenticated
+          this.cartItemCount = 0;
+        } else {
+          this.cartItemCount = 0;
+        }
       }
     });
   }

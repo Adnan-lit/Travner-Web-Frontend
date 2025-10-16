@@ -61,16 +61,16 @@ export class OrderListComponent implements OnInit {
 
         this.marketplaceService.getAdminOrders(params).subscribe({
             next: (response: OrderListResponse) => {
-                this.orders = response['content'];
-                this.totalPages = response['totalPages'];
-                this.totalElements = response['totalElements'];
+                this.orders = response.data || [];
+                this.totalPages = response.pagination?.totalPages || 0;
+                this.totalElements = response.pagination?.totalElements || 0;
                 this.loading = false;
             },
             error: (err: any) => {
                 console.error('Error loading orders:', err);
                 this.error = 'Failed to load orders. Please try again later.';
                 this.loading = false;
-                this.toastService.error('Failed to load orders');
+                this.toastService.error('Failed to load orders', '');
             }
         });
     }
@@ -91,7 +91,7 @@ export class OrderListComponent implements OnInit {
 
     cancelOrder(order: Order): void {
         if (order.status !== 'PLACED') {
-            this.toastService.error('Only orders with PLACED status can be canceled');
+            this.toastService.error('Only orders with PLACED status can be canceled', '');
             return;
         }
 
@@ -108,11 +108,11 @@ export class OrderListComponent implements OnInit {
                 if (index !== -1 && updatedOrder) {
                     this.orders[index] = updatedOrder;
                 }
-                this.toastService.success('Order canceled successfully');
+                this.toastService.success('Order canceled successfully', '');
             },
             error: (err: any) => {
                 console.error('Error canceling order:', err);
-                this.toastService.error('Failed to cancel order');
+                this.toastService.error('Failed to cancel order', '');
             }
         });
     }

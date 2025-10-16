@@ -57,7 +57,7 @@ export class CartComponent implements OnInit {
                 console.error('Error loading cart:', err);
                 this.error = err.message || 'Failed to load cart. Please try again later.';
                 this.loading = false;
-                this.toastService.error(this.error || 'Failed to load cart');
+                this.toastService.error('Failed to load cart', this.error || '');
             }
         });
     }
@@ -67,7 +67,7 @@ export class CartComponent implements OnInit {
 
         // Validate quantity
         if (newQuantity < 0 || newQuantity > 10) {
-            this.toastService.error('Quantity must be between 0 and 10');
+            this.toastService.error('Quantity must be between 0 and 10', '');
             return;
         }
 
@@ -87,13 +87,13 @@ export class CartComponent implements OnInit {
                     this.cart = response.data;
                 }
                 this.updatingItemIds.delete(item.lineId);
-                this.toastService.success('Cart updated');
+                this.toastService.success('Cart updated', '');
             },
             error: (err: any) => {
                 console.error('Error updating cart item:', err);
                 this.updatingItemIds.delete(item.lineId);
                 const errorMessage = err.message || 'Failed to update item quantity';
-                this.toastService.error(errorMessage);
+                this.toastService.error('Error', errorMessage);
             }
         });
     }
@@ -120,12 +120,12 @@ export class CartComponent implements OnInit {
                     this.cart = response.data;
                 }
                 this.updatingItemIds.delete(lineId);
-                this.toastService.success('Item removed from cart');
+                this.toastService.success('Item removed from cart', '');
             },
             error: (err: any) => {
                 console.error('Error removing cart item:', err);
                 this.updatingItemIds.delete(lineId);
-                this.toastService.error('Failed to remove item from cart');
+                this.toastService.error('Failed to remove item from cart', '');
             }
         });
     }
@@ -146,18 +146,18 @@ export class CartComponent implements OnInit {
                     this.cart.items = [];
                     this.cart.totalAmount = 0;
                 }
-                this.toastService.success('Cart cleared');
+                this.toastService.success('Cart cleared', '');
             },
             error: (err: any) => {
                 console.error('Error clearing cart:', err);
-                this.toastService.error('Failed to clear cart');
+                this.toastService.error('Failed to clear cart', '');
             }
         });
     }
 
     proceedToCheckout(): void {
         if (!this.cart || !this.cart.items || !this.cart.items.length) {
-            this.toastService.error('Your cart is empty');
+            this.toastService.error('Your cart is empty', '');
             return;
         }
 

@@ -1,0 +1,454 @@
+<div class="modern-create-container">
+  <div class="create-wrapper">
+    <!-- Modern Header -->
+    <div class="create-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h1 class="create-title">Create Amazing Itinerary</h1>
+          <p class="create-subtitle">Plan your perfect travel experience and share it with the world</p>
+        </div>
+        <div class="header-badges">
+          <span class="badge primary">🇧🇩 Bangladesh Focused</span>
+          <span class="badge secondary">💰 BDT Currency</span>
+        </div>
+      </div>
+    </div>
+
+    <form (ngSubmit)="onSubmit()" #itineraryForm="ngForm" class="create-form">
+      <!-- Basic Information Card -->
+      <div class="form-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <div class="card-title-section">
+            <h2 class="card-title">Basic Information</h2>
+            <p class="card-subtitle">Tell us about your itinerary</p>
+          </div>
+        </div>
+        
+        <div class="form-grid">
+          <!-- Title -->
+          <div class="form-group full-width">
+            <label for="title" class="form-label">
+              <span class="required">*</span> Itinerary Title
+            </label>
+            <input 
+              type="text" 
+              id="title" 
+              name="title" 
+              [(ngModel)]="itinerary.title" 
+              required 
+              class="form-input"
+              placeholder="e.g., Dhaka City Explorer - 3 Days">
+          </div>
+
+          <!-- Destination -->
+          <div class="form-group">
+            <label for="destination" class="form-label">
+              <span class="required">*</span> Destination
+            </label>
+            <input 
+              type="text" 
+              id="destination" 
+              name="destination" 
+              [(ngModel)]="itinerary.destination" 
+              required 
+              class="form-input"
+              placeholder="e.g., Dhaka, Cox's Bazar, Sylhet">
+          </div>
+
+          <!-- Country (Fixed to Bangladesh) -->
+          <div class="form-group">
+            <label for="destinationCountry" class="form-label">Country</label>
+            <input 
+              type="text" 
+              id="destinationCountry" 
+              name="destinationCountry" 
+              [(ngModel)]="itinerary.destinationCountry" 
+              value="Bangladesh"
+              readonly
+              class="form-input readonly">
+          </div>
+
+          <!-- City -->
+          <div class="form-group">
+            <label for="destinationCity" class="form-label">
+              <span class="required">*</span> City
+            </label>
+            <input 
+              type="text" 
+              id="destinationCity" 
+              name="destinationCity" 
+              [(ngModel)]="itinerary.destinationCity" 
+              required 
+              class="form-input"
+              placeholder="e.g., Dhaka, Chittagong, Sylhet">
+          </div>
+
+          <!-- Currency (Fixed to BDT) -->
+          <div class="form-group">
+            <label for="currency" class="form-label">Currency</label>
+            <input 
+              type="text" 
+              id="currency" 
+              name="currency" 
+              [(ngModel)]="itinerary.currency" 
+              value="BDT"
+              readonly
+              class="form-input readonly">
+          </div>
+
+          <!-- Estimated Budget -->
+          <div class="form-group">
+            <label for="estimatedBudget" class="form-label">Estimated Budget (BDT)</label>
+            <div class="budget-input-wrapper">
+              <span class="budget-symbol">৳</span>
+              <input 
+                type="number" 
+                id="estimatedBudget" 
+                name="estimatedBudget" 
+                [(ngModel)]="itinerary.estimatedBudget" 
+                min="0" 
+                step="100"
+                class="form-input budget-input"
+                placeholder="15000">
+            </div>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group full-width">
+          <label for="description" class="form-label">
+            <span class="required">*</span> Description
+          </label>
+          <textarea 
+            id="description" 
+            name="description" 
+            [(ngModel)]="itinerary.description" 
+            required 
+            rows="4"
+            class="form-textarea"
+            placeholder="Describe your itinerary, what makes it special, and what travelers can expect..."></textarea>
+        </div>
+      </div>
+
+      <!-- Dates and Duration Card -->
+      <div class="form-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+          <div class="card-title-section">
+            <h2 class="card-title">Dates & Duration</h2>
+            <p class="card-subtitle">Set your travel dates</p>
+          </div>
+        </div>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="startDate" class="form-label">
+              <span class="required">*</span> Start Date
+            </label>
+            <input 
+              type="date" 
+              id="startDate" 
+              name="startDate" 
+              [(ngModel)]="itinerary.startDate" 
+              required 
+              class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label for="endDate" class="form-label">
+              <span class="required">*</span> End Date
+            </label>
+            <input 
+              type="date" 
+              id="endDate" 
+              name="endDate" 
+              [(ngModel)]="itinerary.endDate" 
+              required 
+              class="form-input">
+          </div>
+        </div>
+      </div>
+
+      <!-- Tags and Settings Card -->
+      <div class="form-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+            </svg>
+          </div>
+          <div class="card-title-section">
+            <h2 class="card-title">Tags & Settings</h2>
+            <p class="card-subtitle">Add tags and configure visibility</p>
+          </div>
+        </div>
+        
+        <div class="form-grid">
+          <!-- Tags -->
+          <div class="form-group">
+            <label class="form-label">Tags (comma-separated)</label>
+            <input 
+              type="text" 
+              [(ngModel)]="tagInput" 
+              [ngModelOptions]="{standalone: true}"
+              (keyup.enter)="addTag()"
+              class="form-input"
+              placeholder="e.g., bangladesh, dhaka, culture, adventure">
+            <div class="tags-container" *ngIf="itinerary.tags.length > 0">
+              <span *ngFor="let tag of itinerary.tags; let i = index" class="tag-item">
+                {{ tag }}
+                <button type="button" (click)="removeTag(i)" class="tag-remove">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </span>
+            </div>
+          </div>
+
+          <!-- Settings -->
+          <div class="form-group">
+            <div class="settings-group">
+              <div class="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="isPublic" 
+                  [(ngModel)]="itinerary.isPublic" 
+                  [ngModelOptions]="{standalone: true}"
+                  class="modern-checkbox">
+                <label for="isPublic" class="checkbox-label">
+                  Make this itinerary public
+                </label>
+              </div>
+              
+              <div class="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="isTemplate" 
+                  [(ngModel)]="itinerary.isTemplate" 
+                  [ngModelOptions]="{standalone: true}"
+                  class="modern-checkbox">
+                <label for="isTemplate" class="checkbox-label">
+                  Use as template for others
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Itinerary Items Card -->
+      <div class="form-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+          </div>
+          <div class="card-title-section">
+            <h2 class="card-title">Itinerary Items</h2>
+            <p class="card-subtitle">Add activities, accommodations, and experiences</p>
+          </div>
+          <button 
+            type="button" 
+            (click)="addItem()" 
+            class="modern-btn primary">
+            <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Add Item
+          </button>
+        </div>
+
+        <div *ngIf="itinerary.items.length === 0" class="empty-items">
+          <div class="empty-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+          </div>
+          <h3>No items added yet</h3>
+          <p>Add activities, accommodations, and experiences to your itinerary</p>
+          <button 
+            type="button" 
+            (click)="addItem()" 
+            class="modern-btn primary">
+            <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Add First Item
+          </button>
+        </div>
+
+        <div *ngFor="let item of itinerary.items; let i = index" class="item-card">
+          <div class="item-header">
+            <div class="item-number">{{ i + 1 }}</div>
+            <button 
+              type="button" 
+              (click)="removeItem(i)" 
+              class="item-remove-btn">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="item-content">
+            <!-- Title -->
+            <div class="form-group full-width">
+              <label class="form-label">Title</label>
+              <input 
+                type="text" 
+                [(ngModel)]="item.title" 
+                name="itemTitle{{i}}" 
+                class="form-input"
+                placeholder="e.g., Visit Lalbagh Fort">
+            </div>
+
+            <!-- Description -->
+            <div class="form-group full-width">
+              <label class="form-label">Description</label>
+              <textarea 
+                [(ngModel)]="item.description" 
+                name="itemDescription{{i}}" 
+                rows="3"
+                class="form-textarea"
+                placeholder="Describe this activity or experience..."></textarea>
+            </div>
+
+            <div class="form-grid">
+              <!-- Location -->
+              <div class="form-group">
+                <label class="form-label">Location</label>
+                <input 
+                  type="text" 
+                  [(ngModel)]="item.location" 
+                  name="itemLocation{{i}}" 
+                  class="form-input"
+                  placeholder="e.g., Lalbagh, Old Dhaka">
+              </div>
+
+              <!-- Category -->
+              <div class="form-group">
+                <label class="form-label">Category</label>
+                <select 
+                  [(ngModel)]="item.category" 
+                  name="itemCategory{{i}}" 
+                  class="form-input">
+                  <option value="activity">Activity</option>
+                  <option value="accommodation">Accommodation</option>
+                  <option value="transportation">Transportation</option>
+                  <option value="food">Food & Dining</option>
+                  <option value="sightseeing">Sightseeing</option>
+                  <option value="shopping">Shopping</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <!-- Start Time -->
+              <div class="form-group">
+                <label class="form-label">Start Time</label>
+                <input 
+                  type="time" 
+                  [(ngModel)]="item.startTime" 
+                  name="itemStartTime{{i}}" 
+                  class="form-input">
+              </div>
+
+              <!-- End Time -->
+              <div class="form-group">
+                <label class="form-label">End Time</label>
+                <input 
+                  type="time" 
+                  [(ngModel)]="item.endTime" 
+                  name="itemEndTime{{i}}" 
+                  class="form-input">
+              </div>
+
+              <!-- Estimated Cost -->
+              <div class="form-group">
+                <label class="form-label">Estimated Cost (BDT)</label>
+                <div class="budget-input-wrapper">
+                  <span class="budget-symbol">৳</span>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="item.estimatedCost" 
+                    name="itemEstimatedCost{{i}}" 
+                    min="0" 
+                    step="10"
+                    class="form-input budget-input"
+                    placeholder="0">
+                </div>
+              </div>
+
+              <!-- Notes -->
+              <div class="form-group">
+                <label class="form-label">Notes</label>
+                <input 
+                  type="text" 
+                  [(ngModel)]="item.notes" 
+                  name="itemNotes{{i}}" 
+                  class="form-input"
+                  placeholder="Any special notes or tips...">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Section -->
+      <div class="form-card submit-card">
+        <div class="submit-content">
+          <div class="submit-info">
+            <h2>Ready to Create?</h2>
+            <p>Review your itinerary and create it for others to discover</p>
+          </div>
+          <div class="submit-actions">
+            <button 
+              type="button" 
+              (click)="router.navigate(['/itineraries'])" 
+              class="modern-btn secondary">
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              [disabled]="loading || !itineraryForm.form.valid"
+              class="modern-btn primary">
+              <svg *ngIf="loading" class="btn-icon loading-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {{ loading ? 'Creating...' : 'Create Itinerary' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="error" class="error-message">
+        <div class="error-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div class="error-content">
+          <h3>Error</h3>
+          <p>{{ error }}</p>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

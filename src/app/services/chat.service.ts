@@ -17,7 +17,7 @@ export class ChatService {
      * Get user's conversations with pagination
      */
     getConversations(page: number = 0, size: number = 20): Observable<ApiListResponse<Conversation>> {
-        const endpoint = `${this.API_BASE_URL}/api/conversations`;
+        const endpoint = `${this.API_BASE_URL}/api/chat/conversations`;
         const params = {
             page: page.toString(),
             size: size.toString()
@@ -29,7 +29,7 @@ export class ChatService {
      * Start a new conversation
      */
     startNewConversation(type: 'DIRECT' | 'GROUP', memberIds: string[], name?: string): Observable<ApiResponse<Conversation>> {
-        const endpoint = `${this.API_BASE_URL}/api/conversations`;
+        const endpoint = `${this.API_BASE_URL}/api/chat/conversations`;
         const requestBody: any = {
             type,
             memberIds
@@ -46,12 +46,19 @@ export class ChatService {
      * Get conversation messages with pagination
      */
     getConversationMessages(conversationId: string, page: number = 0, size: number = 20): Observable<ApiListResponse<Message>> {
-        const endpoint = `${this.API_BASE_URL}/api/conversations/${conversationId}/messages`;
+        const endpoint = `${this.API_BASE_URL}/api/chat/conversations/${conversationId}/messages`;
         const params = {
             page: page.toString(),
             size: size.toString()
         };
         return this.http.get<ApiListResponse<Message>>(endpoint, { params });
+    }
+
+    /**
+     * Get messages for a conversation (alias for getConversationMessages)
+     */
+    getMessages(conversationId: string, page: number = 0, size: number = 20): Observable<ApiListResponse<Message>> {
+        return this.getConversationMessages(conversationId, page, size);
     }
 
     /**
@@ -64,7 +71,7 @@ export class ChatService {
         replyToMessageId?: string,
         attachments?: any[]
     ): Observable<ApiResponse<Message>> {
-        const endpoint = `${this.API_BASE_URL}/api/conversations/${conversationId}/messages`;
+        const endpoint = `${this.API_BASE_URL}/api/chat/conversations/${conversationId}/messages`;
         const requestBody: any = {
             content,
             kind
@@ -85,7 +92,7 @@ export class ChatService {
      * Mark messages as read
      */
     markMessagesAsRead(conversationId: string, lastReadMessageId?: string): Observable<ApiResponse<void>> {
-        const endpoint = `${this.API_BASE_URL}/api/conversations/${conversationId}/read`;
+        const endpoint = `${this.API_BASE_URL}/api/chat/conversations/${conversationId}/read`;
         const params: any = {};
 
         if (lastReadMessageId) {

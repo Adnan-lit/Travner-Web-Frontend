@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Itinerary Create</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧳 Itinerary Create Component Test</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Test Information</h3>
+            <p>This page tests the Itinerary Create component functionality.</p>
+            <p><strong>Expected URL:</strong> <a href="http://localhost:4200/itineraries/create" target="_blank">http://localhost:4200/itineraries/create</a></p>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Component Status</h3>
+            <p><strong>Component:</strong> ItineraryCreateComponent</p>
+            <p><strong>Selector:</strong> app-itinerary-create</p>
+            <p><strong>Route:</strong> /itineraries/create</p>
+            <p><strong>Auth Required:</strong> Yes (AuthGuard)</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Expected Features</h3>
+            <ul>
+                <li>✅ Bangladesh-focused form (Country: Bangladesh, Currency: BDT)</li>
+                <li>✅ Beautiful gradient background (green to blue)</li>
+                <li>✅ Form fields: Title, Destination, City, Dates, Budget, Description</li>
+                <li>✅ Tag management system</li>
+                <li>✅ Itinerary items with categories and costs</li>
+                <li>✅ Public/Private and Template options</li>
+                <li>✅ Form validation and error handling</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🐛 Debug Steps</h3>
+            <ol>
+                <li>Open browser console (F12)</li>
+                <li>Navigate to <a href="http://localhost:4200/itineraries/create" target="_blank">/itineraries/create</a></li>
+                <li>Check for console logs: "🧳 ItineraryCreateComponent initialized"</li>
+                <li>Look for debug message: "Itinerary Create Component is loading successfully!"</li>
+                <li>Verify form fields are visible and functional</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Troubleshooting</h3>
+            <p><strong>If page is blank:</strong></p>
+            <ul>
+                <li>Check browser console for errors</li>
+                <li>Verify Angular server is running on port 4200</li>
+                <li>Check if user is authenticated (AuthGuard requirement)</li>
+                <li>Verify component is properly imported in routes</li>
+            </ul>
+            
+            <p><strong>If form doesn't work:</strong></p>
+            <ul>
+                <li>Check for ngModel errors in console</li>
+                <li>Verify FormsModule is imported</li>
+                <li>Check if all form fields have proper name attributes</li>
+            </ul>
+        </div>
+
+        <div class="test-section success">
+            <h3>✅ Success Indicators</h3>
+            <ul>
+                <li>Page loads without errors</li>
+                <li>Debug message is visible</li>
+                <li>Form fields are populated with Bangladesh/BDT defaults</li>
+                <li>All form interactions work smoothly</li>
+                <li>Console shows component initialization logs</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        console.log('🧳 Test page loaded');
+        console.log('🧳 Angular server should be running on http://localhost:4200');
+        console.log('🧳 Navigate to http://localhost:4200/itineraries/create to test the component');
+    </script>
+</body>
+</html>
+

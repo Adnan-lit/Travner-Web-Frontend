@@ -1,62 +1,239 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 
-export interface Toast {
-    id: number;
-    message: string;
-    type: 'success' | 'error' | 'warning' | 'info';
-    duration?: number;
-    show?: boolean;
+export interface ToastMessage {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  title: string;
+  message: string;
+  duration?: number;
+  action?: {
+    label: string;
+    callback: () => void;
+  };
+  timestamp: Date;
 }
 
 @Injectable({
-    providedIn: 'root'
+  providedIn: 'root'
 })
 export class ToastService {
-    private toasts: BehaviorSubject<Toast[]> = new BehaviorSubject<Toast[]>([]);
-    public toasts$ = this.toasts.asObservable();
-    private currentId = 0;
+  private toastsSubject = new BehaviorSubject<ToastMessage[]>([]);
+  public toasts$ = this.toastsSubject.asObservable();
 
-    success(message: string, duration: number = 5000): void {
-        this.show(message, 'success', duration);
+  private toastIdCounter = 0;
+
+  constructor() { }
+
+  /**
+   * Show success toast
+   */
+  success(title: string, message: string, duration: number = 5000): string {
+    return this.showToast({
+      type: 'success',
+      title,
+      message,
+      duration
+    });
+  }
+
+  /**
+   * Show error toast
+   */
+  error(title: string, message: string, duration: number = 7000): string {
+    return this.showToast({
+      type: 'error',
+      title,
+      message,
+      duration
+    });
+  }
+
+  /**
+   * Show warning toast
+   */
+  warning(title: string, message: string, duration: number = 6000): string {
+    return this.showToast({
+      type: 'warning',
+      title,
+      message,
+      duration
+    });
+  }
+
+  /**
+   * Show info toast
+   */
+  info(title: string, message: string, duration: number = 5000): string {
+    return this.showToast({
+      type: 'info',
+      title,
+      message,
+      duration
+    });
+  }
+
+  /**
+   * Show custom toast
+   */
+  showToast(toast: Omit<ToastMessage, 'id' | 'timestamp'>): string {
+    const id = `toast-${++this.toastIdCounter}`;
+    const toastMessage: ToastMessage = {
+      ...toast,
+      id,
+      timestamp: new Date()
+    };
+
+    const currentToasts = this.toastsSubject.value;
+    this.toastsSubject.next([...currentToasts, toastMessage]);
+
+    // Auto-remove toast after duration
+    if (toast.duration && toast.duration > 0) {
+      setTimeout(() => {
+        this.removeToast(id);
+      }, toast.duration);
     }
 
-    error(message: string, duration: number = 5000): void {
-        this.show(message, 'error', duration);
+    return id;
+  }
+
+  /**
+   * Remove toast by ID
+   */
+  removeToast(id: string): void {
+    const currentToasts = this.toastsSubject.value;
+    const filteredToasts = currentToasts.filter(toast => toast.id !== id);
+    this.toastsSubject.next(filteredToasts);
+  }
+
+  /**
+   * Clear all toasts
+   */
+  clearAll(): void {
+    this.toastsSubject.next([]);
+  }
+
+  /**
+   * Get current toasts
+   */
+  getToasts(): ToastMessage[] {
+    return this.toastsSubject.value;
+  }
+
+  /**
+   * Show API error toast
+   */
+  showApiError(error: any, defaultMessage: string = 'An error occurred'): string {
+    let title = 'Error';
+    let message = defaultMessage;
+
+    if (error?.error?.message) {
+      message = error.error.message;
+    } else if (error?.message) {
+      message = error.message;
+    } else if (typeof error === 'string') {
+      message = error;
     }
 
-    warning(message: string, duration: number = 5000): void {
-        this.show(message, 'warning', duration);
+    if (error?.status) {
+      title = `Error ${error.status}`;
     }
 
-    info(message: string, duration: number = 5000): void {
-        this.show(message, 'info', duration);
-    }
+    return this.error(title, message);
+  }
 
-    private show(message: string, type: Toast['type'], duration: number): void {
-        const id = this.currentId++;
-        const toast: Toast = { id, message, type, duration, show: true };
+  /**
+   * Show network error toast
+   */
+  showNetworkError(): string {
+    return this.error(
+      'Network Error',
+      'Unable to connect to the server. Please check your internet connection and try again.'
+    );
+  }
 
-        const currentToasts = this.toasts.getValue();
-        this.toasts.next([...currentToasts, toast]);
+  /**
+   * Show authentication error toast
+   */
+  showAuthError(): string {
+    return this.error(
+      'Authentication Error',
+      'Your session has expired. Please sign in again.'
+    );
+  }
 
-        // Auto remove toast after duration
-        if (duration > 0) {
-            setTimeout(() => this.remove(toast.id), duration);
-        }
-    }
+  /**
+   * Show validation error toast
+   */
+  showValidationError(message: string): string {
+    return this.warning('Validation Error', message);
+  }
 
-    remove(id: number): void {
-        const currentToasts = this.toasts.getValue();
-        const index = currentToasts.findIndex(toast => toast.id === id);
-        if (index !== -1) {
-            const newToasts = [...currentToasts];
-            newToasts.splice(index, 1);
-            this.toasts.next(newToasts);
-        }
-    }
+  /**
+   * Show success message for common actions
+   */
+  showSaveSuccess(): string {
+    return this.success('Saved', 'Your changes have been saved successfully.');
+  }
 
-    clear(): void {
-        this.toasts.next([]);
-    }
+  /**
+   * Show delete success message
+   */
+  showDeleteSuccess(item: string = 'item'): string {
+    return this.success('Deleted', `${item} has been deleted successfully.`);
+  }
+
+  /**
+   * Show loading toast (persistent until manually removed)
+   */
+  showLoading(title: string, message: string): string {
+    return this.showToast({
+      type: 'info',
+      title,
+      message,
+      duration: 0 // Persistent
+    });
+  }
+
+  /**
+   * Show toast with action button
+   */
+  showWithAction(
+    type: ToastMessage['type'],
+    title: string,
+    message: string,
+    actionLabel: string,
+    actionCallback: () => void,
+    duration: number = 10000
+  ): string {
+    return this.showToast({
+      type,
+      title,
+      message,
+      duration,
+      action: {
+        label: actionLabel,
+        callback: actionCallback
+      }
+    });
+  }
+
+  /**
+   * Show confirmation toast
+   */
+  showConfirmation(
+    title: string,
+    message: string,
+    confirmCallback: () => void,
+    cancelCallback?: () => void
+  ): string {
+    return this.showWithAction(
+      'warning',
+      title,
+      message,
+      'Confirm',
+      confirmCallback,
+      15000
+    );
+  }
 }

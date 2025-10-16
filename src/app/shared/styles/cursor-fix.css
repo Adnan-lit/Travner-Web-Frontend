@@ -1,0 +1,92 @@
+/* Cursor Fix - Ensure proper cursor visibility */
+/* This file fixes the transparent cursor issue */
+
+/* Reset cursor for all elements */
+* {
+  cursor: auto !important;
+}
+
+/* Ensure interactive elements have pointer cursor */
+a,
+button,
+.btn,
+[role="button"],
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+.clickable,
+.clickable-element,
+[onclick],
+[ng-click] {
+  cursor: pointer !important;
+}
+
+/* Hover states for interactive elements */
+a:hover,
+button:hover,
+.btn:hover,
+[role="button"]:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover,
+input[type="reset"]:hover,
+.clickable:hover,
+.clickable-element:hover,
+[onclick]:hover,
+[ng-click]:hover {
+  cursor: pointer !important;
+}
+
+/* Text input cursor */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+textarea {
+  cursor: text !important;
+}
+
+/* Disabled elements */
+button:disabled,
+.btn:disabled,
+input:disabled,
+textarea:disabled,
+[disabled] {
+  cursor: not-allowed !important;
+}
+
+/* Links */
+a {
+  cursor: pointer !important;
+}
+
+a:visited {
+  cursor: pointer !important;
+}
+
+/* Form elements */
+select {
+  cursor: pointer !important;
+}
+
+/* Override any custom cursor that might be causing issues */
+body,
+html {
+  cursor: auto !important;
+}
+
+/* Ensure marketplace components have proper cursor */
+.product-card,
+.product-card *,
+.marketplace-container,
+.marketplace-container * {
+  cursor: auto !important;
+}
+
+.product-card:hover,
+.product-card button:hover,
+.product-card a:hover {
+  cursor: pointer !important;
+}
+

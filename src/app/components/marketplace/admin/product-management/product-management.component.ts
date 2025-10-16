@@ -62,7 +62,7 @@ export class ProductManagementComponent implements OnInit {
         // Check if user is admin
         if (!this.authService.isAdmin()) {
             this.router.navigate(['/']);
-            this.toastService.error('Access denied. Admin privileges required.');
+            this.toastService.error('Access denied. Admin privileges required.', '');
             return;
         }
 
@@ -85,9 +85,9 @@ export class ProductManagementComponent implements OnInit {
 
         this.marketplaceService.getProducts(params).subscribe({
             next: (response: ProductListResponse) => {
-                this.products = response['content'];
-                this.totalPages = response['totalPages'];
-                this.totalElements = response['totalElements'];
+                this.products = response.data || [];
+                this.totalPages = response.pagination?.totalPages || 0;
+                this.totalElements = response.pagination?.totalElements || 0;
                 this.loading = false;
             },
             error: (err: any) => {
@@ -95,7 +95,7 @@ export class ProductManagementComponent implements OnInit {
                 const errorMessage = err.message || 'Failed to load products';
                 this.error = errorMessage;
                 this.loading = false;
-                this.toastService.error(errorMessage);
+                this.toastService.error('Error', errorMessage);
             }
         });
     }
@@ -156,7 +156,7 @@ export class ProductManagementComponent implements OnInit {
 
     onSubmit(): void {
         if (this.productForm.invalid) {
-            this.toastService.error('Please fill in all required fields correctly');
+            this.toastService.error('Please fill in all required fields correctly', '');
             return;
         }
 
@@ -194,17 +194,17 @@ export class ProductManagementComponent implements OnInit {
             next: (response: any) => {
                 // Handle the ApiResponse structure
                 if (response && response.success && response.data) {
-                    this.toastService.success('Product created successfully');
+                    this.toastService.success('Product created successfully', '');
                     this.closeForm();
                     this.loadProducts(); // Refresh the product list
                 } else {
-                    this.toastService.error('Failed to create product');
+                    this.toastService.error('Failed to create product', '');
                 }
             },
             error: (err: any) => {
                 console.error('Error creating product:', err);
                 const errorMessage = err.message || 'Failed to create product';
-                this.toastService.error(errorMessage);
+                this.toastService.error('Error', errorMessage);
             }
         });
     }
@@ -214,17 +214,17 @@ export class ProductManagementComponent implements OnInit {
             next: (response: any) => {
                 // Handle the ApiResponse structure
                 if (response && response.success && response.data) {
-                    this.toastService.success('Product updated successfully');
+                    this.toastService.success('Product updated successfully', '');
                     this.closeForm();
                     this.loadProducts(); // Refresh the product list
                 } else {
-                    this.toastService.error('Failed to update product');
+                    this.toastService.error('Failed to update product', '');
                 }
             },
             error: (err: any) => {
                 console.error('Error updating product:', err);
                 const errorMessage = err.message || 'Failed to update product';
-                this.toastService.error(errorMessage);
+                this.toastService.error('Error', errorMessage);
             }
         });
     }
@@ -236,13 +236,13 @@ export class ProductManagementComponent implements OnInit {
 
         this.marketplaceService.deleteProduct(product.id).subscribe({
             next: () => {
-                this.toastService.success('Product deleted successfully');
+                this.toastService.success('Product deleted successfully', '');
                 this.loadProducts(); // Refresh the product list
             },
             error: (err: any) => {
                 console.error('Error deleting product:', err);
                 const errorMessage = err.message || 'Failed to delete product';
-                this.toastService.error(errorMessage);
+                this.toastService.error('Error', errorMessage);
             }
         });
     }
@@ -263,15 +263,15 @@ export class ProductManagementComponent implements OnInit {
                     if (index !== -1) {
                         this.products[index] = response.data;
                     }
-                    this.toastService.success(`Product ${action}d successfully`);
+                    this.toastService.success('Product ${action}d successfully', '');
                 } else {
-                    this.toastService.error(`Failed to ${action} product`);
+                    this.toastService.error('Failed to ${action} product', '');
                 }
             },
             error: (err: any) => {
                 console.error(`Error ${action}ing product:`, err);
                 const errorMessage = err.message || `Failed to ${action} product`;
-                this.toastService.error(errorMessage);
+                this.toastService.error('Error', errorMessage);
             }
         });
     }

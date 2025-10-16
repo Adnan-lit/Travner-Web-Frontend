@@ -63,7 +63,7 @@ export class CheckoutComponent implements OnInit {
 
                 // Redirect to cart if empty
                 if (this.cart && !this.cart.items.length) {
-                    this.toastService.info('Your cart is empty');
+                    this.toastService.info('Your cart is empty', '');
                     this.router.navigate(['/marketplace/cart']);
                 }
             },
@@ -71,20 +71,20 @@ export class CheckoutComponent implements OnInit {
                 console.error('Error loading cart:', err);
                 this.error = err.message || 'Failed to load cart. Please try again later.';
                 this.loading = false;
-                this.toastService.error(this.error || 'Failed to load cart');
+                this.toastService.error('Failed to load cart', this.error || '');
             }
         });
     }
 
     onSubmit(): void {
         if (!this.cart || !this.cart.items.length) {
-            this.toastService.error('Your cart is empty');
+            this.toastService.error('Your cart is empty', '');
             this.router.navigate(['/marketplace/cart']);
             return;
         }
 
         if (this.checkoutForm.invalid) {
-            this.toastService.error('Please fill in all required fields');
+            this.toastService.error('Please fill in all required fields', '');
             return;
         }
 
@@ -96,7 +96,7 @@ export class CheckoutComponent implements OnInit {
         this.marketplaceService.checkout().subscribe({
             next: (response: any) => {
                 this.submitting = false;
-                this.toastService.success('Order placed successfully!');
+                this.toastService.success('Order placed successfully!', '');
                 // Navigate to order confirmation page
                 // TODO: Extract order ID from response if available
                 this.router.navigate(['/marketplace/orders']);
@@ -105,7 +105,7 @@ export class CheckoutComponent implements OnInit {
                 console.error('Error during checkout:', err);
                 this.submitting = false;
                 this.error = err.message || 'Failed to process checkout. Please try again.';
-                this.toastService.error(this.error || 'Failed to process checkout');
+                this.toastService.error('Failed to process checkout', this.error || '');
             }
         });
     }

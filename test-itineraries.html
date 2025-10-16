@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Itineraries API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+        .error {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .itinerary-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+        }
+        .itinerary-card h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .itinerary-meta {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .itinerary-description {
+            color: #555;
+            margin-bottom: 10px;
+        }
+        .itinerary-tags {
+            margin-top: 10px;
+        }
+        .tag {
+            display: inline-block;
+            background: #e9ecef;
+            color: #495057;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧳 Travner Itineraries API Test</h1>
+            <p>Testing the itinerary endpoints and functionality</p>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Get All Itineraries</h3>
+            <button onclick="testGetItineraries()">Get Itineraries</button>
+            <button onclick="testGetItinerariesWithPagination()">Get with Pagination</button>
+            <div id="itineraries-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Search Itineraries</h3>
+            <button onclick="testGetItinerariesByDestination()">Get by Destination</button>
+            <button onclick="testGetTemplateItineraries()">Get Templates</button>
+            <div id="search-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>➕ Create Sample Itinerary</h3>
+            <button onclick="createSampleItinerary()">Create Sample</button>
+            <div id="create-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 API Status</h3>
+            <button onclick="testApiStatus()">Check API Status</button>
+            <div id="status-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+
+        function showResult(elementId, content, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.textContent = content;
+            element.className = 'result ' + (isError ? 'error' : 'success');
+        }
+
+        async function testGetItineraries() {
+            try {
+                const response = await fetch(`${API_BASE}/itineraries?page=0&size=10`);
+                const data = await response.json();
+                
+                let result = `Status: ${response.status}\n`;
+                result += `Response: ${JSON.stringify(data, null, 2)}\n\n`;
+                
+                if (data.data && data.data.length > 0) {
+                    result += 'Itineraries found:\n';
+                    data.data.forEach((itinerary, index) => {
+                        result += `${index + 1}. ${itinerary.title}\n`;
+                        result += `   Destination: ${itinerary.destination}\n`;
+                        result += `   Author: ${itinerary.author?.userName || 'Unknown'}\n`;
+                        result += `   Public: ${itinerary.isPublic}\n`;
+                        result += `   Template: ${itinerary.isTemplate}\n\n`;
+                    });
+                } else {
+                    result += 'No itineraries found. The database is empty.\n';
+                }
+                
+                showResult('itineraries-result', result, response.status !== 200);
+            } catch (error) {
+                showResult('itineraries-result', `Error: ${error.message}`, true);
+            }
+        }
+
+        async function testGetItinerariesWithPagination() {
+            try {
+                const response = await fetch(`${API_BASE}/itineraries?page=0&size=5&sortBy=createdAt&direction=desc`);
+                const data = await response.json();
+                
+                let result = `Status: ${response.status}\n`;
+                result += `Pagination Info:\n`;
+                result += `- Page: ${data.pagination?.page || 'N/A'}\n`;
+                result += `- Size: ${data.pagination?.size || 'N/A'}\n`;
+                result += `- Total Elements: ${data.pagination?.totalElements || 'N/A'}\n`;
+                result += `- Total Pages: ${data.pagination?.totalPages || 'N/A'}\n\n`;
+                result += `Response: ${JSON.stringify(data, null, 2)}`;
+                
+                showResult('itineraries-result', result, response.status !== 200);
+            } catch (error) {
+                showResult('itineraries-result', `Error: ${error.message}`, true);
+            }
+        }
+
+        async function testGetItinerariesByDestination() {
+            try {
+                const response = await fetch(`${API_BASE}/itineraries/destination/Paris?page=0&size=5`);
+                const data = await response.json();
+                
+                let result = `Status: ${response.status}\n`;
+                result += `Searching for itineraries in Paris...\n\n`;
+                result += `Response: ${JSON.stringify(data, null, 2)}`;
+                
+                showResult('search-result', result, response.status !== 200);
+            } catch (error) {
+                showResult('search-result', `Error: ${error.message}`, true);
+            }
+        }
+
+        async function testGetTemplateItineraries() {
+            try {
+                const response = await fetch(`${API_BASE}/itineraries/templates?page=0&size=5`);
+                const data = await response.json();
+                
+                let result = `Status: ${response.status}\n`;
+                result += `Searching for template itineraries...\n\n`;
+                result += `Response: ${JSON.stringify(data, null, 2)}`;
+                
+                showResult('search-result', result, response.status !== 200);
+            } catch (error) {
+                showResult('search-result', `Error: ${error.message}`, true);
+            }
+        }
+
+        async function createSampleItinerary() {
+            const sampleItinerary = {
+                title: "Paris Adventure - 5 Days",
+                description: "A wonderful 5-day trip to Paris, exploring the city of lights with visits to iconic landmarks, museums, and local cuisine.",
+                destination: "Paris",
+                destinationCountry: "France",
+                destinationCity: "Paris",
+                startDate: "2024-06-01T00:00:00",
+                endDate: "2024-06-05T00:00:00",
+                tags: ["europe", "culture", "food", "museums"],
+                isPublic: true,
+                isTemplate: false,
+                estimatedBudget: 1500,
+                currency: "EUR",
+                items: [
+                    {
+                        title: "Arrival in Paris",
+                        description: "Check into hotel and explore the neighborhood",
+                        location: "Hotel in Marais District",
+                        startTime: "2024-06-01T14:00:00",
+                        endTime: "2024-06-01T18:00:00",
+                        category: "accommodation",
+                        notes: "Get familiar with the area",
+                        estimatedCost: 200,
+                        currency: "EUR"
+                    },
+                    {
+                        title: "Eiffel Tower Visit",
+                        description: "Visit the iconic Eiffel Tower and enjoy the view",
+                        location: "Eiffel Tower, Paris",
+                        startTime: "2024-06-02T10:00:00",
+                        endTime: "2024-06-02T12:00:00",
+                        category: "sightseeing",
+                        notes: "Book tickets in advance",
+                        estimatedCost: 30,
+                        currency: "EUR"
+                    }
+                ]
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/itineraries`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Basic YWRtaW46YWRtaW4=' // admin:admin
+                    },
+                    body: JSON.stringify(sampleItinerary)
+                });
+                
+                const data = await response.json();
+                
+                let result = `Status: ${response.status}\n`;
+                result += `Creating sample itinerary...\n\n`;
+                result += `Response: ${JSON.stringify(data, null, 2)}`;
+                
+                showResult('create-result', result, response.status !== 201);
+            } catch (error) {
+                showResult('create-result', `Error: ${error.message}`, true);
+            }
+        }
+
+        async function testApiStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/itineraries?page=0&size=1`);
+                const data = await response.json();
+                
+                let result = `API Status: ${response.status === 200 ? '✅ Working' : '❌ Error'}\n`;
+                result += `Response Time: ${new Date().toLocaleTimeString()}\n`;
+                result += `Server: ${response.headers.get('server') || 'Unknown'}\n`;
+                result += `Content-Type: ${response.headers.get('content-type')}\n\n`;
+                result += `Sample Response: ${JSON.stringify(data, null, 2)}`;
+                
+                showResult('status-result', result, response.status !== 200);
+            } catch (error) {
+                showResult('status-result', `API Error: ${error.message}`, true);
+            }
+        }
+
+        // Auto-test on page load
+        window.onload = function() {
+            console.log('🧳 Itineraries API Test Page Loaded');
+            testApiStatus();
+        };
+    </script>
+</body>
+</html>
+

@@ -16,6 +16,7 @@ export interface Product {
     sellerId: string;
     sellerUsername: string;
     isAvailable: boolean;
+    status: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -36,6 +37,7 @@ export interface UpdateProductRequest {
     description?: string;
     price?: number;
     stockQuantity?: number;
+    isAvailable?: boolean;
 }
 
 // Cart models
@@ -121,16 +123,53 @@ export interface ProductSearchParams {
     category?: string;
     location?: string;
     tags?: string;
+    status?: string;
 }
 
 // API Response types
 export type ProductListResponse = ApiResponse<Product[]> & {
-    pagination: ApiPaginationInfo;
+    pagination?: ApiPaginationInfo;
 };
 
 export type ProductResponse = ApiResponse<Product>;
 export type CartResponse = ApiResponse<Cart>;
 export type OrderResponse = ApiResponse<Order>;
 export type OrderListResponse = ApiResponse<Order[]> & {
-    pagination: ApiPaginationInfo;
+    pagination?: ApiPaginationInfo;
 };
+
+// Admin marketplace interfaces
+export interface AdminProductResponse extends Product {
+    status: string;
+    sellerInfo?: {
+        id: string;
+        userName: string;
+        email: string;
+    };
+}
+
+export interface AdminOrderResponse {
+    id: string;
+    userId: string;
+    items: OrderItem[];
+    amountTotal: number;
+    itemCount: number;
+    status: string;
+    paymentStatus?: string;
+    fulfillmentStatus?: string;
+    customerInfo: CustomerInfo;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface OrderFilter {
+    status?: string;
+    paymentStatus?: string;
+    fulfillmentStatus?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    size?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+}

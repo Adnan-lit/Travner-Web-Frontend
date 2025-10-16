@@ -52,7 +52,7 @@ export class OrderManagementComponent implements OnInit {
         // Check if user is admin
         if (!this.authService.isAdmin()) {
             this.router.navigate(['/']);
-            this.toastService.error('Access denied. Admin privileges required.');
+            this.toastService.error('Access denied. Admin privileges required.', '');
             return;
         }
 
@@ -78,9 +78,9 @@ export class OrderManagementComponent implements OnInit {
 
         this.marketplaceService.getAdminOrders(params).subscribe({
             next: (response: OrderListResponse) => {
-                this.orders = response['content'];
-                this.totalPages = response['totalPages'];
-                this.totalElements = response['totalElements'];
+                this.orders = response.data || [];
+                this.totalPages = response.pagination?.totalPages || 0;
+                this.totalElements = response.pagination?.totalElements || 0;
                 this.loading = false;
             },
             error: (err: any) => {
@@ -88,7 +88,7 @@ export class OrderManagementComponent implements OnInit {
                 const errorMessage = MarketplaceErrorHandler.getErrorMessage(err);
                 this.error = errorMessage;
                 this.loading = false;
-                this.toastService.error(errorMessage);
+                this.toastService.error('Error', errorMessage);
             }
         });
     }
@@ -156,13 +156,13 @@ export class OrderManagementComponent implements OnInit {
                 if (index !== -1 && updatedOrder) {
                     this.orders[index] = updatedOrder;
                 }
-                this.toastService.success('Order marked as paid');
+                this.toastService.success('Order marked as paid', '');
                 this.closeNotesForm();
             },
             error: (err: any) => {
                 console.error('Error marking order as paid:', err);
                 const errorMessage = MarketplaceErrorHandler.getErrorMessage(err);
-                this.toastService.error(errorMessage);
+                this.toastService.error('Error', errorMessage);
                 this.closeNotesForm();
             }
         });
@@ -177,13 +177,13 @@ export class OrderManagementComponent implements OnInit {
                 if (index !== -1 && updatedOrder) {
                     this.orders[index] = updatedOrder;
                 }
-                this.toastService.success('Order fulfilled');
+                this.toastService.success('Order fulfilled', '');
                 this.closeNotesForm();
             },
             error: (err: any) => {
                 console.error('Error fulfilling order:', err);
                 const errorMessage = MarketplaceErrorHandler.getErrorMessage(err);
-                this.toastService.error(errorMessage);
+                this.toastService.error('Error', errorMessage);
                 this.closeNotesForm();
             }
         });
@@ -198,13 +198,13 @@ export class OrderManagementComponent implements OnInit {
                 if (index !== -1 && updatedOrder) {
                     this.orders[index] = updatedOrder;
                 }
-                this.toastService.success('Order canceled');
+                this.toastService.success('Order canceled', '');
                 this.closeNotesForm();
             },
             error: (err: any) => {
                 console.error('Error canceling order:', err);
                 const errorMessage = MarketplaceErrorHandler.getErrorMessage(err);
-                this.toastService.error(errorMessage);
+                this.toastService.error('Error', errorMessage);
                 this.closeNotesForm();
             }
         });

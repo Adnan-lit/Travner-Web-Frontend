@@ -25,10 +25,12 @@ export interface Post {
     tags?: string[];
     mediaUrls?: string[];
     likes?: number;
-    comments?: number;
+    comments?: Comment[];
+    views?: number;
     isLiked?: boolean;
     createdAt: string;
     updatedAt: string;
+    status?: string;
 }
 
 export interface PostCreate {
@@ -43,6 +45,7 @@ export interface PostUpdate {
     content?: string;
     location?: string;
     tags?: string[];
+    published?: boolean;
 }
 
 // Comment models
@@ -64,6 +67,19 @@ export interface CommentCreate {
     postId: string;
 }
 
+// Search and pagination
+export interface PostSearchParams {
+    page?: number;
+    size?: number;
+    sortBy?: string;
+    direction?: 'asc' | 'desc';
+    query?: string;
+    location?: string;
+    tags?: string[];
+    authorId?: string;
+    status?: string;
+}
+
 // API Response types
 export type PostListResponse = ApiResponse<Post[]> & {
     pagination: ApiPaginationInfo;
@@ -74,3 +90,21 @@ export type CommentResponse = ApiResponse<Comment>;
 export type CommentListResponse = ApiResponse<Comment[]> & {
     pagination: ApiPaginationInfo;
 };
+
+// Admin post interfaces
+export interface AdminPost extends Post {
+    status: string;
+    reportedCount?: number;
+    violationType?: string;
+}
+
+export interface PostFilter {
+    status?: string;
+    reported?: boolean;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    size?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+}

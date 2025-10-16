@@ -58,9 +58,14 @@ export interface Post {
     upvotes: number;
     downvotes: number;
     commentCount: number;
+    likes?: number;
+    shares?: number;
+    comments?: Comment[];
+    views?: number;
     createdAt: string;
     updatedAt: string;
     author?: User;
+    media?: MediaFile[];
     mediaUrls?: string[];
     status?: string;
 }
@@ -193,4 +198,109 @@ export interface CreateUserRequest {
     firstName: string;
     lastName: string;
     email: string;
+}
+
+// Public API interfaces
+export interface PublicUser {
+    id: string;
+    userName: string;
+    firstName?: string;
+    lastName?: string;
+    bio?: string | null;
+    profileImageUrl?: string | null;
+    location?: string | null;
+    createdAt?: string;
+}
+
+export interface HealthCheckResponse {
+    status: string;
+    timestamp: string;
+}
+
+// Chat interfaces
+export interface ChatMessage {
+    id: string;
+    conversationId: string;
+    senderId: string;
+    senderUsername: string;
+    content: string;
+    kind: 'TEXT' | 'IMAGE' | 'FILE';
+    attachments?: any[];
+    replyTo?: string;
+    createdAt: string;
+    readBy: Array<{
+        userId: string;
+        readAt: string;
+    }>;
+}
+
+export interface CreateConversationRequest {
+    type: 'DIRECT' | 'GROUP';
+    memberIds: string[];
+    name?: string;
+}
+
+export interface AddMembersRequest {
+    memberIds: string[];
+}
+
+export interface MarkReadRequest {
+    lastReadMessageId?: string;
+}
+
+// Media interfaces
+export interface MediaFile {
+    id: string;
+    url: string;
+    type: 'image' | 'video';
+    caption?: string;
+    fileType?: string;
+    fileUrl?: string;
+    fileName?: string;
+    createdAt: string;
+}
+
+export interface UploadMediaRequest {
+    files: File[];
+    type: 'image' | 'video';
+}
+
+// Admin interfaces
+export interface ActivateUserRequest {
+    active: boolean;
+}
+
+export interface AdminPost {
+    id: string;
+    title: string;
+    content: string;
+    location?: string;
+    tags?: string[];
+    authorId: string;
+    authorUsername: string;
+    published: boolean;
+    upvotes: number;
+    downvotes: number;
+    commentCount: number;
+    createdAt: string;
+    updatedAt: string;
+    status: string;
+}
+
+export interface AdminProduct {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    category: string;
+    stockQuantity: number;
+    location: string;
+    tags: string[];
+    images: string[];
+    sellerId: string;
+    sellerUsername: string;
+    isAvailable: boolean;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
 }
