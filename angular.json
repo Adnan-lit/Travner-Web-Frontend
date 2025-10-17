@@ -37,11 +37,6 @@
             ],
             "scripts": [
               "src/global-polyfill.js"
-            ],
-            "allowedCommonJsDependencies": [
-              "sockjs-client",
-              "@stomp/stompjs",
-              "@stomp/ng2-stompjs"
             ]
           },
           "configurations": {
@@ -58,7 +53,12 @@
                   "maximumError": "50kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "allowedCommonJsDependencies": [
+                "sockjs-client",
+                "@stomp/stompjs",
+                "@stomp/ng2-stompjs"
+              ]
             },
             "development": {
               "optimization": false,
