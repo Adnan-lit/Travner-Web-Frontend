@@ -16,9 +16,6 @@
             "outputPath": "dist/travner-web-frontend",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": [
-              "src/polyfills.ts"
-            ],
             "tsConfig": "tsconfig.app.json",
             "assets": [
               {
@@ -35,9 +32,7 @@
             "styles": [
               "src/styles.css"
             ],
-            "scripts": [
-              "src/global-polyfill.js"
-            ]
+            "scripts": []
           },
           "configurations": {
             "production": {

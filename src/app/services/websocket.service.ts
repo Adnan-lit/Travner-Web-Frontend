@@ -1,5 +1,4 @@
-// Import global polyfill first
-import '../../global-polyfill';
+// Global polyfill removed - no longer needed
 
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
