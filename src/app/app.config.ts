@@ -10,7 +10,10 @@ import { noAuthPopupInterceptor } from './core/http/no-auth-popup.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideZoneChangeDetection({ 
+      eventCoalescing: true,
+      runCoalescing: true
+    }),
     provideRouter(routes),
     provideAnimationsAsync(),
     provideHttpClient(
