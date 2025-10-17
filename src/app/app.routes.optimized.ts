@@ -176,7 +176,7 @@ export const routes: Routes = [
       },
       { 
         path: 'admin/marketplace/orders', 
-        loadComponent: () => import('./components/marketplace/admin/order-management/order-management.component').then(m => m.OrderManagementComponent),
+        loadComponent: () => import('./components/admin/order-management/order-management.component').then(m => m.OrderManagementComponent),
         canActivate: [AdminGuard]
       },
 

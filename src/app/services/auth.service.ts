@@ -116,7 +116,16 @@ export class AuthService {
      */
     signup(signupData: SignupRequest): Observable<ApiResponse<User>> {
         const endpoint = `${this.API_BASE_URL}/api/public/register`;
-        return this.http.post<ApiResponse<User>>(endpoint, signupData)
+        
+        // Normalize username to lowercase to match signin behavior
+        const normalizedSignupData = {
+            ...signupData,
+            userName: signupData.userName.toLowerCase()
+        };
+        
+        console.log(`🔐 Signup: Normalizing username "${signupData.userName}" -> "${normalizedSignupData.userName}"`);
+        
+        return this.http.post<ApiResponse<User>>(endpoint, normalizedSignupData)
             .pipe(
                 tap(response => {
                     if (response.success && response.data) {
@@ -415,6 +424,23 @@ export class AuthService {
      */
     isAuthenticated(): boolean {
         return this.isAuthenticatedSubject.value;
+    }
+
+    /**
+     * Get the appropriate redirect URL based on user role
+     */
+    getRedirectUrl(): string {
+        if (!this.isAuthenticated()) {
+            return '/signin';
+        }
+        
+        // Admin users should go directly to admin dashboard
+        if (this.isAdmin()) {
+            return '/admin';
+        }
+        
+        // Regular users go to dashboard
+        return '/dashboard';
     }
 
     /**

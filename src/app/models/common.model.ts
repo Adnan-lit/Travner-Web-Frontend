@@ -19,7 +19,11 @@ export interface User {
 export interface AdminUser extends User {
     isActive: boolean;
     lastLoginAt?: string;
+    lastLogin?: string; // Alternative property name
     profilePictureUrl?: string;
+    role?: string; // For admin display
+    roles?: string[]; // Array of roles
+    status?: 'ACTIVE' | 'INACTIVE' | 'BANNED' | 'PENDING'; // User status
 }
 
 export interface SignupRequest {
@@ -76,6 +80,7 @@ export interface CreatePostRequest {
     location?: string;
     tags?: string[];
     published: boolean;
+    mediaIds?: string[];
 }
 
 export interface UpdatePostRequest {
@@ -84,6 +89,7 @@ export interface UpdatePostRequest {
     location?: string;
     tags?: string[];
     published?: boolean;
+    mediaIds?: string[];
 }
 
 export interface VoteRequest {
@@ -251,13 +257,16 @@ export interface MarkReadRequest {
 // Media interfaces
 export interface MediaFile {
     id: string;
-    url: string;
-    type: 'image' | 'video';
-    caption?: string;
-    fileType?: string;
-    fileUrl?: string;
-    fileName?: string;
-    createdAt: string;
+    filename: string;
+    originalFilename: string;
+    contentType: string;
+    size: number;
+    uploadedBy: string;
+    type: string;
+    entityId?: string;
+    uploadedAt: string;
+    downloadUrl: string;
+    gridFsId: string;
 }
 
 export interface UploadMediaRequest {

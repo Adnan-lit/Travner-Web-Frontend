@@ -1,17 +1,9 @@
 import { User } from './common.model';
 import { ApiResponse, ApiPaginationInfo } from './api-response.model';
+import { Media } from './media.model';
 
-// Media model
-export interface Media {
-    id: string;
-    url: string;
-    type: 'image' | 'video';
-    caption?: string;
-    fileType?: string;
-    fileUrl?: string;
-    fileName?: string;
-    createdAt: string;
-}
+// Use Media from media.model for consistency
+export type { Media };
 
 // Post models
 export interface Post {
@@ -23,6 +15,7 @@ export interface Post {
     authorName?: string;
     location?: string;
     tags?: string[];
+    media?: Media[];
     mediaUrls?: string[];
     likes?: number;
     comments?: Comment[];
@@ -38,6 +31,8 @@ export interface PostCreate {
     content: string;
     location?: string;
     tags?: string[];
+    published?: boolean;
+    mediaIds?: string[];
 }
 
 export interface PostUpdate {
@@ -46,6 +41,7 @@ export interface PostUpdate {
     location?: string;
     tags?: string[];
     published?: boolean;
+    mediaIds?: string[];
 }
 
 // Comment models

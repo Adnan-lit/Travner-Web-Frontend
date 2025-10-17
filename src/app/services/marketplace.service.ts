@@ -345,6 +345,58 @@ export class MarketplaceService {
     }
 
     /**
+     * Get all orders (admin only) - simple version
+     */
+    getAllOrders(): Observable<ApiResponse<Order[]>> {
+        const endpoint = `${this.API_BASE_URL}/api/market/orders/admin`;
+        return this.http.get<ApiResponse<Order[]>>(endpoint).pipe(
+            catchError(error => {
+                console.error('Error fetching all orders:', error);
+                throw error;
+            })
+        );
+    }
+
+    /**
+     * Pay order
+     */
+    payOrder(orderId: string): Observable<ApiResponse<Order>> {
+        const endpoint = `${this.API_BASE_URL}/api/market/orders/${orderId}/pay`;
+        return this.http.post<ApiResponse<Order>>(endpoint, {}).pipe(
+            catchError(error => {
+                console.error('Error paying order:', error);
+                throw error;
+            })
+        );
+    }
+
+    /**
+     * Fulfill order
+     */
+    fulfillOrder(orderId: string): Observable<ApiResponse<Order>> {
+        const endpoint = `${this.API_BASE_URL}/api/market/orders/${orderId}/fulfill`;
+        return this.http.post<ApiResponse<Order>>(endpoint, {}).pipe(
+            catchError(error => {
+                console.error('Error fulfilling order:', error);
+                throw error;
+            })
+        );
+    }
+
+    /**
+     * Admin cancel order
+     */
+    adminCancelOrder(orderId: string): Observable<ApiResponse<Order>> {
+        const endpoint = `${this.API_BASE_URL}/api/market/orders/${orderId}/admin-cancel`;
+        return this.http.post<ApiResponse<Order>>(endpoint, {}).pipe(
+            catchError(error => {
+                console.error('Error admin cancelling order:', error);
+                throw error;
+            })
+        );
+    }
+
+    /**
      * Mark order as paid
      */
     markOrderPaid(orderId: string, notes?: string): Observable<ApiResponse<Order>> {
@@ -357,29 +409,4 @@ export class MarketplaceService {
         );
     }
 
-    /**
-     * Fulfill order
-     */
-    fulfillOrder(orderId: string, notes?: string): Observable<ApiResponse<Order>> {
-        const endpoint = `${this.API_BASE_URL}/api/market/orders/${orderId}/fulfill`;
-        return this.http.post<ApiResponse<Order>>(endpoint, { notes }).pipe(
-            catchError(error => {
-                console.error(`Error fulfilling order ${orderId}:`, error);
-                throw error;
-            })
-        );
-    }
-
-    /**
-     * Admin cancel order
-     */
-    adminCancelOrder(orderId: string, notes?: string): Observable<ApiResponse<Order>> {
-        const endpoint = `${this.API_BASE_URL}/api/market/orders/${orderId}/admin-cancel`;
-        return this.http.post<ApiResponse<Order>>(endpoint, { notes }).pipe(
-            catchError(error => {
-                console.error(`Error admin cancelling order ${orderId}:`, error);
-                throw error;
-            })
-        );
-    }
 }

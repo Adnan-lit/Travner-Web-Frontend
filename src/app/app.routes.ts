@@ -4,6 +4,9 @@ import { SigninComponent } from './components/signin/signin.component';
 import { SignupComponent } from './components/signup/signup.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { AdminComponent } from './components/admin/admin.component';
+import { AdminDashboardComponent } from './components/admin/admin-dashboard/admin-dashboard.component';
+import { UserManagementComponent } from './components/admin/user-management/user-management.component';
+import { OrderManagementComponent } from './components/admin/order-management/order-management.component';
 import { PostListComponent } from './components/posts/post-list.component';
 import { PostDetailComponent } from './components/posts/post-detail/post-detail.component';
 import { PostEditComponent } from './components/posts/post-edit/post-edit.component';
@@ -24,7 +27,6 @@ import { CheckoutComponent } from './components/marketplace/checkout/checkout.co
 import { OrderListComponent } from './components/marketplace/order-list/order-list.component';
 import { OrderDetailComponent } from './components/marketplace/order-detail/order-detail.component';
 import { ProductManagementComponent } from './components/marketplace/admin/product-management/product-management.component';
-import { OrderManagementComponent } from './components/marketplace/admin/order-management/order-management.component';
 import { AuthDebugComponent } from './components/auth-debug/auth-debug.component';
 import { TripListComponent } from './components/trips/trip-list/trip-list.component';
 
@@ -45,7 +47,20 @@ export const routes: Routes = [
     children: [
       { path: '', component: LandingComponent },
       { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
-      { path: 'admin', component: AdminComponent, canActivate: [AdminGuard] },
+      { 
+        path: 'admin', 
+        component: AdminComponent, 
+        canActivate: [AdminGuard],
+        children: [
+          { path: '', component: AdminDashboardComponent },
+          { path: 'users', component: UserManagementComponent },
+          { path: 'posts', component: PostListComponent },
+          { path: 'orders', component: OrderManagementComponent },
+          { path: 'products', component: ProductManagementComponent },
+          { path: 'analytics', component: AdminDashboardComponent }, // Placeholder
+          { path: 'settings', component: AdminDashboardComponent } // Placeholder
+        ]
+      },
       { path: 'community', component: PostListComponent },
       { path: 'community/new', component: PostCreateComponent, canActivate: [AuthGuard] },
       { path: 'community/:id', component: PostDetailComponent },

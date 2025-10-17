@@ -83,8 +83,10 @@ export interface OrderItem {
     descriptionSnapshot: string;
     imageUrlSnapshot: string;
     unitPrice: number;
+    price?: number; // Alternative property name
     quantity: number;
     sellerId: string;
+    productName?: string; // For admin display
     createdAt: string;
     updatedAt: string;
 }
@@ -106,9 +108,18 @@ export interface Order {
     userId: string;
     items: OrderItem[];
     amountTotal: number;
+    totalAmount?: number; // Alternative property name
     itemCount: number;
-    status: 'PLACED' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+    status: 'PLACED' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'PENDING' | 'PAID' | 'FULFILLED' | 'REFUNDED';
     customerInfo: CustomerInfo;
+    customerName?: string; // For admin display
+    customerEmail?: string; // For admin display
+    shippingAddress?: string; // For admin display
+    paymentInfo?: {
+        status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
+        method?: string;
+        transactionId?: string;
+    };
     createdAt: string;
     updatedAt: string;
 }

@@ -207,7 +207,7 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
           setTimeout(() => {
             this.router.navigate(['/signin'], {
               queryParams: {
-                message: `Account created successfully! You can now access protected endpoints using your username: ${signupData.userName}`
+                message: `Account created successfully! You can now sign in using your username: ${signupData.userName.toLowerCase()}`
               }
             });
           }, 2000);

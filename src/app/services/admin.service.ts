@@ -80,6 +80,19 @@ export class AdminService {
   }
 
   /**
+   * Delete user
+   */
+  deleteUser(userId: string): Observable<ApiResponse<void>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/users/${userId}`;
+    return this.http.delete<ApiResponse<void>>(endpoint).pipe(
+      catchError(error => {
+        console.error(`Error deleting user ${userId}:`, error);
+        throw error;
+      })
+    );
+  }
+
+  /**
    * Deactivate user
    */
   deactivateUser(userId: string): Observable<ApiResponse<AdminUser>> {
@@ -93,13 +106,26 @@ export class AdminService {
   }
 
   /**
-   * Delete user
+   * Get post statistics
    */
-  deleteUser(userId: string): Observable<ApiResponse<void>> {
-    const endpoint = `${this.API_BASE_URL}/api/admin/users/${userId}`;
-    return this.http.delete<ApiResponse<void>>(endpoint).pipe(
+  getPostStats(): Observable<ApiResponse<any>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/stats/posts`;
+    return this.http.get<ApiResponse<any>>(endpoint).pipe(
       catchError(error => {
-        console.error(`Error deleting user ${userId}:`, error);
+        console.error('Error fetching post stats:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Cleanup invalid media URLs
+   */
+  cleanupInvalidMediaUrls(): Observable<ApiResponse<string>> {
+    const endpoint = `${this.API_BASE_URL}/api/admin/cleanup/media-urls`;
+    return this.http.post<ApiResponse<string>>(endpoint, {}).pipe(
+      catchError(error => {
+        console.error('Error cleaning up media URLs:', error);
         throw error;
       })
     );

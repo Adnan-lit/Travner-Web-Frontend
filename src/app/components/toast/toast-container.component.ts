@@ -16,7 +16,10 @@ import { ToastService, ToastMessage } from '../../services/toast.service';
       >
         <div class="toast-content">
           <i class="toast-icon" [ngClass]="getIconClass(toast.type)"></i>
-          <span class="toast-message">{{ toast.message }}</span>
+          <div class="toast-text">
+            <div class="toast-title" *ngIf="toast.title">{{ toast.title }}</div>
+            <div class="toast-message">{{ toast.message }}</div>
+          </div>
           <button type="button" class="toast-close" (click)="removeToast(toast.id)">
             &times;
           </button>
@@ -62,10 +65,22 @@ import { ToastService, ToastMessage } from '../../services/toast.service';
       font-size: 20px;
     }
 
-    .toast-message {
+    .toast-text {
       flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toast-title {
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .toast-message {
+      font-size: 13px;
+      font-weight: 400;
+      opacity: 0.9;
     }
 
     .toast-close {

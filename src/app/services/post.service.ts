@@ -336,7 +336,7 @@ export class PostService {
       uploadObservables.forEach(obs => {
         obs.subscribe({
           next: (media) => {
-            uploadedMedia.push(media);
+            uploadedMedia.push(media.data);
             completed++;
             if (completed === files.length) {
               observer.next(uploadedMedia);

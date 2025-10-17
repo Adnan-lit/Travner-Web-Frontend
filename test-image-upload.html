@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Image Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .preview {
+            margin: 20px 0;
+        }
+        .preview img {
+            max-width: 200px;
+            max-height: 200px;
+            margin: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>Test Image Upload for Products</h1>
+    
+    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+        <h3>Click to Upload Images</h3>
+        <p>Select image files to test the upload functionality</p>
+        <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+    </div>
+    
+    <div id="status"></div>
+    <div id="preview" class="preview"></div>
+    
+    <script>
+        const API_BASE_URL = 'http://localhost:8080';
+        const fileInput = document.getElementById('fileInput');
+        const statusDiv = document.getElementById('status');
+        const previewDiv = document.getElementById('preview');
+        
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            if (files.length === 0) return;
+            
+            showStatus('info', `Selected ${files.length} file(s). Starting upload...`);
+            
+            // Show previews
+            previewDiv.innerHTML = '';
+            files.forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.alt = file.name;
+                    previewDiv.appendChild(img);
+                }
+            });
+            
+            // Upload files
+            uploadFiles(files);
+        }
+        
+        async function uploadFiles(files) {
+            const uploadPromises = files.map(file => uploadFile(file));
+            
+            try {
+                const results = await Promise.all(uploadPromises);
+                showStatus('success', `Successfully uploaded ${results.length} file(s)!`);
+                
+                // Show uploaded file URLs
+                results.forEach(result => {
+                    if (result && result.data) {
+                        const url = `${API_BASE_URL}/api/media/files/${result.data.filename}`;
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.textContent = `View: ${result.data.originalFilename}`;
+                        link.target = '_blank';
+                        link.style.display = 'block';
+                        link.style.margin = '5px 0';
+                        previewDiv.appendChild(link);
+                    }
+                });
+            } catch (error) {
+                showStatus('error', `Upload failed: ${error.message}`);
+            }
+        }
+        
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('type', 'product');
+            
+            const response = await fetch(`${API_BASE_URL}/api/media/upload`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Authorization': 'Bearer ' + getAuthToken()
+                }
+            });
+            
+            if (!response.ok) {
+                const error = await response.text();
+                throw new Error(`HTTP ${response.status}: ${error}`);
+            }
+            
+            return await response.json();
+        }
+        
+        function getAuthToken() {
+            // In a real app, this would come from login
+            // For testing, you might need to login first or use a test token
+            return localStorage.getItem('authToken') || '';
+        }
+        
+        function showStatus(type, message) {
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        // Check if backend is running
+        fetch(`${API_BASE_URL}/actuator/health`)
+            .then(response => response.json())
+            .then(data => {
+                showStatus('success', 'Backend is running! Status: ' + data.status);
+            })
+            .catch(error => {
+                showStatus('error', 'Backend is not running. Please start the backend server first.');
+            });
+    </script>
+</body>
+</html>

@@ -2,10 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Observable, forkJoin, map } from 'rxjs';
 import { PostService } from '../../../services/post.service';
 import { ToastService } from '../../../services/toast.service';
 import { Post, PostCreate, PostUpdate } from '../../../models/post.model';
 import { AuthService } from '../../../services/auth.service';
+import { MediaService } from '../../../services/media.service';
 import { isPostOwner } from '../../../utils/ownership.util';
 import { PostFormComponent } from '../post-form/post-form.component';
 
@@ -21,7 +23,7 @@ import { PostFormComponent } from '../post-form/post-form.component';
         <p>Update your travel experiences and share with the community</p>
       </div>
 
-      <app-post-form *ngIf="post" [mode]="'edit'" [initial]="post" [saving]="saving" (submitPost)="onSubmit($event)" (deleteMedia)="onDeleteMedia($event)" (cancel)="goBack()" />
+      <app-post-form *ngIf="post" [mode]="'edit'" [initial]="post" [saving]="saving" [existingMedia]="getExistingMedia()" (submitPost)="onSubmit($event)" (deleteMedia)="onDeleteMedia($event)" (cancel)="goBack()" />
 
       <!-- Error Message -->
       <div class="error-message" *ngIf="error">
@@ -57,7 +59,7 @@ export class PostEditComponent implements OnInit {
     saving = false;
     error: string | null = null;
 
-    constructor(private route: ActivatedRoute, private postService: PostService, private router: Router, private auth: AuthService, private toast: ToastService) { }
+    constructor(private route: ActivatedRoute, private postService: PostService, private router: Router, private auth: AuthService, private toast: ToastService, private mediaService: MediaService) { }
 
     ngOnInit(): void {
         this.postId = this.route.snapshot.paramMap.get('id');
@@ -114,32 +116,52 @@ export class PostEditComponent implements OnInit {
         });
     }
 
-    onSubmit(event: { data: PostCreate | PostUpdate; files: File[] }): void {
+    onSubmit(event: { data: PostCreate | PostUpdate; files: File[]; uploadedMediaIds: string[] }): void {
         if (!this.postId) return;
-        const payload = event.data as PostUpdate; // edit mode partial allowed
+        const payload = event.data as PostUpdate;
         this.saving = true;
-        this.postService.updatePost(this.postId, payload).subscribe({
-            next: (updated: any) => {
-                const files = event.files || [];
-                if (files.length > 0) {
-                    this.postService.uploadMedia(this.postId!, files).subscribe({
-                        next: () => {
-                            this.saving = false;
-                            this.router.navigate(['/community', updated['id']]);
-                            this.toast.success('Post updated', '');
-                        },
-                        error: (err: any) => {
-                            console.error('Post updated but media upload failed', err);
-                            this.saving = false;
-                            this.router.navigate(['/community', updated['id']]);
-                            this.toast.warning('Updated but some media failed', '');
-                        }
-                    });
-                } else {
+
+        // Combine uploaded media IDs with any new files that need to be uploaded
+        const allMediaIds = [...event.uploadedMediaIds];
+        const files = event.files || [];
+        
+        if (files.length > 0) {
+            this.uploadMediaFiles(files).subscribe({
+                next: (newMediaIds) => {
+                    // Include all media IDs in the update payload
+                    payload.mediaIds = [...allMediaIds, ...newMediaIds];
+                    this.updatePost(payload);
+                },
+                error: (error) => {
+                    console.error('Error uploading media:', error);
+                    this.error = 'Failed to upload media files';
                     this.saving = false;
-                    this.router.navigate(['/community', updated['id']]);
-                    this.toast.success('Post updated', '');
                 }
+            });
+        } else {
+            // No new files to upload, just use the uploaded media IDs
+            payload.mediaIds = allMediaIds;
+            this.updatePost(payload);
+        }
+    }
+
+    private uploadMediaFiles(files: File[]): Observable<string[]> {
+        const uploadObservables = files.map(file => 
+            this.mediaService.uploadMedia(file, 'post')
+        );
+        
+        return forkJoin(uploadObservables).pipe(
+            map(responses => responses.map(response => response.data.id).filter(id => id !== undefined))
+        );
+    }
+
+    private updatePost(payload: PostUpdate): void {
+        this.postService.updatePost(this.postId!, payload).subscribe({
+            next: (updated: any) => {
+                this.saving = false;
+                // Use the original postId for navigation since updated['id'] might be undefined
+                this.router.navigate(['/community', this.postId]);
+                this.toast.success('Post updated', 'Your changes have been saved successfully.');
             },
             error: (err: any) => {
                 console.error('Failed to save post', err);
@@ -204,5 +226,26 @@ export class PostEditComponent implements OnInit {
             isOwner: this.post ? isPostOwner(postOwner, current) : 'No post loaded',
             enableDebugMode: 'Run: localStorage.setItem("travner_debug", "true"); then refresh'
         });
+    }
+
+    getExistingMedia(): any[] {
+        if (!this.post?.media) return [];
+        
+        // Convert MediaFile[] to Media[] format for the form component
+        return this.post.media.map((media: any) => ({
+            id: media.id,
+            filename: media.filename,
+            originalFilename: media.originalFilename,
+            contentType: media.contentType,
+            size: media.size,
+            uploadedBy: media.uploadedBy,
+            type: media.type,
+            entityId: media.entityId,
+            uploadedAt: media.uploadedAt,
+            downloadUrl: media.downloadUrl,
+            gridFsId: media.gridFsId,
+            url: media.downloadUrl, // Use downloadUrl as url for display
+            createdAt: media.uploadedAt // Use uploadedAt as createdAt for display
+        }));
     }
 }

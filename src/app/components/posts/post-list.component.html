@@ -98,7 +98,7 @@
                  *ngIf="post.author?.profileImageUrl; else defaultAvatar">
             <ng-template #defaultAvatar>
               <div class="avatar-placeholder">
-                {{post.author?.firstName?.charAt(0)}}{{post.author?.lastName?.charAt(0)}}
+                {{post.author?.firstName?.charAt(0) || 'U'}}{{post.author?.lastName?.charAt(0) || 'U'}}
               </div>
             </ng-template>
           </div>

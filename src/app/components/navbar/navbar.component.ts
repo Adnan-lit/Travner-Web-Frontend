@@ -1,11 +1,11 @@
-import { Component, OnInit, HostListener, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 import { MarketplaceService } from '../../services/marketplace.service';
-import { filter } from 'rxjs/operators';
-import { Observable, of } from 'rxjs';
+import { filter, takeUntil } from 'rxjs/operators';
+import { Observable, of, Subject } from 'rxjs';
 
 @Component({
   selector: 'app-navbar',
@@ -14,7 +14,7 @@ import { Observable, of } from 'rxjs';
   standalone: true,
   imports: [CommonModule, RouterModule]
 })
-export class NavbarComponent implements OnInit {
+export class NavbarComponent implements OnInit, OnDestroy {
   isAuthenticated = false;
   currentUser: any = null;
   showMobileMenu = false;
@@ -30,15 +30,17 @@ export class NavbarComponent implements OnInit {
   private authService = inject(AuthService);
 
   private marketplaceService = inject(MarketplaceService);
+  private destroy$ = new Subject<void>();
 
   theme$ = of('light');
   cartItemCount = 0;
+  hasUnreadMessages = false;
 
   constructor() { }
 
   ngOnInit(): void {
     this.ensureBackdropSupport();
-    this.authService.currentUser$.subscribe(user => {
+    this.authService.currentUser$.pipe(takeUntil(this.destroy$)).subscribe(user => {
       this.isAuthenticated = !!user;
       this.currentUser = user;
       console.log('🧭 Navbar: Authentication status changed:', this.isAuthenticated);
@@ -61,7 +63,10 @@ export class NavbarComponent implements OnInit {
       setTimeout(() => { window.scrollTo(0, 0); this.onScroll(); });
     }
 
-    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((e: any) => {
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd),
+      takeUntil(this.destroy$)
+    ).subscribe((e: any) => {
       const landing = e.urlAfterRedirects === '/' || e.url === '/';
       if (landing !== this.isLandingRoute) {
         // If entering landing, suppress transition for smoother visual
@@ -121,8 +126,13 @@ export class NavbarComponent implements OnInit {
     this.lastScrollY = currentY;
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   isAdmin(): boolean {
-    return this.currentUser?.role === 'ADMIN';
+    return this.authService.isAdmin();
   }
 
   isMarketplacePage(): boolean {
@@ -180,7 +190,7 @@ export class NavbarComponent implements OnInit {
       return;
     }
 
-    this.marketplaceService.getCartItemCount().subscribe({
+        this.marketplaceService.getCartItemCount().pipe(takeUntil(this.destroy$)).subscribe({
       next: (response: any) => {
         this.cartItemCount = response?.data || 0;
         console.log('🧭 Navbar: Cart count loaded successfully:', this.cartItemCount);

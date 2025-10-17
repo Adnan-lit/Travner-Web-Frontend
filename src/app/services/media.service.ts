@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { Observable } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { ApiResponse } from '../models/api-response.model';
+import { EnvironmentConfig } from '../config/environment.config';
 
 export interface MediaFile {
   id: string;
@@ -19,101 +19,110 @@ export interface MediaFile {
 }
 
 export interface MediaUploadResponse {
-  id: string;
-  filename: string;
-  originalFilename: string;
-  contentType: string;
-  size: number;
-  uploadedBy: string;
-  type: string;
-  entityId?: string;
-  uploadedAt: string;
-  downloadUrl: string;
-  gridFsId: string;
+  success: boolean;
+  message: string;
+  data: MediaFile;
+  id?: string; // For backward compatibility
+}
+
+export interface MediaListResponse {
+  success: boolean;
+  message: string;
+  data: MediaFile[];
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class MediaService {
-  private readonly API_BASE_URL = '/api/media';
+  private readonly API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   /**
-   * Upload a media file to the backend
+   * Upload a media file
    */
-  uploadMedia(file: File, type: string = 'post', entityId?: string): Observable<MediaUploadResponse> {
+  uploadMedia(file: File, type: string = 'product', entityId?: string): Observable<MediaUploadResponse> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', type);
+    
     if (entityId) {
       formData.append('entityId', entityId);
     }
 
-    return this.http.post<ApiResponse<MediaUploadResponse>>(`${this.API_BASE_URL}/upload`, formData).pipe(
+    const endpoint = `${this.API_BASE_URL}/api/media/upload`;
+    return this.http.post<MediaUploadResponse>(endpoint, formData).pipe(
       map(response => {
-        if (response.success && response.data) {
-          return response.data;
+        // Add id property for backward compatibility
+        if (response.data && !response.id) {
+          response.id = response.data.id;
         }
-        throw new Error(response.message || 'Upload failed');
+        return response;
       }),
       catchError(error => {
-        console.error('Media upload error:', error);
-        return throwError(() => error);
+        console.error('Error uploading media:', error);
+        throw error;
       })
     );
   }
 
   /**
-   * Get media files for a specific post
+   * Upload multiple media files
    */
-  getMediaForPost(postId: string): Observable<MediaFile[]> {
-    return this.http.get<ApiResponse<MediaFile[]>>(`${this.API_BASE_URL}/posts/${postId}`).pipe(
-      map(response => {
-        if (response.success && response.data) {
-          return response.data;
-        }
-        return [];
-      }),
-      catchError(error => {
-        console.error('Error fetching media for post:', error);
-        return throwError(() => error);
-      })
-    );
+  uploadMultipleMedia(files: File[], type: string = 'product', entityId?: string): Observable<MediaUploadResponse[]> {
+    const uploadObservables = files.map(file => this.uploadMedia(file, type, entityId));
+    
+    // Use forkJoin to upload all files in parallel
+    return new Observable(observer => {
+      const uploads = uploadObservables.map(obs => obs.toPromise());
+      Promise.all(uploads).then(results => {
+        observer.next(results as MediaUploadResponse[]);
+        observer.complete();
+      }).catch(error => {
+        observer.error(error);
+      });
+    });
   }
 
   /**
    * Get media file by ID
    */
-  getMediaById(mediaId: string): Observable<MediaFile> {
-    return this.http.get<ApiResponse<MediaFile>>(`${this.API_BASE_URL}/${mediaId}`).pipe(
-      map(response => {
-        if (response.success && response.data) {
-          return response.data;
-        }
-        throw new Error(response.message || 'Media not found');
-      }),
+  getMedia(mediaId: string): Observable<MediaFile> {
+    const endpoint = `${this.API_BASE_URL}/api/media/${mediaId}`;
+    return this.http.get<MediaFile>(endpoint).pipe(
       catchError(error => {
-        console.error('Error fetching media:', error);
-        return throwError(() => error);
+        console.error('Error getting media:', error);
+        throw error;
       })
     );
   }
 
   /**
-   * Delete a media file
+   * Get media files for a specific entity
    */
-  deleteMedia(mediaId: string): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(`${this.API_BASE_URL}/${mediaId}`).pipe(
-      map(response => {
-        if (!response.success) {
-          throw new Error(response.message || 'Delete failed');
-        }
-      }),
+  getMediaForEntity(entityId: string, type: string): Observable<MediaFile[]> {
+    const endpoint = `${this.API_BASE_URL}/api/media/entity/${entityId}`;
+    const params = new HttpParams().set('type', type);
+    
+    return this.http.get<MediaListResponse>(endpoint, { params }).pipe(
+      map(response => response.data || []),
+      catchError(error => {
+        console.error('Error getting media for entity:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Delete media file
+   */
+  deleteMedia(mediaId: string): Observable<any> {
+    const endpoint = `${this.API_BASE_URL}/api/media/${mediaId}`;
+    return this.http.delete(endpoint).pipe(
       catchError(error => {
         console.error('Error deleting media:', error);
-        return throwError(() => error);
+        throw error;
       })
     );
   }
@@ -121,27 +130,15 @@ export class MediaService {
   /**
    * Get media file URL for display
    */
-  getMediaUrl(mediaId: string): string {
-    return `${this.API_BASE_URL}/${mediaId}`;
+  getMediaUrl(filename: string): string {
+    return `${this.API_BASE_URL}/api/media/files/${filename}`;
   }
 
   /**
-   * Get media file URL by filename
+   * Get media file URL by ID
    */
-  getMediaFileUrl(filename: string): string {
-    return `${this.API_BASE_URL}/files/${filename}`;
-  }
-
-  /**
-   * Get media blob for display
-   */
-  getMediaBlob(mediaUrl: string): Observable<Blob> {
-    return this.http.get(mediaUrl, { responseType: 'blob' }).pipe(
-      catchError(error => {
-        console.error(`Error fetching media blob from ${mediaUrl}:`, error);
-        throw error;
-      })
-    );
+  getMediaUrlById(mediaId: string): string {
+    return `${this.API_BASE_URL}/api/media/${mediaId}`;
   }
 
   /**
@@ -155,34 +152,40 @@ export class MediaService {
     }
 
     // Check file type
-    const allowedTypes = [
-      'image/jpeg',
-      'image/jpg', 
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'video/mp4',
-      'video/webm',
-      'video/quicktime'
-    ];
-
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      return { valid: false, error: 'File type not supported. Allowed types: JPG, PNG, GIF, WebP, MP4, WebM, MOV' };
+      return { valid: false, error: 'Only image files (JPEG, PNG, GIF, WebP) are allowed' };
     }
 
     return { valid: true };
   }
 
   /**
-   * Get file type category
+   * Create preview URL for file
    */
-  getFileTypeCategory(contentType: string): 'image' | 'video' | 'other' {
-    if (contentType.startsWith('image/')) {
-      return 'image';
-    } else if (contentType.startsWith('video/')) {
-      return 'video';
-    }
-    return 'other';
+  createPreviewUrl(file: File): string {
+    return URL.createObjectURL(file);
+  }
+
+  /**
+   * Revoke preview URL to free memory
+   */
+  revokePreviewUrl(url: string): void {
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Get media files for a specific post (backward compatibility)
+   */
+  getMediaForPost(postId: string): Observable<MediaFile[]> {
+    return this.getMediaForEntity(postId, 'post');
+  }
+
+  /**
+   * Get media file URL (backward compatibility alias)
+   */
+  getMediaFileUrl(filename: string): string {
+    return this.getMediaUrl(filename);
   }
 
   /**
@@ -199,62 +202,42 @@ export class MediaService {
   }
 
   /**
-   * Create thumbnail for video files
+   * Create image preview (placeholder for backward compatibility)
    */
-  createVideoThumbnail(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const video = document.createElement('video');
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      if (!ctx) {
-        reject(new Error('Canvas context not available'));
-        return;
-      }
-
-      video.addEventListener('loadedmetadata', () => {
-        canvas.width = 300;
-        canvas.height = 200;
-        
-        // Seek to 1 second or 10% of duration
-        video.currentTime = Math.min(1, video.duration * 0.1);
-      });
-
-      video.addEventListener('seeked', () => {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const thumbnail = canvas.toDataURL('image/jpeg', 0.8);
-        resolve(thumbnail);
-      });
-
-      video.addEventListener('error', (e) => {
-        reject(new Error('Error loading video: ' + e));
-      });
-
-      video.src = URL.createObjectURL(file);
-      video.load();
+  createImagePreview(file: File): Promise<string> {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
     });
   }
 
   /**
-   * Create preview for image files
+   * Create video thumbnail (placeholder for backward compatibility)
    */
-  createImagePreview(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          resolve(e.target.result as string);
-        } else {
-          reject(new Error('Failed to read file'));
-        }
+  createVideoThumbnail(file: File): Promise<string> {
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      video.src = URL.createObjectURL(file);
+      video.onloadedmetadata = () => {
+        video.currentTime = 1;
+        video.onseeked = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(video, 0, 0);
+          resolve(canvas.toDataURL());
+          URL.revokeObjectURL(video.src);
+        };
       };
-      
-      reader.onerror = () => {
-        reject(new Error('Error reading file'));
-      };
-      
-      reader.readAsDataURL(file);
     });
+  }
+
+  /**
+   * Get media blob (placeholder for backward compatibility)
+   */
+  getMediaBlob(mediaUrl: string): Observable<Blob> {
+    return this.http.get(mediaUrl, { responseType: 'blob' });
   }
 }

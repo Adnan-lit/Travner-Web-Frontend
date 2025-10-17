@@ -1,0 +1,256 @@
+<div class="admin-dashboard">
+  <!-- Header Section -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1 class="dashboard-title">
+        <i class="fas fa-tachometer-alt"></i>
+        Admin Dashboard
+      </h1>
+      <p class="dashboard-subtitle">Monitor and manage your travel community platform</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" (click)="refreshData()" [disabled]="isLoading">
+        <i class="fas fa-sync-alt" [class.fa-spin]="isLoading"></i>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- System Alerts -->
+  <div class="alerts-section" *ngIf="systemAlerts.length > 0">
+    <h3 class="section-title">
+      <i class="fas fa-bell"></i>
+      System Alerts
+    </h3>
+    <div class="alerts-grid">
+      <div class="alert-card" 
+           *ngFor="let alert of systemAlerts"
+           [ngClass]="getAlertColor(alert.type)">
+        <div class="alert-content">
+          <div class="alert-icon">
+            <i [ngClass]="getAlertIcon(alert.type)"></i>
+          </div>
+          <div class="alert-text">
+            <h4>{{alert.title}}</h4>
+            <p>{{alert.message}}</p>
+          </div>
+        </div>
+        <div class="alert-actions">
+          <button class="btn btn-sm btn-primary" (click)="handleSystemAlert(alert)">
+            <i class="fas fa-cog"></i>
+            Action
+          </button>
+          <button class="btn btn-sm btn-outline" (click)="dismissAlert(alert.id)">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Access Warning -->
+  <div class="admin-warning" *ngIf="!currentUser || !authService.isAdmin()">
+    <div class="warning-card">
+      <div class="warning-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      </div>
+      <div class="warning-content">
+        <h3>Admin Access Required</h3>
+        <p>You need admin privileges to access this dashboard. Please log in with an admin account.</p>
+        <div class="admin-credentials">
+          <p><strong>Default Admin Credentials:</strong></p>
+          <p>Username: <code>admin</code></p>
+          <p>Password: <code>admin123</code></p>
+        </div>
+        <button class="btn btn-primary" (click)="goToSignin()">Go to Sign In</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Overview -->
+  <div class="stats-overview" *ngIf="currentUser && authService.isAdmin()">
+    <h3 class="section-title">
+      <i class="fas fa-chart-bar"></i>
+      Platform Overview
+    </h3>
+    <div class="stats-grid">
+      <!-- Users Stats -->
+      <div class="stat-card primary">
+        <div class="stat-icon">
+          <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-content">
+          <h4>Total Users</h4>
+          <p class="stat-value">{{dashboardStats.totalUsers | number}}</p>
+          <p class="stat-change">
+            <i class="fas fa-arrow-up text-green-500"></i>
+            {{dashboardStats.activeUsers}} active
+          </p>
+        </div>
+      </div>
+
+      <!-- Posts Stats -->
+      <div class="stat-card success">
+        <div class="stat-icon">
+          <i class="fas fa-comments"></i>
+        </div>
+        <div class="stat-content">
+          <h4>Community Posts</h4>
+          <p class="stat-value">{{dashboardStats.totalPosts | number}}</p>
+          <p class="stat-change">
+            <i class="fas fa-image text-blue-500"></i>
+            {{dashboardStats.postsWithMedia}} with media
+          </p>
+        </div>
+      </div>
+
+      <!-- Orders Stats -->
+      <div class="stat-card warning">
+        <div class="stat-icon">
+          <i class="fas fa-shopping-bag"></i>
+        </div>
+        <div class="stat-content">
+          <h4>Marketplace Orders</h4>
+          <p class="stat-value">{{dashboardStats.totalOrders | number}}</p>
+          <p class="stat-change">
+            <i class="fas fa-clock text-orange-500"></i>
+            {{dashboardStats.pendingOrders}} pending
+          </p>
+        </div>
+      </div>
+
+      <!-- Products Stats -->
+      <div class="stat-card info">
+        <div class="stat-icon">
+          <i class="fas fa-box"></i>
+        </div>
+        <div class="stat-content">
+          <h4>Products</h4>
+          <p class="stat-value">{{dashboardStats.totalProducts | number}}</p>
+          <p class="stat-change">
+            <i class="fas fa-check-circle text-green-500"></i>
+            {{dashboardStats.availableProducts}} available
+          </p>
+        </div>
+      </div>
+
+      <!-- System Health -->
+      <div class="stat-card" [ngClass]="'health-' + dashboardStats.systemHealth">
+        <div class="stat-icon">
+          <i class="fas fa-heartbeat"></i>
+        </div>
+        <div class="stat-content">
+          <h4>System Health</h4>
+          <p class="stat-value">{{dashboardStats.systemHealth | titlecase}}</p>
+          <p class="stat-change">
+            <i class="fas fa-clock text-gray-500"></i>
+            Updated {{formatTimestamp(dashboardStats.lastUpdate)}}
+          </p>
+        </div>
+      </div>
+
+      <!-- Media Issues -->
+      <div class="stat-card" [ngClass]="dashboardStats.postsWithInvalidMedia > 0 ? 'danger' : 'success'">
+        <div class="stat-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="stat-content">
+          <h4>Media Issues</h4>
+          <p class="stat-value">{{dashboardStats.postsWithInvalidMedia | number}}</p>
+          <p class="stat-change">
+            <i class="fas fa-link text-red-500"></i>
+            Invalid URLs
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <h3 class="section-title">
+      <i class="fas fa-bolt"></i>
+      Quick Actions
+    </h3>
+    <div class="actions-grid">
+      <a routerLink="/admin/users" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-users"></i>
+        </div>
+        <h4>Manage Users</h4>
+        <p>View and manage user accounts</p>
+      </a>
+
+      <a routerLink="/admin/posts" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-comments"></i>
+        </div>
+        <h4>Moderate Content</h4>
+        <p>Review and moderate posts</p>
+      </a>
+
+      <a routerLink="/admin/orders" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-shopping-cart"></i>
+        </div>
+        <h4>Process Orders</h4>
+        <p>Manage marketplace orders</p>
+      </a>
+
+      <a routerLink="/admin/products" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-box"></i>
+        </div>
+        <h4>Manage Products</h4>
+        <p>Review and manage products</p>
+      </a>
+
+      <a routerLink="/admin/analytics" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <h4>View Analytics</h4>
+        <p>Detailed platform analytics</p>
+      </a>
+
+      <a routerLink="/admin/settings" class="action-card">
+        <div class="action-icon">
+          <i class="fas fa-cogs"></i>
+        </div>
+        <h4>System Settings</h4>
+        <p>Configure platform settings</p>
+      </a>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="recent-activity">
+    <h3 class="section-title">
+      <i class="fas fa-history"></i>
+      Recent Activity
+    </h3>
+    <div class="activity-list">
+      <div class="activity-item" *ngFor="let activity of recentActivities">
+        <div class="activity-icon" [ngClass]="getActivityColor(activity.type)">
+          <i [ngClass]="getActivityIcon(activity.type)"></i>
+        </div>
+        <div class="activity-content">
+          <p class="activity-description">{{activity.description}}</p>
+          <p class="activity-time">{{formatTimestamp(activity.timestamp)}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <p>Loading dashboard data...</p>
+    </div>
+  </div>
+</div>

@@ -1,14 +1,10 @@
 import { ApiResponse, ApiPaginationInfo } from './api-response.model';
+import { MediaFile } from './common.model';
 
-export interface Media {
-    id: string;
-    url: string;
-    type: 'image' | 'video';
-    caption?: string;
-    fileType?: string;
-    fileUrl?: string;
-    fileName?: string;
-    createdAt: string;
+// Extended Media interface that includes both MediaFile properties and legacy properties
+export interface Media extends MediaFile {
+  url?: string;
+  createdAt?: string;
 }
 
 export interface UploadMediaRequest {

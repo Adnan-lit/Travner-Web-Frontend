@@ -1,133 +1,65 @@
 <div class="admin-container">
-  <div class="admin-header">
-    <h1>Admin Dashboard</h1>
-    <p>Manage your travel community platform</p>
-  </div>
-
-  <div class="user-info" *ngIf="currentUser">
-    <div class="user-card">
-      <div class="user-avatar">
-        <img src="https://ui-avatars.com/api/?name={{currentUser.firstName}}+{{currentUser.lastName}}&background=e74c3c&color=fff&size=100" 
-             alt="{{currentUser.firstName}} {{currentUser.lastName}}" 
-             *ngIf="currentUser.profileImageUrl; else defaultAvatar">
-        <ng-template #defaultAvatar>
-          <div class="avatar-placeholder">
-            {{currentUser.firstName?.charAt(0)}}{{currentUser.lastName?.charAt(0)}}
-          </div>
-        </ng-template>
-      </div>
-      <div class="user-details">
-        <h2>{{currentUser.firstName}} {{currentUser.lastName}}</h2>
-        <p class="username">&#64;<span>{{currentUser.userName}}</span></p>
-        <p class="email">{{currentUser.email}}</p>
-        <p class="role">
-          <i class="fas fa-user-shield"></i> Administrator
-        </p>
-      </div>
+  <!-- Admin Navigation -->
+  <nav class="admin-nav">
+    <div class="nav-brand">
+      <i class="fas fa-user-shield"></i>
+      <span>Admin Panel</span>
     </div>
-  </div>
-
-  <div class="admin-actions">
-    <div class="action-grid">
-      <a href="/admin/marketplace/products" class="action-card">
-        <div class="action-icon">
-          <i class="fas fa-box"></i>
-        </div>
-        <h3>Product Management</h3>
-        <p>Manage marketplace products and inventory</p>
+    <div class="nav-links">
+      <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+        <i class="fas fa-tachometer-alt"></i>
+        Dashboard
       </a>
-
-      <a href="/admin/marketplace/orders" class="action-card">
-        <div class="action-icon">
-          <i class="fas fa-shopping-cart"></i>
-        </div>
-        <h3>Order Management</h3>
-        <p>View and manage customer orders</p>
+      <a routerLink="/admin/users" routerLinkActive="active">
+        <i class="fas fa-users"></i>
+        Users
       </a>
-
-      <a href="/community" class="action-card">
-        <div class="action-icon">
-          <i class="fas fa-comments"></i>
-        </div>
-        <h3>Community Moderation</h3>
-        <p>Monitor and moderate community content</p>
+      <a routerLink="/admin/posts" routerLinkActive="active">
+        <i class="fas fa-comments"></i>
+        Posts
       </a>
-
-      <a href="/users" class="action-card">
-        <div class="action-icon">
-          <i class="fas fa-users"></i>
-        </div>
-        <h3>User Management</h3>
-        <p>Manage user accounts and permissions</p>
+      <a routerLink="/admin/orders" routerLinkActive="active">
+        <i class="fas fa-shopping-cart"></i>
+        Orders
       </a>
-
-      <a href="/analytics" class="action-card">
-        <div class="action-icon">
-          <i class="fas fa-chart-bar"></i>
-        </div>
-        <h3>Analytics</h3>
-        <p>View platform usage and performance metrics</p>
+      <a routerLink="/admin/products" routerLinkActive="active">
+        <i class="fas fa-box"></i>
+        Products
       </a>
-
-      <a href="/settings" class="action-card">
-        <div class="action-icon">
-          <i class="fas fa-cogs"></i>
-        </div>
-        <h3>Platform Settings</h3>
-        <p>Configure platform-wide settings</p>
+      <a routerLink="/admin/analytics" routerLinkActive="active">
+        <i class="fas fa-chart-bar"></i>
+        Analytics
+      </a>
+      <a routerLink="/admin/settings" routerLinkActive="active">
+        <i class="fas fa-cogs"></i>
+        Settings
       </a>
     </div>
-  </div>
-
-  <div class="admin-stats">
-    <h3>Platform Overview</h3>
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="fas fa-users"></i>
+    <div class="nav-user">
+      <div class="user-info" *ngIf="currentUser">
+        <div class="user-avatar">
+          <img src="https://ui-avatars.com/api/?name={{currentUser.firstName}}+{{currentUser.lastName}}&background=e74c3c&color=fff&size=32" 
+               alt="{{currentUser.firstName}} {{currentUser.lastName}}" 
+               *ngIf="currentUser.profileImageUrl; else defaultAvatar">
+          <ng-template #defaultAvatar>
+            <div class="avatar-placeholder">
+              {{currentUser.firstName?.charAt(0)}}{{currentUser.lastName?.charAt(0)}}
+            </div>
+          </ng-template>
         </div>
-        <div class="stat-content">
-          <h4>Total Users</h4>
-          <p class="stat-value">1,234</p>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="fas fa-comments"></i>
-        </div>
-        <div class="stat-content">
-          <h4>Community Posts</h4>
-          <p class="stat-value">5,678</p>
+        <div class="user-details">
+          <span class="user-name">{{currentUser.firstName}} {{currentUser.lastName}}</span>
+          <span class="user-role">Administrator</span>
         </div>
       </div>
-
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="fas fa-shopping-bag"></i>
-        </div>
-        <div class="stat-content">
-          <h4>Marketplace Orders</h4>
-          <p class="stat-value">890</p>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="fas fa-chart-line"></i>
-        </div>
-        <div class="stat-content">
-          <h4>Active Sessions</h4>
-          <p class="stat-value">123</p>
-        </div>
-      </div>
+      <button class="logout-btn" (click)="logout()">
+        <i class="fas fa-sign-out-alt"></i>
+      </button>
     </div>
-  </div>
+  </nav>
 
-  <div class="recent-activity">
-    <h3>Recent Admin Activity</h3>
-    <div class="activity-placeholder">
-      <p>Recent admin activities will appear here...</p>
-    </div>
-  </div>
+  <!-- Admin Content -->
+  <main class="admin-content">
+    <router-outlet></router-outlet>
+  </main>
 </div>

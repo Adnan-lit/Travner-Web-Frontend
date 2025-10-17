@@ -81,17 +81,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
       },
       error: (error: any) => {
         console.error('Error loading user posts:', error);
+        // Set fallback value on error
+        this.userStats.posts = 0;
       }
     });
 
     // Mock data for demonstration - in real app, these would come from API
-    this.userStats = {
-      posts: Math.floor(Math.random() * 50) + 5,
-      followers: Math.floor(Math.random() * 200) + 20,
-      trips: Math.floor(Math.random() * 15) + 2,
-      likes: Math.floor(Math.random() * 500) + 50,
-      comments: Math.floor(Math.random() * 100) + 10
-    };
+    // Only set mock data for stats not loaded from API
+    this.userStats.followers = Math.floor(Math.random() * 200) + 20;
+    this.userStats.trips = Math.floor(Math.random() * 15) + 2;
+    this.userStats.likes = Math.floor(Math.random() * 500) + 50;
+    this.userStats.comments = Math.floor(Math.random() * 100) + 10;
 
     this.isLoading = false;
   }

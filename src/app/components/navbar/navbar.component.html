@@ -1,327 +1,433 @@
-<nav
-  class="navbar"
-  [class.nav-hidden]="hidden"
-  [class.nav-scrolled]="scrolled"
-  [class.no-bg-transition]="suppressTransition"
->
-  <div class="navbar-inner">
-    <div class="nav-left">
-      <a class="brand" (click)="go('/')" aria-label="Travner home">
-        <span class="brand-logo">TR</span>
+<nav class="navbar" [class.nav-hidden]="hidden" [class.nav-scrolled]="scrolled">
+  <div class="navbar-container">
+    <!-- Brand Logo -->
+    <div class="navbar-brand">
+      <a routerLink="/" class="brand-link">
+        <span class="brand-icon">TR</span>
         <span class="brand-text">Travner</span>
       </a>
-      <div class="primary-links">
-        <a
-          routerLink="/"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-          (click)="closeMobileMenu()"
-          >Home</a
-        >
-        <a
-          routerLink="/dashboard"
-          routerLinkActive="active"
-          (click)="closeMobileMenu()"
-          *ngIf="isAuthenticated"
-          >Dashboard</a
-        >
-        <a
-          routerLink="/community"
-          routerLinkActive="active"
-          (click)="closeMobileMenu()"
-          >Community</a
-        >
-        <a
-          routerLink="/marketplace"
-          routerLinkActive="active"
-          (click)="closeMobileMenu()"
-          >Marketplace</a
-        >
-        <a
-          routerLink="/itineraries"
-          routerLinkActive="active"
-          (click)="closeMobileMenu()"
-          >Itineraries</a
-        >
-        <a
-          routerLink="/travel-buddies"
-          routerLinkActive="active"
-          (click)="closeMobileMenu()"
-          >Travel Buddies</a
-        >
-        <a
-          routerLink="/local-guides"
-          routerLinkActive="active"
-          (click)="closeMobileMenu()"
-          >Local Guides</a
-        >
-        <a
-          routerLink="/chat"
-          routerLinkActive="active"
-          (click)="closeMobileMenu()"
-          *ngIf="isAuthenticated"
-          >Chat</a
-        >
-        <a
-          routerLink="/admin"
-          routerLinkActive="active"
-          (click)="closeMobileMenu()"
-          *ngIf="isAuthenticated && isAdmin()"
-          >Admin</a
-        >
+    </div>
+
+    <!-- Main Navigation -->
+    <div class="navbar-nav">
+      <!-- Regular User Navigation -->
+      <div class="nav-links" *ngIf="!isAdmin()">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+        <a routerLink="/community" routerLinkActive="active">Community</a>
+        <a routerLink="/marketplace" routerLinkActive="active">Marketplace</a>
+        <a routerLink="/itineraries" routerLinkActive="active">Itineraries</a>
+        <a routerLink="/travel-buddies" routerLinkActive="active">Travel Buddies</a>
+      </div>
+
+      <!-- Admin Navigation -->
+      <div class="nav-links admin-nav" *ngIf="isAdmin()">
+        <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+        <a routerLink="/admin/users" routerLinkActive="active">Users</a>
+        <a routerLink="/admin/posts" routerLinkActive="active">Content</a>
+        <a routerLink="/admin/orders" routerLinkActive="active">Orders</a>
       </div>
     </div>
 
-    <div class="nav-right" *ngIf="!isAuthenticated">
-      <button class="ghost" (click)="go('/signin')">Sign In</button>
-      <button class="primary" (click)="go('/signup')">Sign Up</button>
-      <button class="icon" (click)="toggleTheme()" aria-label="Toggle theme">
-        <ng-container *ngIf="(theme$ | async) === 'light'; else darkIcon">
-          <svg
-            viewBox="0 0 24 24"
-            width="20"
-            height="20"
-            stroke="currentColor"
-            fill="none"
-            stroke-width="2"
-          >
-            <circle cx="12" cy="12" r="5" />
-            <line x1="12" y1="1" x2="12" y2="3" />
-            <line x1="12" y1="21" x2="12" y2="23" />
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-            <line x1="1" y1="12" x2="3" y2="12" />
-            <line x1="21" y1="12" x2="23" y2="12" />
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-          </svg>
-        </ng-container>
-        <ng-template #darkIcon>
-          <svg
-            viewBox="0 0 24 24"
-            width="20"
-            height="20"
-            stroke="currentColor"
-            fill="none"
-            stroke-width="2"
-          >
-            <path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79z" />
-          </svg>
-        </ng-template>
-      </button>
-    </div>
+    <!-- Right Side Actions -->
+    <div class="navbar-actions">
+      <!-- Not Authenticated -->
+      <div class="auth-buttons" *ngIf="!isAuthenticated">
+        <button class="btn btn-outline" (click)="go('/signin')">Sign In</button>
+        <button class="btn btn-primary" (click)="go('/signup')">Sign Up</button>
+      </div>
 
-    <div class="nav-right auth" *ngIf="isAuthenticated">
-      <button
-        class="icon cart-icon"
-        routerLink="/marketplace/cart"
-        aria-label="Shopping Cart"
-        *ngIf="isMarketplacePage()"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          width="20"
-          height="20"
-          stroke="currentColor"
-          fill="none"
-          stroke-width="2"
-        >
-          <circle cx="9" cy="21" r="1" />
-          <circle cx="20" cy="21" r="1" />
-          <path d="m1 1 4 4 5.5 11h8l3.5-7" />
-        </svg>
-        <span class="cart-badge" *ngIf="cartItemCount > 0">{{
-          cartItemCount
-        }}</span>
-      </button>
-      <button class="icon" (click)="toggleTheme()" aria-label="Toggle theme">
-        <ng-container *ngIf="(theme$ | async) === 'light'; else darkIcon2">
-          <svg
-            viewBox="0 0 24 24"
-            width="20"
-            height="20"
-            stroke="currentColor"
-            fill="none"
-            stroke-width="2"
+      <!-- Authenticated User -->
+      <div class="user-section" *ngIf="isAuthenticated">
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+          <!-- Chat -->
+          <button 
+            class="action-btn" 
+            (click)="go('/chat')" 
+            *ngIf="!isAdmin()"
+            title="Chat"
           >
-            <circle cx="12" cy="12" r="5" />
-          </svg>
-        </ng-container>
-        <ng-template #darkIcon2>
-          <svg
-            viewBox="0 0 24 24"
-            width="20"
-            height="20"
-            stroke="currentColor"
-            fill="none"
-            stroke-width="2"
-          >
-            <path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79z" />
-          </svg>
-        </ng-template>
-      </button>
-      <div class="user" [class.open]="showUserMenu">
-        <button
-          class="user-btn"
-          (click)="toggleUserMenu()"
-          aria-haspopup="menu"
-          [attr.aria-expanded]="showUserMenu"
-        >
-          <span class="avatar">{{ initials }}</span>
-          <span class="name">{{
-            currentUser?.firstName || currentUser?.userName
-          }}</span>
-          <svg
-            viewBox="0 0 24 24"
-            width="18"
-            height="18"
-            stroke="currentColor"
-            fill="none"
-            stroke-width="2"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </button>
-        <div class="menu" *ngIf="showUserMenu" (mouseleave)="closeUserMenu()">
-          <button (click)="go('/dashboard'); closeUserMenu()">Dashboard</button>
-          <button (click)="go('/community'); closeUserMenu()">Community</button>
-          <button (click)="go('/marketplace'); closeUserMenu()">
-            Marketplace
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
           </button>
-          <button
-            (click)="go('/marketplace/cart'); closeUserMenu()"
-            *ngIf="isMarketplacePage()"
+
+          <!-- Cart -->
+          <button 
+            class="action-btn cart-btn" 
+            (click)="go('/marketplace/cart')" 
+            *ngIf="!isAdmin() && isMarketplacePage()"
+            title="Shopping Cart"
+            [class.has-items]="cartItemCount > 0"
           >
-            Cart
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="m1 1 4 4 13 0 1 8-12 0z" />
+            </svg>
+            <span class="cart-badge" *ngIf="cartItemCount > 0">{{ cartItemCount }}</span>
           </button>
-          <button (click)="go('/itineraries'); closeUserMenu()">Itineraries</button>
-          <button (click)="go('/travel-buddies'); closeUserMenu()">Travel Buddies</button>
-          <button (click)="go('/local-guides'); closeUserMenu()">Local Guides</button>
-          <button (click)="go('/chat'); closeUserMenu()">Chat</button>
-          <button *ngIf="isAdmin()" (click)="go('/admin'); closeUserMenu()">
-            Admin Panel
-          </button>
-          <hr />
-          <button class="danger" (click)="logout(); closeUserMenu()">
-            Logout
+
+          <!-- Dashboard -->
+          <button 
+            class="action-btn" 
+            (click)="go('/dashboard')" 
+            *ngIf="!isAdmin()"
+            title="Dashboard"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
           </button>
         </div>
-      </div>
-    </div>
 
-    <button
-      class="hamburger"
-      (click)="toggleMobileMenu()"
-      aria-label="Toggle navigation"
-    >
-      <span></span><span></span><span></span>
-    </button>
+        <!-- User Profile -->
+        <div class="user-profile" [class.active]="showUserMenu">
+          <button class="user-btn" (click)="toggleUserMenu()">
+            <img 
+              [src]="currentUser?.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (currentUser?.firstName || '') + '+' + (currentUser?.lastName || '') + '&background=e74c3c&color=fff&size=32'" 
+              [alt]="currentUser?.firstName || currentUser?.userName"
+              class="user-avatar"
+            >
+            <span class="user-name">{{ currentUser?.firstName || currentUser?.userName }}</span>
+            <svg class="dropdown-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+
+          <!-- User Menu Dropdown -->
+          <div class="user-menu" *ngIf="showUserMenu" (click)="$event.stopPropagation()">
+            <!-- User Info -->
+            <div class="user-menu-header">
+              <div class="user-info">
+                <img 
+                  [src]="currentUser?.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (currentUser?.firstName || '') + '+' + (currentUser?.lastName || '') + '&background=e74c3c&color=fff&size=40'" 
+                  [alt]="currentUser?.firstName || currentUser?.userName"
+                  class="user-avatar-large"
+                >
+                <div class="user-details">
+                  <div class="user-name-large">{{ currentUser?.firstName || currentUser?.userName }}</div>
+                  <div class="user-role" *ngIf="isAdmin()">Administrator</div>
+                  <div class="user-email">{{ currentUser?.email }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Admin Menu Items -->
+            <div class="menu-section" *ngIf="isAdmin()">
+              <a routerLink="/admin" (click)="closeUserMenu()" class="menu-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                </svg>
+                Dashboard
+              </a>
+              <a routerLink="/admin/users" (click)="closeUserMenu()" class="menu-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                User Management
+              </a>
+              <a routerLink="/admin/posts" (click)="closeUserMenu()" class="menu-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                Content Moderation
+              </a>
+              <a routerLink="/admin/orders" (click)="closeUserMenu()" class="menu-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="9" cy="21" r="1" />
+                  <circle cx="20" cy="21" r="1" />
+                  <path d="m1 1 4 4 13 0 1 8-12 0z" />
+                </svg>
+                Order Management
+              </a>
+            </div>
+
+            <!-- Regular User Menu Items -->
+            <div class="menu-section" *ngIf="!isAdmin()">
+              <a routerLink="/dashboard" (click)="closeUserMenu()" class="menu-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                </svg>
+                Dashboard
+              </a>
+              <a routerLink="/community" (click)="closeUserMenu()" class="menu-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                Community
+              </a>
+              <a routerLink="/marketplace" (click)="closeUserMenu()" class="menu-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                </svg>
+                Marketplace
+              </a>
+              <a routerLink="/itineraries" (click)="closeUserMenu()" class="menu-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                </svg>
+                Itineraries
+              </a>
+              <a routerLink="/travel-buddies" (click)="closeUserMenu()" class="menu-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                Travel Buddies
+              </a>
+              <a routerLink="/local-guides" (click)="closeUserMenu()" class="menu-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="10" r="3" />
+                  <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z" />
+                </svg>
+                Local Guides
+              </a>
+              <a routerLink="/chat" (click)="closeUserMenu()" class="menu-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                Chat
+              </a>
+            </div>
+
+            <div class="menu-divider"></div>
+
+            <div class="menu-section">
+              <a routerLink="/profile" (click)="closeUserMenu()" class="menu-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                Profile Settings
+              </a>
+              <button (click)="logout(); closeUserMenu()" class="menu-item logout">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Menu Toggle -->
+      <button 
+        class="mobile-toggle" 
+        (click)="toggleMobileMenu()" 
+        aria-label="Toggle menu"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+    </div>
   </div>
 
-  <div class="mobile-panel" *ngIf="showMobileMenu">
-    <div class="mobile-links">
-      <a
-        routerLink="/"
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: true }"
-        (click)="closeMobileMenu()"
-        >Home</a
-      >
-      <a
-        routerLink="/dashboard"
-        routerLinkActive="active"
-        (click)="closeMobileMenu()"
-        *ngIf="isAuthenticated"
-        >Dashboard</a
-      >
-      <a
-        routerLink="/community"
-        routerLinkActive="active"
-        (click)="closeMobileMenu()"
-        >Community</a
-      >
-      <a
-        routerLink="/marketplace"
-        routerLinkActive="active"
-        (click)="closeMobileMenu()"
-        >Marketplace</a
-      >
-      <a
-        routerLink="/marketplace/cart"
-        routerLinkActive="active"
-        (click)="closeMobileMenu()"
-        *ngIf="isAuthenticated && isMarketplacePage()"
-        >Cart</a
-      >
-      <a
-        routerLink="/itineraries"
-        routerLinkActive="active"
-        (click)="closeMobileMenu()"
-        >Itineraries</a
-      >
-      <a
-        routerLink="/travel-buddies"
-        routerLinkActive="active"
-        (click)="closeMobileMenu()"
-        >Travel Buddies</a
-      >
-      <a
-        routerLink="/local-guides"
-        routerLinkActive="active"
-        (click)="closeMobileMenu()"
-        >Local Guides</a
-      >
-      <a
-        routerLink="/chat"
-        routerLinkActive="active"
-        (click)="closeMobileMenu()"
-        *ngIf="isAuthenticated"
-        >Chat</a
-      >
-      <a
-        routerLink="/admin"
-        routerLinkActive="active"
-        (click)="closeMobileMenu()"
-        *ngIf="isAuthenticated && isAdmin()"
-        >Admin</a
-      >
-    </div>
-    <div class="mobile-actions" *ngIf="!isAuthenticated">
-      <button class="ghost" (click)="go('/signin'); closeMobileMenu()">
-        Sign In
-      </button>
-      <button class="primary" (click)="go('/signup'); closeMobileMenu()">
-        Create Account
+  <!-- Mobile Menu Overlay -->
+  <div class="mobile-overlay" [class.active]="showMobileMenu" (click)="closeMobileMenu()"></div>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" [class.active]="showMobileMenu">
+    <div class="mobile-header">
+      <div class="mobile-brand">
+        <span class="brand-icon">TR</span>
+        <span class="brand-text">Travner</span>
+      </div>
+      <button class="mobile-close" (click)="closeMobileMenu()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
       </button>
     </div>
-    <div class="mobile-actions" *ngIf="isAuthenticated">
-      <div class="user-summary">
-        <div class="avatar">{{ initials }}</div>
-        <div>
-          <div class="name">
-            {{ currentUser?.firstName || currentUser?.userName }}
-          </div>
-          <div class="role" *ngIf="isAdmin()">Admin</div>
+
+    <div class="mobile-content">
+      <!-- User Info -->
+      <div class="mobile-user-info" *ngIf="isAuthenticated">
+        <img 
+          [src]="currentUser?.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (currentUser?.firstName || '') + '+' + (currentUser?.lastName || '') + '&background=e74c3c&color=fff&size=48'" 
+          [alt]="currentUser?.firstName || currentUser?.userName"
+          class="mobile-avatar"
+        >
+        <div class="mobile-user-details">
+          <div class="mobile-user-name">{{ currentUser?.firstName || currentUser?.userName }}</div>
+          <div class="mobile-user-role" *ngIf="isAdmin()">Administrator</div>
         </div>
       </div>
-      <button (click)="go('/dashboard'); closeMobileMenu()">Dashboard</button>
-      <button (click)="go('/community'); closeMobileMenu()">Community</button>
-      <button (click)="go('/marketplace'); closeMobileMenu()">
-        Marketplace
-      </button>
-      <button (click)="go('/itineraries'); closeMobileMenu()">Itineraries</button>
-      <button (click)="go('/travel-buddies'); closeMobileMenu()">Travel Buddies</button>
-      <button (click)="go('/local-guides'); closeMobileMenu()">Local Guides</button>
-      <button (click)="go('/chat'); closeMobileMenu()">Chat</button>
-      <button *ngIf="isAdmin()" (click)="go('/admin'); closeMobileMenu()">
-        Admin Panel
-      </button>
-      <button class="danger" (click)="logout(); closeMobileMenu()">
-        Logout
-      </button>
-    </div>
-    <div class="mobile-theme">
-      <button (click)="toggleTheme()">Toggle Theme</button>
+
+      <!-- Navigation Links -->
+      <div class="mobile-nav">
+        <!-- Admin Navigation -->
+        <div class="mobile-nav-section" *ngIf="isAdmin()">
+          <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            Dashboard
+          </a>
+          <a routerLink="/admin/users" routerLinkActive="active" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            User Management
+          </a>
+          <a routerLink="/admin/posts" routerLinkActive="active" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            Content Moderation
+          </a>
+          <a routerLink="/admin/orders" routerLinkActive="active" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="m1 1 4 4 13 0 1 8-12 0z" />
+            </svg>
+            Order Management
+          </a>
+        </div>
+
+        <!-- Regular User Navigation -->
+        <div class="mobile-nav-section" *ngIf="!isAdmin()">
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            </svg>
+            Home
+          </a>
+          <a routerLink="/dashboard" routerLinkActive="active" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            Dashboard
+          </a>
+          <a routerLink="/community" routerLinkActive="active" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            Community
+          </a>
+          <a routerLink="/marketplace" routerLinkActive="active" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+            </svg>
+            Marketplace
+          </a>
+          <a routerLink="/itineraries" routerLinkActive="active" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            </svg>
+            Itineraries
+          </a>
+          <a routerLink="/travel-buddies" routerLinkActive="active" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            Travel Buddies
+          </a>
+          <a routerLink="/local-guides" routerLinkActive="active" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="10" r="3" />
+              <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z" />
+            </svg>
+            Local Guides
+          </a>
+          <a routerLink="/chat" routerLinkActive="active" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            Chat
+          </a>
+        </div>
+
+        <!-- Unauthenticated Navigation -->
+        <div class="mobile-nav-section" *ngIf="!isAuthenticated">
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            </svg>
+            Home
+          </a>
+          <a routerLink="/community" routerLinkActive="active" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            Community
+          </a>
+          <a routerLink="/marketplace" routerLinkActive="active" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+            </svg>
+            Marketplace
+          </a>
+          <a routerLink="/itineraries" routerLinkActive="active" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            </svg>
+            Itineraries
+          </a>
+          <a routerLink="/travel-buddies" routerLinkActive="active" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            Travel Buddies
+          </a>
+        </div>
+
+        <div class="mobile-divider" *ngIf="isAuthenticated"></div>
+
+        <div class="mobile-nav-section" *ngIf="isAuthenticated">
+          <a routerLink="/profile" (click)="closeMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            Profile Settings
+          </a>
+          <button (click)="logout(); closeMobileMenu()" class="mobile-logout">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Sign Out
+          </button>
+        </div>
+
+        <div class="mobile-nav-section" *ngIf="!isAuthenticated">
+          <button (click)="go('/signin'); closeMobileMenu()" class="btn btn-outline">
+            Sign In
+          </button>
+          <button (click)="go('/signup'); closeMobileMenu()" class="btn btn-primary">
+            Sign Up
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </nav>

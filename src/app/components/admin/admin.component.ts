@@ -6,6 +6,7 @@ import { User } from '../../models/common.model';
 
 @Component({
   selector: 'app-admin',
+  standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.css']

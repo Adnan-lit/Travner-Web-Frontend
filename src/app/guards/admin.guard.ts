@@ -19,10 +19,13 @@ export class AdminGuard implements CanActivate {
       return of(true);
     }
 
-    // If not authenticated or not admin, redirect to dashboard or sign-in
+    // If not authenticated, redirect to sign-in
     if (!this.authService.isAuthenticated()) {
+      console.log('AdminGuard: User not authenticated, redirecting to signin');
       this.router.navigate(['/signin']);
     } else {
+      // User is authenticated but not admin, redirect to dashboard
+      console.log('AdminGuard: User authenticated but not admin, redirecting to dashboard');
       this.router.navigate(['/dashboard']);
     }
     return of(false);

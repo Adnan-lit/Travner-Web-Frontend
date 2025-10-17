@@ -149,10 +149,11 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
           // Show success message
           this.successMessage = 'Login successful! Redirecting...';
 
-          // Navigate to return URL or dashboard after successful authentication test
+          // Navigate to appropriate URL based on user role
           setTimeout(() => {
-            this.router.navigate([this.returnUrl]);
-            console.log('🔐 Signin: Redirecting to:', this.returnUrl);
+            const redirectUrl = this.authService.getRedirectUrl();
+            console.log('🔐 Redirecting user to:', redirectUrl);
+            this.router.navigate([redirectUrl]);
           }, 1000);
         },
         error: (error) => {

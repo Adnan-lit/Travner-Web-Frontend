@@ -1,41 +1,121 @@
 <div class="landing-page">
   <!-- Hero Section -->
   <section class="hero-section">
-    <div class="particles" id="particles"></div>
+    <div class="hero-background">
+      <div class="hero-pattern"></div>
+      <div class="floating-elements">
+        <div class="floating-element element-1"></div>
+        <div class="floating-element element-2"></div>
+        <div class="floating-element element-3"></div>
+      </div>
+    </div>
+    
     <div class="hero-content">
       <div class="hero-text">
+        <div class="hero-badge">
+          <span class="flag-emoji">🇧🇩</span>
+          <span>Bangladeshi Travelers Community</span>
+        </div>
+        
         <h1 class="hero-title">
-          <span class="gradient-text">Discover</span> the World,
-          <span class="gradient-text">Connect</span> with Travelers
+          <span class="gradient-text">Explore</span> the World,
+          <span class="gradient-text">Connect</span> with Fellow Bangladeshis
         </h1>
+        
         <p class="hero-subtitle">
-          Join the ultimate social platform for travelers. Share your adventures, 
-          find travel buddies, discover local guides, and explore the world together.
+          Join Bangladesh's premier travel community! Share your adventures, 
+          find travel companions from home, discover local guides worldwide, 
+          and explore the world together with fellow Bangladeshi travelers.
         </p>
+        
+        <div class="hero-stats">
+          <div class="stat-item">
+            <div class="stat-number">5K+</div>
+            <div class="stat-label">Bangladeshi Travelers</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">30+</div>
+            <div class="stat-label">Countries Explored</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">500+</div>
+            <div class="stat-label">Travel Stories</div>
+          </div>
+        </div>
+        
         <div class="hero-actions">
           <a routerLink="/signup" class="btn btn-primary btn-lg">
-            <i class="fas fa-rocket"></i>
-            Start Your Journey
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+              <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+              <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+              <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+            </svg>
+            Join Our Community
           </a>
           <a routerLink="/community" class="btn btn-outline btn-lg">
-            <i class="fas fa-users"></i>
-            Explore Community
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Explore Stories
           </a>
         </div>
       </div>
+      
       <div class="hero-visual">
-        <div class="floating-cards">
-          <div class="floating-card card-1">
-            <i class="fas fa-map-marked-alt"></i>
-            <span>Plan Trips</span>
+        <div class="travel-cards">
+          <div class="travel-card card-1">
+            <div class="card-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </div>
+            <div class="card-content">
+              <h4>Cox's Bazar</h4>
+              <p>World's longest beach</p>
+            </div>
           </div>
-          <div class="floating-card card-2">
-            <i class="fas fa-camera"></i>
-            <span>Share Photos</span>
+          
+          <div class="travel-card card-2">
+            <div class="card-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 20h18l-2-16H5l-2 16z"/>
+                <path d="M8 8h8"/>
+                <path d="M8 12h8"/>
+                <path d="M8 16h8"/>
+              </svg>
+            </div>
+            <div class="card-content">
+              <h4>Sundarbans</h4>
+              <p>Mangrove forest</p>
+            </div>
           </div>
-          <div class="floating-card card-3">
-            <i class="fas fa-heart"></i>
-            <span>Make Friends</span>
+          
+          <div class="travel-card card-3">
+            <div class="card-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </div>
+            <div class="card-content">
+              <h4>Share Photos</h4>
+              <p>From your travels</p>
+            </div>
+          </div>
+          
+          <div class="travel-card card-4">
+            <div class="card-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </div>
+            <div class="card-content">
+              <h4>Make Friends</h4>
+              <p>Connect with travelers</p>
+            </div>
           </div>
         </div>
       </div>
@@ -46,57 +126,207 @@
   <section class="features-section section">
     <div class="container">
       <div class="section-header text-center">
-        <h2>Why Choose Travner?</h2>
-        <p>Everything you need to make your travel dreams come true</p>
+        <h2>Why Bangladeshi Travelers Choose Travner?</h2>
+        <p>Everything you need to make your travel dreams come true, designed for our community</p>
       </div>
       
-      <div class="features-grid grid grid-cols-3">
-        <div class="feature-card card">
+      <div class="features-grid">
+        <div class="feature-card">
           <div class="feature-icon">
-            <i class="fas fa-users"></i>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
           </div>
           <h3>Travel Buddies</h3>
-          <p>Find like-minded travelers to explore destinations together. Connect with people who share your passion for adventure.</p>
+          <p>Find fellow Bangladeshi travelers to explore destinations together. Connect with people who share your culture and passion for adventure.</p>
+          <div class="feature-highlight">
+            <span class="highlight-text">Perfect for group trips!</span>
+          </div>
         </div>
         
-        <div class="feature-card card">
+        <div class="feature-card">
           <div class="feature-icon">
-            <i class="fas fa-map"></i>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="10" r="3"/>
+              <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/>
+            </svg>
           </div>
           <h3>Local Guides</h3>
-          <p>Connect with experienced local guides who know the hidden gems and can show you the authentic side of any destination.</p>
+          <p>Connect with experienced local guides who understand Bangladeshi culture and can show you authentic experiences worldwide.</p>
+          <div class="feature-highlight">
+            <span class="highlight-text">Cultural understanding guaranteed!</span>
+          </div>
         </div>
         
-        <div class="feature-card card">
+        <div class="feature-card">
           <div class="feature-icon">
-            <i class="fas fa-store"></i>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="9" cy="21" r="1"/>
+              <circle cx="20" cy="21" r="1"/>
+              <path d="m1 1 4 4 13 0 1 8-12 0z"/>
+            </svg>
           </div>
           <h3>Travel Marketplace</h3>
-          <p>Buy and sell travel gear, book experiences, and discover unique products from fellow travelers around the world.</p>
+          <p>Buy and sell travel gear, book experiences, and discover products from fellow Bangladeshi travelers around the world.</p>
+          <div class="feature-highlight">
+            <span class="highlight-text">Trusted by our community!</span>
+          </div>
         </div>
         
-        <div class="feature-card card">
+        <div class="feature-card">
           <div class="feature-icon">
-            <i class="fas fa-comments"></i>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
           </div>
           <h3>Community Stories</h3>
-          <p>Share your travel experiences, get advice, and inspire others with your adventures through our vibrant community.</p>
+          <p>Share your travel experiences in Bangla or English, get advice from fellow travelers, and inspire others with your adventures.</p>
+          <div class="feature-highlight">
+            <span class="highlight-text">Share in your language!</span>
+          </div>
         </div>
         
-        <div class="feature-card card">
+        <div class="feature-card">
           <div class="feature-icon">
-            <i class="fas fa-route"></i>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
           </div>
           <h3>Itinerary Planning</h3>
-          <p>Create and share detailed travel itineraries. Get recommendations and plan your perfect trip with community insights.</p>
+          <p>Create and share detailed travel itineraries. Get recommendations from Bangladeshi travelers who've been there before.</p>
+          <div class="feature-highlight">
+            <span class="highlight-text">Local insights included!</span>
+          </div>
         </div>
         
-        <div class="feature-card card">
+        <div class="feature-card">
           <div class="feature-icon">
-            <i class="fas fa-mobile-alt"></i>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
           </div>
           <h3>Real-time Chat</h3>
-          <p>Stay connected with fellow travelers through our instant messaging system. Plan trips, share updates, and make friends.</p>
+          <p>Stay connected with fellow Bangladeshi travelers through our instant messaging system. Plan trips and make friends.</p>
+          <div class="feature-highlight">
+            <span class="highlight-text">Always stay connected!</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Popular Destinations Section -->
+  <section class="destinations-section section">
+    <div class="container">
+      <div class="section-header text-center">
+        <h2>Beautiful Destinations in Bangladesh</h2>
+        <p>Explore the hidden gems of our beautiful country</p>
+      </div>
+      
+      <div class="destinations-grid">
+        <div class="destination-card">
+          <div class="destination-image">
+            <img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=300&fit=crop" alt="Cox's Bazar">
+            <div class="destination-overlay">
+              <span class="destination-label">World's Longest Beach</span>
+            </div>
+          </div>
+          <div class="destination-content">
+            <h3>Cox's Bazar</h3>
+            <p>120 km of pristine sandy beach</p>
+            <div class="destination-stats">
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 2.5K travelers</span>
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> 4.9 rating</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="destination-card">
+          <div class="destination-image">
+            <img src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop" alt="Sundarbans">
+            <div class="destination-overlay">
+              <span class="destination-label">UNESCO World Heritage</span>
+            </div>
+          </div>
+          <div class="destination-content">
+            <h3>Sundarbans</h3>
+            <p>Largest mangrove forest in the world</p>
+            <div class="destination-stats">
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 1.8K travelers</span>
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> 4.8 rating</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="destination-card">
+          <div class="destination-image">
+            <img src="https://images.unsplash.com/photo-1587474260584-136574528ed5?w=400&h=300&fit=crop" alt="Sylhet">
+            <div class="destination-overlay">
+              <span class="destination-label">Tea Gardens</span>
+            </div>
+          </div>
+          <div class="destination-content">
+            <h3>Sylhet</h3>
+            <p>Beautiful tea gardens and hills</p>
+            <div class="destination-stats">
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 1.2K travelers</span>
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> 4.7 rating</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="destination-card">
+          <div class="destination-image">
+            <img src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop" alt="Bandarban">
+            <div class="destination-overlay">
+              <span class="destination-label">Hill Station</span>
+            </div>
+          </div>
+          <div class="destination-content">
+            <h3>Bandarban</h3>
+            <p>Scenic hills and tribal culture</p>
+            <div class="destination-stats">
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 1.5K travelers</span>
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> 4.8 rating</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="destination-card">
+          <div class="destination-image">
+            <img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=300&fit=crop" alt="St. Martin's Island">
+            <div class="destination-overlay">
+              <span class="destination-label">Coral Island</span>
+            </div>
+          </div>
+          <div class="destination-content">
+            <h3>St. Martin's Island</h3>
+            <p>Only coral island in Bangladesh</p>
+            <div class="destination-stats">
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 1.0K travelers</span>
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> 4.9 rating</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="destination-card">
+          <div class="destination-image">
+            <img src="https://images.unsplash.com/photo-1587474260584-136574528ed5?w=400&h=300&fit=crop" alt="Dhaka">
+            <div class="destination-overlay">
+              <span class="destination-label">Capital City</span>
+            </div>
+          </div>
+          <div class="destination-content">
+            <h3>Dhaka</h3>
+            <p>Historic capital with rich culture</p>
+            <div class="destination-stats">
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 3.0K travelers</span>
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> 4.6 rating</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -105,22 +335,28 @@
   <!-- Stats Section -->
   <section class="stats-section">
     <div class="container">
-      <div class="stats-grid grid grid-cols-4">
-        <div class="stat-item">
-          <div class="stat-number">10K+</div>
-          <div class="stat-label">Active Travelers</div>
+      <div class="stats-content">
+        <div class="stats-text">
+          <h2>Join Bangladesh's Growing Travel Community</h2>
+          <p>Be part of the largest network of Bangladeshi travelers worldwide</p>
         </div>
-        <div class="stat-item">
-          <div class="stat-number">50+</div>
-          <div class="stat-label">Countries</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">1M+</div>
-          <div class="stat-label">Stories Shared</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">500+</div>
-          <div class="stat-label">Local Guides</div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-number">5,000+</div>
+            <div class="stat-label">Active Bangladeshi Travelers</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">30+</div>
+            <div class="stat-label">Countries Explored</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">1,000+</div>
+            <div class="stat-label">Travel Stories Shared</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">200+</div>
+            <div class="stat-label">Local Guides Worldwide</div>
+          </div>
         </div>
       </div>
     </div>
@@ -130,52 +366,70 @@
   <section class="testimonials-section section">
     <div class="container">
       <div class="section-header text-center">
-        <h2>What Our Travelers Say</h2>
-        <p>Real stories from real travelers</p>
+        <h2>What Our Bangladeshi Travelers Say</h2>
+        <p>Real stories from our community members</p>
       </div>
       
-      <div class="testimonials-grid grid grid-cols-3">
-        <div class="testimonial-card card">
+      <div class="testimonials-grid">
+        <div class="testimonial-card">
           <div class="testimonial-content">
-            <p>"Travner helped me find amazing travel buddies for my Southeast Asia trip. The community is incredible!"</p>
+            <div class="quote-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+                <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
+              </svg>
+            </div>
+            <p>"Travner helped me find amazing travel buddies for my Dubai trip. Meeting fellow Bangladeshis abroad made the experience so much better!"</p>
           </div>
           <div class="testimonial-author">
             <div class="author-avatar">
-              <img src="https://ui-avatars.com/api/?name=Sarah+Johnson&background=0ea5e9&color=fff" alt="Sarah Johnson">
+              <img src="https://ui-avatars.com/api/?name=Rahman+Ahmed&background=0ea5e9&color=fff" alt="Rahman Ahmed">
             </div>
             <div class="author-info">
-              <h4>Sarah Johnson</h4>
-              <span>Adventure Traveler</span>
+              <h4>Rahman Ahmed</h4>
+              <span>Software Engineer, Dhaka</span>
             </div>
           </div>
         </div>
         
-        <div class="testimonial-card card">
+        <div class="testimonial-card">
           <div class="testimonial-content">
-            <p>"I've discovered so many hidden gems through local guides on Travner. It's changed how I travel completely!"</p>
+            <div class="quote-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+                <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
+              </svg>
+            </div>
+            <p>"I've discovered so many hidden gems through local guides on Travner. The cultural understanding makes all the difference!"</p>
           </div>
           <div class="testimonial-author">
             <div class="author-avatar">
-              <img src="https://ui-avatars.com/api/?name=Mike+Chen&background=22c55e&color=fff" alt="Mike Chen">
+              <img src="https://ui-avatars.com/api/?name=Fatima+Khan&background=22c55e&color=fff" alt="Fatima Khan">
             </div>
             <div class="author-info">
-              <h4>Mike Chen</h4>
-              <span>Culture Explorer</span>
+              <h4>Fatima Khan</h4>
+              <span>Marketing Manager, Chittagong</span>
             </div>
           </div>
         </div>
         
-        <div class="testimonial-card card">
+        <div class="testimonial-card">
           <div class="testimonial-content">
-            <p>"The marketplace feature is fantastic! I've bought and sold so much travel gear. It's like a travel community store."</p>
+            <div class="quote-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+                <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
+              </svg>
+            </div>
+            <p>"The marketplace feature is fantastic! I've bought and sold so much travel gear with fellow Bangladeshi travelers. It's like a community store!"</p>
           </div>
           <div class="testimonial-author">
             <div class="author-avatar">
-              <img src="https://ui-avatars.com/api/?name=Emma+Wilson&background=eab308&color=fff" alt="Emma Wilson">
+              <img src="https://ui-avatars.com/api/?name=Karim+Hasan&background=eab308&color=fff" alt="Karim Hasan">
             </div>
             <div class="author-info">
-              <h4>Emma Wilson</h4>
-              <span>Budget Backpacker</span>
+              <h4>Karim Hasan</h4>
+              <span>Business Owner, Sylhet</span>
             </div>
           </div>
         </div>
@@ -187,15 +441,54 @@
   <section class="cta-section">
     <div class="container">
       <div class="cta-content text-center">
-        <h2>Ready to Start Your Adventure?</h2>
-        <p>Join thousands of travelers who are already exploring the world together</p>
+        <div class="cta-badge">
+          <span class="flag-emoji">🇧🇩</span>
+          <span>Join Bangladesh's Travel Community</span>
+        </div>
+        
+        <h2>Ready to Explore the World with Fellow Bangladeshis?</h2>
+        <p>Join thousands of Bangladeshi travelers who are already exploring the world together</p>
+        
         <div class="cta-actions">
           <a routerLink="/signup" class="btn btn-primary btn-xl">
-            <i class="fas fa-rocket"></i>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+              <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+              <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+              <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+            </svg>
             Join Travner Today
           </a>
+          <a routerLink="/community" class="btn btn-outline btn-xl">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            See What's Happening
+          </a>
+        </div>
+        
+        <div class="cta-features">
+          <div class="cta-feature">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span>Free to join</span>
+          </div>
+          <div class="cta-feature">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span>Connect with Bangladeshis worldwide</span>
+          </div>
+          <div class="cta-feature">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span>Share in Bangla or English</span>
+          </div>
         </div>
       </div>
-  </div>
+    </div>
   </section>
 </div>

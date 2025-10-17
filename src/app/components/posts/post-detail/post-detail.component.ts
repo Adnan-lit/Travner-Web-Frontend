@@ -827,17 +827,29 @@ export class PostDetailComponent implements OnInit {
   }
 
   loadMedia(): void {
-    if (!this.postId) return;
+    if (!this.postId || !this.post) return;
 
-    // Removed as getMedia method doesn't exist
-    // this.postService.getMedia(this.postId).subscribe({
-    //   next: (mediaItems) => {
-    //     this.media = mediaItems;
-    //   },
-    //   error: (error) => {
-    //     console.error('Error loading media:', error);
-    //   }
-    // });
+    // Get media from post data if available
+    if (this.post.media && this.post.media.length > 0) {
+      this.media = this.post.media;
+    } else if (this.post.mediaUrls && this.post.mediaUrls.length > 0) {
+      // Convert mediaUrls to Media objects for backward compatibility
+      this.media = this.post.mediaUrls.map((url: string, index: number) => ({
+        id: `media-${index}`,
+        filename: url.split('/').pop() || `media-${index}`,
+        originalFilename: url.split('/').pop() || `media-${index}`,
+        contentType: url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 'image/jpeg' : 'video/mp4',
+        size: 0,
+        uploadedBy: 'unknown',
+        type: url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 'image' : 'video',
+        entityId: this.postId || undefined,
+        uploadedAt: new Date().toISOString(),
+        downloadUrl: url,
+        gridFsId: `gridfs-${index}`,
+        url: url,
+        createdAt: new Date().toISOString()
+      }));
+    }
   }
 
   loadComments(): void {
@@ -845,12 +857,15 @@ export class PostDetailComponent implements OnInit {
 
     this.postService.getComments(this.postId, this.currentCommentPage, this.commentPageSize).subscribe({
       next: (response: any) => {
-        this.comments = response.content;
-        this.totalCommentPages = response.totalPages;
-        this.totalCommentElements = response.totalElements;
+        this.comments = response?.content || response?.data || [];
+        this.totalCommentPages = response?.totalPages || 0;
+        this.totalCommentElements = response?.totalElements || 0;
       },
       error: (error) => {
         console.error('Error loading comments:', error);
+        this.comments = [];
+        this.totalCommentPages = 0;
+        this.totalCommentElements = 0;
       }
     });
   }

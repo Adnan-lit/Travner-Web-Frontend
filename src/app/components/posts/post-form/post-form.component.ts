@@ -2,15 +2,18 @@ import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
-import { Post, Media } from '../../../models/post.model';
-import { CreatePostRequest, UpdatePostRequest } from '../../../models/common.model';
+import { Post } from '../../../models/post.model';
+import { Media } from '../../../models/media.model';
+import { PostCreate, PostUpdate } from '../../../models/post.model';
+import { MediaUploadComponent } from '../../media/media-upload/media-upload.component';
+import { MediaService, MediaFile } from '../../../services/media.service';
 
 export type PostFormMode = 'create' | 'edit';
 
 @Component({
   selector: 'app-post-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, MediaUploadComponent],
   template: `
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="post-form" novalidate>
     <!-- Title Field -->
@@ -73,6 +76,37 @@ export type PostFormMode = 'create' | 'edit';
       <div class="form-hint">Separate multiple tags with commas</div>
     </div>
 
+    <!-- Existing Media Display (Edit Mode) -->
+    <div class="form-group" *ngIf="mode === 'edit' && existingMedia.length > 0">
+      <label class="form-label">Current Media</label>
+      <div class="existing-media-grid">
+        <div class="existing-media-item" *ngFor="let media of existingMedia">
+          <img *ngIf="media.type === 'image'" [src]="media.url" [alt]="media.filename || 'Media'" class="media-preview">
+          <video *ngIf="media.type === 'video'" class="media-preview" controls>
+            <source [src]="media.url" type="video/mp4">
+          </video>
+          <button type="button" class="remove-media-btn" (click)="deleteMedia.emit(media.id)" title="Remove media">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Media Upload Section -->
+    <div class="form-group" *ngIf="allowMedia">
+      <label class="form-label">Add Media</label>
+      <app-media-upload
+        [entityType]="'post'"
+        [maxFiles]="10"
+        (filesUploaded)="onMediaUploaded($event)"
+        (uploadComplete)="onMediaUploadComplete()"
+        (uploadError)="onMediaUploadError($event)"
+      ></app-media-upload>
+    </div>
+
     <!-- Form Actions -->
     <div class="form-actions">
       <button
@@ -108,7 +142,7 @@ export class PostFormComponent implements OnChanges {
   @Input() saving = false;
   @Input() existingMedia: Media[] = [];
   @Input() allowMedia = true;
-  @Output() submitPost = new EventEmitter<{ data: CreatePostRequest | UpdatePostRequest; files: File[] }>();
+  @Output() submitPost = new EventEmitter<{ data: PostCreate | PostUpdate; files: File[]; uploadedMediaIds: string[] }>();
   @Output() deleteMedia = new EventEmitter<string>();
   @Output() cancel = new EventEmitter<void>();
 
@@ -118,6 +152,7 @@ export class PostFormComponent implements OnChanges {
   tagInput = '';
   selectedFiles: File[] = [];
   previews: { file: File; url: string; type: 'image' | 'video'; }[] = [];
+  uploadedMedia: MediaFile[] = [];
 
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
@@ -170,10 +205,16 @@ export class PostFormComponent implements OnChanges {
       content: this.form.value.content,
       location: this.form.value.location,
       tags: tags,
-      mediaIds: [], // Initialize empty for now, will be updated after media upload
+      mediaIds: this.uploadedMedia.map(media => media.id), // Include uploaded media IDs
       published: true
     };
-    this.submitPost.emit({ data: base as CreatePostRequest | UpdatePostRequest, files: this.selectedFiles });
+    
+    // Emit both selected files (for manual upload) and uploaded media IDs
+    this.submitPost.emit({ 
+      data: base as PostCreate | PostUpdate, 
+      files: this.selectedFiles,
+      uploadedMediaIds: this.uploadedMedia.map(media => media.id)
+    });
   }
 
   onFileInput(e: Event): void {
@@ -186,4 +227,17 @@ export class PostFormComponent implements OnChanges {
   onFileDrop(e: DragEvent): void { e.preventDefault(); if (e.dataTransfer?.files) { this.addFiles(Array.from(e.dataTransfer.files)); } }
   private addFiles(files: File[]): void { for (const file of files) { if (!/^image\//.test(file.type) && !/^video\//.test(file.type)) continue; this.selectedFiles.push(file); const url = URL.createObjectURL(file); this.previews.push({ file, url, type: file.type.startsWith('image') ? 'image' : 'video' }); } }
   removeNewFile(i: number): void { const p = this.previews[i]; if (p) URL.revokeObjectURL(p.url); this.previews.splice(i, 1); this.selectedFiles.splice(i, 1); }
+
+  // Media upload methods
+  onMediaUploaded(mediaFiles: MediaFile[]): void {
+    this.uploadedMedia = [...this.uploadedMedia, ...mediaFiles];
+  }
+
+  onMediaUploadComplete(): void {
+    // Media upload completed
+  }
+
+  onMediaUploadError(error: string): void {
+    console.error('Media upload error:', error);
+  }
 }

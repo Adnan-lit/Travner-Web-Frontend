@@ -144,7 +144,8 @@ export class PostCreateComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private postService: PostService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private mediaService: MediaService
   ) {
     this.postForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
@@ -182,47 +183,42 @@ export class PostCreateComponent implements OnInit, OnDestroy {
         ? formValue.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0)
         : [];
 
-      const postData = {
-        title: formValue.title,
-        content: formValue.content,
-        location: formValue.location || null,
-        tags: tags,
-        published: true
-      };
-
-      this.postService.createPost(postData).pipe(
-        takeUntil(this.destroy$)
-      ).subscribe({
-        next: (response: any) => {
-          if (response.success && response.data) {
-            const postId = response.data.id;
-            
-            // If there are uploaded media files, associate them with the post
-            if (this.uploadedMedia.length > 0) {
-              this.associateMediaWithPost(postId);
-            } else {
-              this.onPostCreated();
-            }
-          } else {
-            this.errorMessage = response.message || 'Failed to create post';
-            this.isSubmitting = false;
-          }
-        },
-        error: (error: any) => {
-          console.error('Error creating post:', error);
-          this.errorMessage = error.error?.message || 'Failed to create post';
-          this.isSubmitting = false;
-        }
-      });
+      // Use the media IDs from uploadedMedia (MediaUploadComponent handles the upload)
+      const mediaIds = this.uploadedMedia.map(media => media.id);
+      this.createPostWithMedia(formValue, tags, mediaIds);
     }
   }
 
-  private associateMediaWithPost(postId: string): void {
-    // Update media files to associate them with the post
-    // This would typically be done by updating the media entities with the post ID
-    // For now, we'll assume the media service handles this automatically
-    this.onPostCreated();
+
+  private createPostWithMedia(formValue: any, tags: string[], mediaIds: string[]): void {
+    const postData = {
+      title: formValue.title,
+      content: formValue.content,
+      location: formValue.location || null,
+      tags: tags,
+      published: true,
+      mediaIds: mediaIds
+    };
+
+    this.postService.createPost(postData).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (response: any) => {
+        if (response.success && response.data) {
+          this.onPostCreated();
+        } else {
+          this.errorMessage = response.message || 'Failed to create post';
+          this.isSubmitting = false;
+        }
+      },
+      error: (error: any) => {
+        console.error('Error creating post:', error);
+        this.errorMessage = error.error?.message || 'Failed to create post';
+        this.isSubmitting = false;
+      }
+    });
   }
+
 
   private onPostCreated(): void {
     this.isSubmitting = false;
@@ -233,6 +229,7 @@ export class PostCreateComponent implements OnInit, OnDestroy {
     this.uploadedMedia = mediaFiles;
     console.log('Media uploaded:', mediaFiles);
   }
+
 
   onMediaUploadComplete(): void {
     console.log('Media upload complete');
