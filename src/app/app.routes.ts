@@ -27,7 +27,7 @@ import { CheckoutComponent } from './components/marketplace/checkout/checkout.co
 import { OrderListComponent } from './components/marketplace/order-list/order-list.component';
 import { OrderDetailComponent } from './components/marketplace/order-detail/order-detail.component';
 import { ProductManagementComponent } from './components/marketplace/admin/product-management/product-management.component';
-import { AuthDebugComponent } from './components/auth-debug/auth-debug.component';
+// import { AuthDebugComponent } from './components/auth-debug/auth-debug.component';
 import { TripListComponent } from './components/trips/trip-list/trip-list.component';
 
 // Location-based components
@@ -36,7 +36,7 @@ import { ItineraryDetailComponent } from './components/itineraries/itinerary-det
 import { ItineraryCreateComponent } from './components/itineraries/itinerary-create/itinerary-create.component';
 import { ItineraryCreateMinimalComponent } from './components/itineraries/itinerary-create/itinerary-create-minimal.component';
 import { ItineraryCreateSimpleComponent } from './components/itineraries/itinerary-create/itinerary-create-simple.component';
-import { ItineraryListTestComponent } from './components/itineraries/itinerary-list/itinerary-list-test.component';
+// import { ItineraryListTestComponent } from './components/itineraries/itinerary-list/itinerary-list-test.component';
 import { TravelBuddyListComponent } from './components/travel-buddies/travel-buddy-list/travel-buddy-list.component';
 import { LocalGuideListComponent } from './components/local-guides/local-guide-list/local-guide-list.component';
 
@@ -77,7 +77,7 @@ export const routes: Routes = [
 
       // Itinerary Routes
       { path: 'itineraries', component: ItineraryListComponent },
-      { path: 'itineraries/test', component: ItineraryListTestComponent },
+      // { path: 'itineraries/test', component: ItineraryListTestComponent },
       { path: 'itineraries/create', component: ItineraryCreateMinimalComponent },
       { path: 'itineraries/:id', component: ItineraryDetailComponent },
       
@@ -103,7 +103,7 @@ export const routes: Routes = [
       { path: 'admin/marketplace/orders', component: OrderManagementComponent, canActivate: [AdminGuard] },
 
       // Debug Routes (development only)
-      { path: 'debug/auth', component: AuthDebugComponent },
+      // { path: 'debug/auth', component: AuthDebugComponent },
     ]
   },
   { path: 'signin', component: SigninComponent, canActivate: [NoAuthGuard] },

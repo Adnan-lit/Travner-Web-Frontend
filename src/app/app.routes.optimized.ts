@@ -199,10 +199,10 @@ export const routes: Routes = [
       },
 
       // Debug Routes (development only - lazy loaded)
-      { 
-        path: 'debug/auth', 
-        loadComponent: () => import('./components/auth-debug/auth-debug.component').then(m => m.AuthDebugComponent)
-      },
+      // { 
+      //   path: 'debug/auth', 
+      //   loadComponent: () => import('./components/auth-debug/auth-debug.component').then(m => m.AuthDebugComponent)
+      // },
     ]
   },
   
