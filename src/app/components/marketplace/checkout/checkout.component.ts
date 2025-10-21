@@ -93,10 +93,11 @@ export class CheckoutComponent implements OnInit {
 
         const customerInfo: CustomerInfo = this.checkoutForm.value;
 
-        this.marketplaceService.checkout().subscribe({
+        this.marketplaceService.checkout(customerInfo).subscribe({
             next: (response: any) => {
                 this.submitting = false;
                 this.toastService.success('Order placed successfully!', '');
+                
                 // Navigate to order confirmation page
                 // TODO: Extract order ID from response if available
                 this.router.navigate(['/marketplace/orders']);

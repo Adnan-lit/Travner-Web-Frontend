@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Product, ProductListResponse, ProductSearchParams, CreateProductRequest, UpdateProductRequest } from '@app/models/marketplace.model';
@@ -20,6 +20,8 @@ import { MediaUploadComponent } from '../../../media/media-upload/media-upload.c
     styleUrls: ['./product-management.component.css']
 })
 export class ProductManagementComponent implements OnInit {
+    @ViewChild(MediaUploadComponent) mediaUploadComponent?: MediaUploadComponent;
+    
     products: Product[] = [];
     loading = true;
     error: string | null = null;
@@ -161,6 +163,11 @@ export class ProductManagementComponent implements OnInit {
         
         // Clear media data
         this.uploadedMedia = [];
+        
+        // Clear MediaUploadComponent's internal state
+        if (this.mediaUploadComponent) {
+            this.mediaUploadComponent.clearAll();
+        }
     }
 
     onSubmit(): void {

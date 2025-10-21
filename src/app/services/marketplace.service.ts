@@ -11,6 +11,7 @@ import {
     AddToCartRequest,
     UpdateCartItemRequest,
     Order,
+    CustomerInfo,
     ProductSearchParams,
     ProductListResponse,
     ProductResponse,
@@ -293,11 +294,29 @@ export class MarketplaceService {
     }
 
     /**
-     * Checkout cart
+     * Checkout cart - create order from cart
      */
-    checkout(): Observable<ApiResponse<Order>> {
-        const endpoint = `${this.API_BASE_URL}/api/cart/checkout`;
-        return this.http.post<ApiResponse<Order>>(endpoint, {}).pipe(
+    checkout(customerInfo: CustomerInfo, paymentMethod: string = 'CASH_ON_DELIVERY'): Observable<ApiResponse<Order>> {
+        const endpoint = `${this.API_BASE_URL}/api/market/orders`;
+        const orderRequest = {
+            shippingAddress: {
+                fullName: customerInfo.fullName,
+                addressLine1: customerInfo.addressLine1,
+                addressLine2: customerInfo.addressLine2 || '',
+                city: customerInfo.city,
+                state: customerInfo.state,
+                zipCode: customerInfo.postalCode,
+                country: customerInfo.country,
+                phoneNumber: customerInfo.phone
+            },
+            paymentInfo: {
+                paymentMethod: paymentMethod,
+                transactionId: null
+            },
+            notes: ''
+        };
+        
+        return this.http.post<ApiResponse<Order>>(endpoint, orderRequest).pipe(
             catchError(error => {
                 console.error('Error during checkout:', error);
                 throw error;
@@ -326,6 +345,19 @@ export class MarketplaceService {
         return this.http.get<ApiResponse<Order>>(endpoint).pipe(
             catchError(error => {
                 console.error(`Error fetching order ${orderId}:`, error);
+                throw error;
+            })
+        );
+    }
+
+    /**
+     * Get user's orders
+     */
+    getUserOrders(): Observable<ApiResponse<Order[]>> {
+        const endpoint = `${this.API_BASE_URL}/api/market/orders`;
+        return this.http.get<ApiResponse<Order[]>>(endpoint).pipe(
+            catchError(error => {
+                console.error('Error fetching user orders:', error);
                 throw error;
             })
         );

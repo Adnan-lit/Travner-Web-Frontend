@@ -50,20 +50,17 @@ export class OrderListComponent implements OnInit {
         this.loading = true;
         this.error = null;
 
-        const params: any = {
-            page: this.currentPage,
-            size: this.pageSize
-        };
-
-        if (this.statusFilter !== 'ALL') {
-            params.status = this.statusFilter;
-        }
-
-        this.marketplaceService.getAdminOrders(params).subscribe({
-            next: (response: OrderListResponse) => {
-                this.orders = response.data || [];
-                this.totalPages = response.pagination?.totalPages || 0;
-                this.totalElements = response.pagination?.totalElements || 0;
+        this.marketplaceService.getUserOrders().subscribe({
+            next: (response: any) => {
+                if (response && response.success && response.data) {
+                    this.orders = response.data || [];
+                    // Filter by status if needed
+                    if (this.statusFilter !== 'ALL') {
+                        this.orders = this.orders.filter(order => order.status === this.statusFilter);
+                    }
+                } else {
+                    this.orders = [];
+                }
                 this.loading = false;
             },
             error: (err: any) => {

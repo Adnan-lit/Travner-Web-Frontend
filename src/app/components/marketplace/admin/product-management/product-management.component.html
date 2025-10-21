@@ -221,6 +221,26 @@
             (uploadError)="onMediaUploadError($event)"
           ></app-media-upload>
 
+          <!-- Uploaded Images Preview Summary -->
+          <div class="uploaded-summary" *ngIf="uploadedMedia.length > 0" style="margin-top: 20px;">
+            <div class="summary-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20,6 9,17 4,12"></polyline>
+              </svg>
+              <span>{{ uploadedMedia.length }} image(s) ready for product</span>
+            </div>
+            <div class="preview-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 10px;">
+              <div *ngFor="let media of uploadedMedia" class="mini-preview" style="position: relative; border: 2px solid #4CAF50; border-radius: 8px; overflow: hidden; aspect-ratio: 1;">
+                <img 
+                  [src]="mediaService.getMediaUrlById(media.id)" 
+                  [alt]="media.originalFilename"
+                  style="width: 100%; height: 100%; object-fit: cover;"
+                  (error)="handleImageError($event)"
+                />
+              </div>
+            </div>
+          </div>
+
           <!-- Manual Image URLs (Optional - for backward compatibility) -->
           <div class="manual-urls" style="margin-top: 20px;">
             <label for="imageUrls">Additional Image URLs (Optional)</label>

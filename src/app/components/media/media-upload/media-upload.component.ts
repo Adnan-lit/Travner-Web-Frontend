@@ -306,6 +306,11 @@ export class MediaUploadComponent implements OnInit, OnDestroy {
             item.mediaId = media.id;
             item.progress = 100;
             
+            // Update preview to server URL for images
+            if (this.isImage(item.file) && media.data.downloadUrl) {
+              item.preview = media.data.downloadUrl;
+            }
+            
             uploadedMedia.push(media.data);
             this.uploadCount++;
             this.updateOverallProgress();
