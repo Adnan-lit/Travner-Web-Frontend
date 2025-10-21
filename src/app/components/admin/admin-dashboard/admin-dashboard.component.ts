@@ -1,87 +1,87 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil, interval } from 'rxjs';
-import { AdminService } from '../../../services/admin.service';
-import { AuthService } from '../../../services/auth.service';
-import { PostService } from '../../../services/post.service';
-import { MarketplaceService } from '../../../services/marketplace.service';
-import { User, SystemStats, AdminUser } from '../../../models/common.model';
-import { ApiResponse, ApiListResponse } from '../../../models/api-response.model';
+import { HttpClient } from '@angular/common/http';
+import { Subject, takeUntil } from 'rxjs';
 
 interface DashboardStats {
-  totalUsers: number;
-  activeUsers: number;
-  totalPosts: number;
-  postsWithMedia: number;
-  postsWithInvalidMedia: number;
-  totalOrders: number;
-  pendingOrders: number;
-  totalProducts: number;
-  availableProducts: number;
-  systemHealth: 'healthy' | 'warning' | 'critical';
-  lastUpdate: string;
+  users: {
+    total: number;
+    active: number;
+    newThisWeek: number;
+  };
+  content: {
+    posts: number;
+    comments: number;
+    itineraries: number;
+    travelBuddies: number;
+  };
+  engagement: {
+    votes: number;
+    chatMessages: number;
+  };
+  marketplace: {
+    products: number;
+    orders: number;
+    revenue: number;
+  };
 }
 
-interface RecentActivity {
+interface User {
   id: string;
-  type: 'user_registration' | 'post_created' | 'order_placed' | 'product_added' | 'admin_action';
-  description: string;
-  timestamp: string;
-  user?: string;
-  metadata?: any;
+  userName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  roles: string[];
+  active: boolean;
+  createdAt: string;
+  lastLogin: string;
+}
+
+interface SystemHealth {
+  database: {
+    connected: boolean;
+    status: string;
+  };
+  memory: {
+    total: number;
+    used: number;
+    free: number;
+    usagePercent: number;
+  };
+  system: {
+    uptime: number;
+    javaVersion: string;
+    osName: string;
+    osVersion: string;
+  };
 }
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
-  currentUser: User | null = null;
-  isLoading = true;
-  dashboardStats: DashboardStats = {
-    totalUsers: 0,
-    activeUsers: 0,
-    totalPosts: 0,
-    postsWithMedia: 0,
-    postsWithInvalidMedia: 0,
-    totalOrders: 0,
-    pendingOrders: 0,
-    totalProducts: 0,
-    availableProducts: 0,
-    systemHealth: 'healthy',
-    lastUpdate: new Date().toISOString()
-  };
-  
-  recentActivities: RecentActivity[] = [];
-  systemAlerts: any[] = [];
-  
-  // Real-time updates
   private destroy$ = new Subject<void>();
-  private refreshInterval$ = interval(30000); // Refresh every 30 seconds
 
-  constructor(
-    public authService: AuthService,
-    private adminService: AdminService,
-    private postService: PostService,
-    private marketplaceService: MarketplaceService,
-    private router: Router
-  ) { }
+  loading = false;
+  dashboardStats: DashboardStats | null = null;
+  systemHealth: SystemHealth | null = null;
+  users: User[] = [];
+  filteredUsers: User[] = [];
+  userSearch = '';
+  selectedRole = '';
+
+  constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
-    this.authService.currentUser$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(user => {
-        this.currentUser = user;
-        if (user && this.authService.isAdmin()) {
-          this.loadDashboardData();
-          this.startRealTimeUpdates();
-        }
-      });
+    this.loadDashboardData();
+    this.loadUsers();
+    this.loadSystemHealth();
   }
 
   ngOnDestroy(): void {
@@ -89,250 +89,160 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private loadDashboardData(): void {
-    this.isLoading = true;
-    
-    // Load all dashboard data in parallel
-    Promise.all([
-      this.loadUserStats(),
-      this.loadPostStats(),
-      this.loadOrderStats(),
-      this.loadProductStats(),
-      this.loadRecentActivities(),
-      this.loadSystemAlerts()
-    ]).finally(() => {
-      this.isLoading = false;
-    });
-  }
-
-  private async loadUserStats(): Promise<void> {
-    try {
-      const response = await this.adminService.getUsers(0, 1).toPromise();
-      if (response?.data) {
-        this.dashboardStats.totalUsers = response.pagination?.totalElements || 0;
-        // Mock active users calculation (in real app, this would come from backend)
-        this.dashboardStats.activeUsers = Math.floor(this.dashboardStats.totalUsers * 0.7);
-      }
-    } catch (error: any) {
-      console.error('Error loading user stats:', error);
-      
-      // Handle specific error cases
-      if (error?.status === 401) {
-        console.warn('User does not have admin privileges. Please use admin account.');
-        // You might want to redirect to a different page or show a message
-      } else if (error?.status === 500) {
-        console.error('Server error when loading user stats. Admin endpoints may not be properly configured.');
-      }
-    }
-  }
-
-  private async loadPostStats(): Promise<void> {
-    try {
-      const response = await this.adminService.getPostStats().toPromise();
-      if (response?.data) {
-        const stats = response.data as any;
-        this.dashboardStats.totalPosts = stats.totalPosts || 0;
-        this.dashboardStats.postsWithMedia = stats.postsWithMedia || 0;
-        this.dashboardStats.postsWithInvalidMedia = stats.postsWithInvalidMedia || 0;
-      }
-    } catch (error: any) {
-      console.error('Error loading post stats:', error);
-      
-      // Handle specific error cases
-      if (error?.status === 401) {
-        console.warn('User does not have admin privileges for post stats. Please use admin account.');
-      } else if (error?.status === 500) {
-        console.error('Server error when loading post stats. Admin endpoints may not be properly configured.');
-      }
-    }
-  }
-
-  private async loadOrderStats(): Promise<void> {
-    try {
-      const response = await this.marketplaceService.getAllOrders().toPromise();
-      if (response?.data) {
-        const orders = response.data;
-        this.dashboardStats.totalOrders = orders.length;
-        this.dashboardStats.pendingOrders = orders.filter((order: any) => 
-          order.status === 'PENDING' || order.status === 'PAID'
-        ).length;
-      }
-    } catch (error) {
-      console.error('Error loading order stats:', error);
-    }
-  }
-
-  private async loadProductStats(): Promise<void> {
-    try {
-      const response = await this.marketplaceService.getProducts({ page: 0, size: 1 }).toPromise();
-      if (response?.data) {
-        this.dashboardStats.totalProducts = response.pagination?.totalElements || 0;
-        // Mock available products (in real app, this would come from backend)
-        this.dashboardStats.availableProducts = Math.floor(this.dashboardStats.totalProducts * 0.85);
-      }
-    } catch (error) {
-      console.error('Error loading product stats:', error);
-    }
-  }
-
-  private async loadRecentActivities(): Promise<void> {
-    // Mock recent activities (in real app, this would come from backend)
-    this.recentActivities = [
-      {
-        id: '1',
-        type: 'user_registration',
-        description: 'New user registered: john_doe',
-        timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-        user: 'john_doe'
-      },
-      {
-        id: '2',
-        type: 'post_created',
-        description: 'New post created: "Amazing trip to Japan"',
-        timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-        user: 'jane_traveler'
-      },
-      {
-        id: '3',
-        type: 'order_placed',
-        description: 'New order placed: #ORD-12345',
-        timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-        user: 'mike_explorer'
-      },
-      {
-        id: '4',
-        type: 'product_added',
-        description: 'New product added: Travel Backpack',
-        timestamp: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
-        user: 'seller_pro'
-      }
-    ];
-  }
-
-  private async loadSystemAlerts(): Promise<void> {
-    // Mock system alerts (in real app, this would come from backend)
-    this.systemAlerts = [];
-    
-    if (this.dashboardStats.postsWithInvalidMedia > 0) {
-      this.systemAlerts.push({
-        id: '1',
-        type: 'warning',
-        title: 'Invalid Media URLs Detected',
-        message: `${this.dashboardStats.postsWithInvalidMedia} posts have invalid media URLs`,
-        action: 'cleanup_media'
-      });
-    }
-    
-    if (this.dashboardStats.pendingOrders > 10) {
-      this.systemAlerts.push({
-        id: '2',
-        type: 'info',
-        title: 'High Pending Orders',
-        message: `${this.dashboardStats.pendingOrders} orders are pending processing`,
-        action: 'view_orders'
-      });
-    }
-  }
-
-  private startRealTimeUpdates(): void {
-    this.refreshInterval$
+  loadDashboardData(): void {
+    this.loading = true;
+    this.http.get<any>('/api/admin/dashboard')
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.loadDashboardData();
+      .subscribe({
+        next: (response) => {
+          this.dashboardStats = response.data;
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error loading dashboard data:', error);
+          this.loading = false;
+        }
+      });
+  }
+
+  loadUsers(): void {
+    this.http.get<any>('/api/admin/users')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.users = response.data.content;
+          this.filterUsers();
+        },
+        error: (error) => {
+          console.error('Error loading users:', error);
+        }
+      });
+  }
+
+  loadSystemHealth(): void {
+    this.http.get<any>('/api/admin/health')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.systemHealth = response.data;
+        },
+        error: (error) => {
+          console.error('Error loading system health:', error);
+        }
       });
   }
 
   refreshData(): void {
     this.loadDashboardData();
+    this.loadUsers();
+    this.loadSystemHealth();
   }
 
-  cleanupInvalidMedia(): void {
-    this.adminService.cleanupInvalidMediaUrls().subscribe({
-      next: (response) => {
-        console.log('Media cleanup completed:', response);
-        this.loadDashboardData(); // Refresh data
-      },
-      error: (error) => {
-        console.error('Error during media cleanup:', error);
-      }
+  filterUsers(): void {
+    this.filteredUsers = this.users.filter(user => {
+      const matchesSearch = !this.userSearch || 
+        user.userName.toLowerCase().includes(this.userSearch.toLowerCase()) ||
+        user.firstName?.toLowerCase().includes(this.userSearch.toLowerCase()) ||
+        user.lastName?.toLowerCase().includes(this.userSearch.toLowerCase()) ||
+        user.email?.toLowerCase().includes(this.userSearch.toLowerCase());
+      
+      const matchesRole = !this.selectedRole || user.roles?.includes(this.selectedRole);
+      
+      return matchesSearch && matchesRole;
     });
   }
 
-  handleSystemAlert(alert: any): void {
-    switch (alert.action) {
-      case 'cleanup_media':
-        this.cleanupInvalidMedia();
-        break;
-      case 'view_orders':
-        // Navigate to orders page
-        break;
-      default:
-        console.log('Unknown alert action:', alert.action);
+  activateUser(username: string): void {
+    this.loading = true;
+    this.http.put<any>(`/api/admin/users/${username}/activate`, {})
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.loadUsers();
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error activating user:', error);
+          this.loading = false;
+        }
+      });
+  }
+
+  deactivateUser(username: string): void {
+    this.loading = true;
+    this.http.put<any>(`/api/admin/users/${username}/deactivate`, {})
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.loadUsers();
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error deactivating user:', error);
+          this.loading = false;
+        }
+      });
+  }
+
+  deleteUser(username: string): void {
+    if (confirm(`Are you sure you want to delete user ${username}?`)) {
+      this.loading = true;
+      this.http.delete<any>(`/api/admin/users/${username}`)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.loadUsers();
+            this.loading = false;
+          },
+          error: (error) => {
+            console.error('Error deleting user:', error);
+            this.loading = false;
+          }
+        });
     }
   }
 
-  dismissAlert(alertId: string): void {
-    this.systemAlerts = this.systemAlerts.filter(alert => alert.id !== alertId);
+  cleanupMediaUrls(): void {
+    this.loading = true;
+    this.http.post<any>('/api/admin/cleanup/media-urls', {})
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          alert(response.message);
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error cleaning up media URLs:', error);
+          this.loading = false;
+        }
+      });
   }
 
-  formatTimestamp(timestamp: string): string {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+  exportUserData(): void {
+    // Implementation for data export
+    alert('Data export feature coming soon!');
+  }
+
+  viewSystemLogs(): void {
+    // Implementation for viewing system logs
+    alert('System logs feature coming soon!');
+  }
+
+  formatDate(dateString: string): string {
+    return new Date(dateString).toLocaleDateString();
+  }
+
+  formatUptime(uptime: number | undefined): string {
+    if (!uptime) return 'Unknown';
     
-    if (diffInMinutes < 1) {
-      return 'Just now';
-    } else if (diffInMinutes < 60) {
-      return `${diffInMinutes}m ago`;
-    } else {
-      const diffInHours = Math.floor(diffInMinutes / 60);
-      return `${diffInHours}h ago`;
-    }
-  }
-
-  getActivityIcon(type: string): string {
-    switch (type) {
-      case 'user_registration': return 'fas fa-user-plus';
-      case 'post_created': return 'fas fa-comment-plus';
-      case 'order_placed': return 'fas fa-shopping-cart';
-      case 'product_added': return 'fas fa-box';
-      case 'admin_action': return 'fas fa-user-shield';
-      default: return 'fas fa-info-circle';
-    }
-  }
-
-  getActivityColor(type: string): string {
-    switch (type) {
-      case 'user_registration': return 'text-blue-500';
-      case 'post_created': return 'text-green-500';
-      case 'order_placed': return 'text-purple-500';
-      case 'product_added': return 'text-orange-500';
-      case 'admin_action': return 'text-red-500';
-      default: return 'text-gray-500';
-    }
-  }
-
-  getAlertIcon(type: string): string {
-    switch (type) {
-      case 'warning': return 'fas fa-exclamation-triangle';
-      case 'error': return 'fas fa-exclamation-circle';
-      case 'info': return 'fas fa-info-circle';
-      case 'success': return 'fas fa-check-circle';
-      default: return 'fas fa-bell';
-    }
-  }
-
-  getAlertColor(type: string): string {
-    switch (type) {
-      case 'warning': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'error': return 'text-red-600 bg-red-50 border-red-200';
-      case 'info': return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'success': return 'text-green-600 bg-green-50 border-green-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
-  }
-
-  goToSignin(): void {
-    this.router.navigate(['/signin']);
+    const seconds = Math.floor(uptime / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    
+    if (days > 0) return `${days}d ${hours % 24}h`;
+    if (hours > 0) return `${hours}h ${minutes % 60}m`;
+    if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+    return `${seconds}s`;
   }
 }

@@ -289,7 +289,7 @@ export class AdminService {
     uptime: number;
     version: string;
   }>> {
-    const endpoint = `${this.API_BASE_URL}/api/admin/system/health`;
+    const endpoint = `${this.API_BASE_URL}/api/admin/health`;
     return this.http.get<ApiResponse<{
       status: string;
       database: boolean;

@@ -50,5 +50,19 @@
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"
+  },
+  "/topic/**": {
+    "target": "http://localhost:8080",
+    "ws": true,
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/app/**": {
+    "target": "http://localhost:8080",
+    "ws": true,
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
   }
 }

@@ -1,5 +1,12 @@
 // Type-safe interfaces for better type checking based on Travner API documentation
 
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  error?: string;
+}
+
 export interface User {
     id: string;
     userName: string;
@@ -14,6 +21,7 @@ export interface User {
     createdAt?: string;
     lastLoginAt?: string;
     active?: boolean;
+    isOnline?: boolean;
 }
 
 export interface AdminUser extends User {
@@ -114,35 +122,6 @@ export interface CreateCommentRequest {
     parentCommentId?: string;
 }
 
-export interface Conversation {
-    id: string;
-    type: 'DIRECT' | 'GROUP';
-    name?: string;
-    participants: Array<{
-        userId: string;
-        username: string;
-    }>;
-    lastMessage?: string;
-    lastMessageAt?: string;
-    unreadCount: number;
-    createdAt: string;
-}
-
-export interface Message {
-    id: string;
-    conversationId: string;
-    senderId: string;
-    senderUsername: string;
-    kind: string;
-    body: string;
-    attachments: any[];
-    replyTo?: string;
-    createdAt: string;
-    readBy: Array<{
-        userId: string;
-        readAt: string;
-    }>;
-}
 
 export interface DiagnosticStep {
     step: string;
@@ -240,10 +219,47 @@ export interface ChatMessage {
     }>;
 }
 
+export interface Conversation {
+    id: string;
+    type: 'DIRECT' | 'GROUP';
+    title?: string;
+    participants: Array<{
+        id: string;
+        username: string;
+        firstName?: string;
+        lastName?: string;
+        profileImageUrl?: string;
+        isOnline?: boolean;
+    }>;
+    lastMessage?: string;
+    lastMessageAt?: string;
+    unreadCount?: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface CreateConversationRequest {
     type: 'DIRECT' | 'GROUP';
-    memberIds: string[];
-    name?: string;
+    participantIds: string[];
+    title?: string;
+}
+
+export interface Message {
+    id: string;
+    conversationId: string;
+    senderId: string;
+    senderUsername: string;
+    content: string;
+    kind: 'TEXT' | 'IMAGE' | 'FILE';
+    attachments?: any[];
+    replyTo?: string;
+    createdAt: string;
+    readBy: Array<{
+        userId: string;
+        readAt: string;
+    }>;
+    isEdited?: boolean;
+    status?: 'sent' | 'delivered' | 'read';
 }
 
 export interface AddMembersRequest {

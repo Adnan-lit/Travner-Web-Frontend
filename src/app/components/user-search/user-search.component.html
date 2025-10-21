@@ -1,0 +1,116 @@
+<div class="user-search-container">
+  <!-- Search Input -->
+  <div class="search-input-container">
+    <div class="search-input-wrapper">
+      <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="M21 21l-4.35-4.35"/>
+      </svg>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        (input)="onSearchInput()"
+        placeholder="Search users to chat with..."
+        class="search-input"
+        autocomplete="off"
+        aria-label="Search users to chat with"
+        role="searchbox"
+        [attr.aria-expanded]="showResults"
+        [attr.aria-activedescendant]="selectedUserId"
+      />
+      <button 
+        *ngIf="searchQuery" 
+        (click)="clearSearch()" 
+        class="clear-btn"
+        type="button"
+        aria-label="Clear search"
+        title="Clear search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Search Results -->
+  <div class="search-results" *ngIf="showResults && (searchResults.length > 0 || isLoading)" (click)="$event.stopPropagation()">
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="isLoading">
+      <div class="loader"></div>
+      <span>Searching users...</span>
+    </div>
+
+    <!-- Results List -->
+    <div class="results-list" *ngIf="!isLoading && searchResults.length > 0">
+      <div 
+        *ngFor="let user of searchResults; let i = index" 
+        class="user-result-item"
+        (click)="selectUser(user)"
+        [id]="'user-result-' + i"
+        role="option"
+        [attr.aria-selected]="false"
+        tabindex="0"
+        (keydown.enter)="selectUser(user)"
+        (keydown.space)="selectUser(user)">
+        <div class="user-avatar">
+          <img 
+            *ngIf="user.profileImageUrl" 
+            [src]="user.profileImageUrl" 
+            [alt]="getUserDisplayName(user)"
+            class="avatar-image"
+          />
+          <div *ngIf="!user.profileImageUrl" class="avatar-placeholder">
+            {{ getUserInitials(user) }}
+          </div>
+        </div>
+        
+        <div class="user-info">
+          <div class="user-name">{{ getUserDisplayName(user) }}</div>
+          <div class="user-username">@{{ user.userName }}</div>
+          <div class="user-bio" *ngIf="user.bio">{{ user.bio }}</div>
+          <div class="user-location" *ngIf="user.location">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            {{ user.location }}
+          </div>
+        </div>
+
+        <div class="user-actions">
+          <button class="chat-btn" (click)="selectUser(user)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Chat
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- No Results -->
+    <div class="no-results" *ngIf="!isLoading && searchResults.length === 0 && searchQuery.trim().length >= 2">
+      <div class="no-results-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      <p>No users found for "{{ searchQuery }}"</p>
+      <span class="no-results-subtitle">Try searching with a different username or name</span>
+    </div>
+  </div>
+
+  <!-- Search Hint -->
+  <div class="search-hint" *ngIf="!showResults && !searchQuery">
+    <div class="hint-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="M21 21l-4.35-4.35"/>
+      </svg>
+    </div>
+    <p>Search for users by username or name</p>
+    <span class="hint-subtitle">Start typing to find people to chat with</span>
+  </div>
+</div>

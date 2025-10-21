@@ -6,15 +6,16 @@ import { MarketplaceService } from '@services/marketplace.service';
 import { MediaService, MediaFile } from '@services/media.service';
 import { ToastService } from '@services/toast.service';
 import { AuthService } from '@services/auth.service';
-import { NgIf, NgFor, TitleCasePipe, DecimalPipe } from '@angular/common';
+import { NgIf, NgFor, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 // import { MarketplaceErrorHandler } from '../../../../../../utils/marketplace-error-handler';
 import { ImageUtil } from '@app/utils/image.util';
+import { MediaUploadComponent } from '../../../media/media-upload/media-upload.component';
 
 @Component({
     selector: 'app-product-management',
     standalone: true,
-    imports: [NgIf, NgFor, TitleCasePipe, DecimalPipe, ReactiveFormsModule, FormsModule],
+    imports: [NgIf, NgFor, TitleCasePipe, ReactiveFormsModule, FormsModule, MediaUploadComponent],
     templateUrl: './product-management.component.html',
     styleUrls: ['./product-management.component.css']
 })
@@ -42,11 +43,7 @@ export class ProductManagementComponent implements OnInit {
     ];
 
     // Media upload properties
-    uploadedFiles: File[] = [];
     uploadedMedia: MediaFile[] = [];
-    previewUrls: string[] = [];
-    isUploading = false;
-    uploadProgress: { [key: string]: number } = {};
 
     constructor(
         private marketplaceService: MarketplaceService,
@@ -163,7 +160,7 @@ export class ProductManagementComponent implements OnInit {
         this.productForm.reset();
         
         // Clear media data
-        this.clearAllMedia();
+        this.uploadedMedia = [];
     }
 
     onSubmit(): void {
@@ -182,15 +179,16 @@ export class ProductManagementComponent implements OnInit {
             isAvailable: formValue.active
         };
 
-        // Handle image URLs - combine uploaded media and manual URLs
-        const imageUrls: string[] = [];
+        // Handle image URLs - use uploaded media IDs for backend association
+        const mediaIds: string[] = this.uploadedMedia.map(media => media.id);
+        productData.mediaIds = mediaIds;
         
-        // Add uploaded media URLs
-        this.uploadedMedia.forEach(media => {
-            imageUrls.push(this.mediaService.getMediaUrl(media.filename));
-        });
+        // Also include the download URLs for backward compatibility
+        const imageUrls: string[] = this.uploadedMedia.map(media => 
+            this.mediaService.getMediaUrlById(media.id)
+        );
         
-        // Add manual image URLs from form
+        // Add manual image URLs from form if any
         if (formValue.imageUrls) {
             const manualUrls = formValue.imageUrls
                 .split(',')
@@ -328,153 +326,20 @@ export class ProductManagementComponent implements OnInit {
         return ImageUtil.getPlaceholder('admin');
     }
 
-    // Media upload methods
-    onFileSelected(event: any): void {
-        const files = Array.from(event.target.files) as File[];
-        
-        if (files.length === 0) return;
-
-        // Validate files
-        for (const file of files) {
-            const validation = this.mediaService.validateFile(file);
-            if (!validation.valid) {
-                this.toastService.error('Invalid file', validation.error || 'File validation failed');
-                return;
-            }
-        }
-
-        // Add files to upload list
-        this.uploadedFiles = [...this.uploadedFiles, ...files];
-        
-        // Create preview URLs
-        files.forEach(file => {
-            const previewUrl = this.mediaService.createPreviewUrl(file);
-            this.previewUrls.push(previewUrl);
-        });
-
-        this.toastService.success('Files selected', `${files.length} file(s) ready for upload`);
+    // Media upload event handlers (used with MediaUploadComponent)
+    onMediaUploaded(mediaFiles: MediaFile[]): void {
+        this.uploadedMedia = mediaFiles;
+        console.log('Product media uploaded:', mediaFiles);
+        this.toastService.success('Media uploaded', `${mediaFiles.length} file(s) uploaded successfully`);
     }
 
-    removeFile(index: number): void {
-        // Remove file and its preview
-        const file = this.uploadedFiles[index];
-        const previewUrl = this.previewUrls[index];
-        
-        this.uploadedFiles.splice(index, 1);
-        this.previewUrls.splice(index, 1);
-        
-        // Revoke preview URL to free memory
-        if (previewUrl) {
-            this.mediaService.revokePreviewUrl(previewUrl);
-        }
+    onMediaUploadComplete(): void {
+        console.log('Product media upload complete');
     }
 
-    removeUploadedMedia(index: number): void {
-        const media = this.uploadedMedia[index];
-        
-        // Delete from server
-        this.mediaService.deleteMedia(media.id).subscribe({
-            next: () => {
-                this.uploadedMedia.splice(index, 1);
-                this.toastService.success('Media deleted', 'File removed successfully');
-            },
-            error: (error) => {
-                console.error('Error deleting media:', error);
-                this.toastService.error('Delete failed', 'Could not remove file');
-            }
-        });
-    }
-
-    uploadFiles(): void {
-        if (this.uploadedFiles.length === 0) {
-            this.toastService.error('No files', 'Please select files to upload');
-            return;
-        }
-
-        this.isUploading = true;
-        this.uploadProgress = {};
-
-        // Upload files one by one to track progress
-        const uploadPromises = this.uploadedFiles.map((file, index) => {
-            const fileKey = `${file.name}_${index}`;
-            this.uploadProgress[fileKey] = 0;
-
-            return this.mediaService.uploadMedia(file, 'product').toPromise().then(response => {
-                this.uploadProgress[fileKey] = 100;
-                return response;
-            }).catch(error => {
-                console.error('Upload error:', error);
-                throw error;
-            });
-        });
-
-        Promise.all(uploadPromises).then(responses => {
-            // Add uploaded media to the list
-            responses.forEach(response => {
-                if (response && response.data) {
-                    this.uploadedMedia.push(response.data);
-                }
-            });
-
-            // Clear uploaded files and previews
-            this.uploadedFiles = [];
-            this.previewUrls.forEach(url => this.mediaService.revokePreviewUrl(url));
-            this.previewUrls = [];
-            this.uploadProgress = {};
-
-            this.isUploading = false;
-            this.toastService.success('Upload complete', `${responses.length} file(s) uploaded successfully`);
-        }).catch(error => {
-            this.isUploading = false;
-            this.toastService.error('Upload failed', 'Some files failed to upload');
-        });
-    }
-
-    getUploadProgress(): number {
-        const progressValues = Object.values(this.uploadProgress);
-        if (progressValues.length === 0) return 0;
-        return progressValues.reduce((sum, progress) => sum + progress, 0) / progressValues.length;
-    }
-
-    getTotalUploadedImages(): number {
-        return this.uploadedMedia.length + this.uploadedFiles.length;
-    }
-
-    getAllImageUrls(): string[] {
-        const urls: string[] = [];
-        
-        // Add uploaded media URLs
-        this.uploadedMedia.forEach(media => {
-            urls.push(this.mediaService.getMediaUrl(media.filename));
-        });
-        
-        // Add preview URLs for pending uploads
-        urls.push(...this.previewUrls);
-        
-        // Add existing image URLs from form
-        const formImageUrls = this.productForm.get('imageUrls')?.value;
-        if (formImageUrls) {
-            const existingUrls = formImageUrls.split(',')
-                .map((url: string) => url.trim())
-                .filter((url: string) => url.length > 0);
-            urls.push(...existingUrls);
-        }
-        
-        return urls;
-    }
-
-    clearAllMedia(): void {
-        // Clear uploaded files and previews
-        this.uploadedFiles = [];
-        this.previewUrls.forEach(url => this.mediaService.revokePreviewUrl(url));
-        this.previewUrls = [];
-        this.uploadedMedia = [];
-        this.uploadProgress = {};
-        
-        // Clear form image URLs
-        this.productForm.patchValue({ imageUrls: '' });
-        
-        this.toastService.success('Media cleared', 'All media files removed');
+    onMediaUploadError(error: any): void {
+        console.error('Product media upload error:', error);
+        this.toastService.error('Upload failed', error.message || 'Failed to upload media');
     }
 
     // Pagination helper methods

@@ -17,6 +17,7 @@ import { NoAuthGuard } from './guards/no-auth.guard';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 import { PostOwnerGuard } from './guards/post-owner.guard';
 import { ChatComponent } from './components/chat/chat.component';
+import { AIChatComponent } from './components/ai-chat/ai-chat.component';
 import { ProductListComponent } from './components/marketplace/product-list/product-list.component';
 import { ProductListFixedComponent } from './components/marketplace/product-list/product-list-fixed.component';
 
@@ -58,6 +59,8 @@ export const routes: Routes = [
           { path: 'orders', component: OrderManagementComponent },
           { path: 'products', component: ProductManagementComponent },
           { path: 'analytics', component: AdminDashboardComponent }, // Placeholder
+          { path: 'chat', component: ChatComponent },
+          { path: 'chat/:id', component: ChatComponent },
           { path: 'settings', component: AdminDashboardComponent } // Placeholder
         ]
       },
@@ -69,6 +72,7 @@ export const routes: Routes = [
       { path: 'posts/:id', redirectTo: 'community/:id', pathMatch: 'full' },
       { path: 'chat', component: ChatComponent, canActivate: [AuthGuard] },
       { path: 'chat/:id', component: ChatComponent, canActivate: [AuthGuard] },
+      { path: 'ai-chat', component: AIChatComponent },
       
       // Trip Routes
       { path: 'trips', component: TripListComponent },

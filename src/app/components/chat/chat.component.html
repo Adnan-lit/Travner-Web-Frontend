@@ -1,0 +1,187 @@
+<div class="chat-container">
+  <!-- Sidebar -->
+  <div class="chat-sidebar">
+    <!-- Header -->
+    <div class="chat-header">
+      <h2>Messages</h2>
+      <div class="header-actions">
+        <button class="new-message-btn" (click)="toggleUserSearch()" title="New Message">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14m-7-7h14"></path>
+          </svg>
+        </button>
+        <div class="connection-status" [class]="getConnectionStatusClass()">
+          {{ getConnectionStatusText() }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="chat-search">
+      <input 
+        type="text" 
+        placeholder="Search conversations..."
+        [(ngModel)]="conversationSearchQuery"
+        (input)="onConversationSearch($event)"
+        class="search-input">
+    </div>
+
+    <!-- Conversations List -->
+    <div class="conversations-list">
+      <div *ngIf="loadingConversations" class="loading">
+        Loading conversations...
+      </div>
+      
+      <div *ngIf="!loadingConversations && filteredConversations.length === 0" class="no-conversations">
+        No conversations found
+      </div>
+      
+      <div 
+        *ngFor="let conversation of filteredConversations" 
+        class="conversation-item"
+        [class.active]="selectedConversation?.id === conversation.id"
+        (click)="selectConversation(conversation)">
+        
+        <div class="conversation-avatar">
+          <div class="avatar-placeholder">
+            {{ getConversationTitle(conversation).charAt(0) }}
+          </div>
+        </div>
+        
+        <div class="conversation-content">
+          <div class="conversation-header">
+            <h4 class="conversation-title">{{ getConversationTitle(conversation) }}</h4>
+            <span class="conversation-time">{{ getConversationTime(conversation) }}</span>
+          </div>
+          
+          <div class="conversation-preview">
+            <p class="last-message">{{ getConversationLastMessage(conversation) }}</p>
+            <span *ngIf="conversation.unreadCount > 0" class="unread-badge">
+              {{ conversation.unreadCount }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Chat Area -->
+  <div class="chat-main">
+    <!-- Chat Header -->
+    <div class="chat-main-header" *ngIf="selectedConversation">
+      <div class="chat-user-info">
+        <div class="user-avatar">
+          <div class="avatar-placeholder">
+            {{ getChatHeaderTitle().charAt(0) }}
+          </div>
+        </div>
+        <div class="user-details">
+          <h3>{{ getChatHeaderTitle() }}</h3>
+          <span class="user-status">Online</span>
+        </div>
+      </div>
+      
+      <div class="chat-actions">
+        <button class="action-btn" (click)="showConversationInfo()" title="Conversation Info">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- No Conversation Selected -->
+    <div class="no-conversation" *ngIf="!selectedConversation">
+      <div class="no-conversation-content">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <h3>Select a conversation</h3>
+        <p>Choose a conversation from the sidebar to start messaging</p>
+        <button class="start-chat-btn" (click)="toggleUserSearch()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14m-7-7h14"></path>
+          </svg>
+          Start New Chat
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages Area -->
+    <div class="messages-container" *ngIf="selectedConversation" #messagesContainer>
+      <div *ngIf="loadingMessages" class="loading-messages">
+        Loading messages...
+      </div>
+      
+      <div *ngFor="let message of messages" class="message-item" [class.own-message]="isOwnMessage(message)">
+        <div class="message-content">
+          <div class="message-header" *ngIf="!isOwnMessage(message)">
+            <span class="sender-name">{{ getSenderDisplayName(message) }}</span>
+            <span class="message-time">{{ getMessageTime(message) }}</span>
+          </div>
+          
+          <div class="message-bubble">
+            <p>{{ message.content }}</p>
+          </div>
+          
+          <div class="message-footer">
+            <span class="message-status" [class]="message.status.toLowerCase()" *ngIf="isOwnMessage(message)">
+              {{ message.status }}
+            </span>
+            <span class="message-time">
+              {{ getMessageTime(message) }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message Input -->
+    <div class="message-input-container" *ngIf="selectedConversation">
+      <div class="message-input-wrapper">
+        <button class="attach-btn" (click)="attachFile()" title="Attach File">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.64 16.2a2 2 0 0 1-2.83-2.83l8.49-8.49"></path>
+          </svg>
+        </button>
+        
+        <input 
+          type="text" 
+          [(ngModel)]="newMessage"
+          (input)="onMessageInput()"
+          (keydown)="onKeyDown($event)"
+          placeholder="Type a message..."
+          class="message-input"
+          [disabled]="sendingMessage"
+          #messageInput>
+        
+        <button 
+          class="send-btn" 
+          (click)="sendMessage()" 
+          [disabled]="!newMessage.trim() || sendingMessage"
+          title="Send Message">
+          <svg *ngIf="!sendingMessage" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
+          </svg>
+          <div *ngIf="sendingMessage" class="spinner"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Search Overlay -->
+  <app-user-search 
+    *ngIf="showUserSearch"
+    (userSelected)="onUserSelected($event)"
+    (closeSearch)="onCloseUserSearch()">
+  </app-user-search>
+
+  <!-- Floating Action Button for Mobile -->
+  <button class="floating-action-btn" (click)="toggleUserSearch()" title="New Message">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 5v14m-7-7h14"></path>
+    </svg>
+  </button>
+</div>

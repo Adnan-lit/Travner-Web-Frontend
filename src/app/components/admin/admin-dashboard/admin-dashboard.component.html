@@ -1,256 +1,243 @@
 <div class="admin-dashboard">
-  <!-- Header Section -->
+  <!-- Header -->
   <div class="dashboard-header">
-    <div class="header-content">
-      <h1 class="dashboard-title">
-        <i class="fas fa-tachometer-alt"></i>
-        Admin Dashboard
-      </h1>
-      <p class="dashboard-subtitle">Monitor and manage your travel community platform</p>
-    </div>
+    <h1>Admin Dashboard</h1>
     <div class="header-actions">
-      <button class="btn btn-outline" (click)="refreshData()" [disabled]="isLoading">
-        <i class="fas fa-sync-alt" [class.fa-spin]="isLoading"></i>
+      <button class="refresh-btn" (click)="refreshData()" [disabled]="loading">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+          <path d="M21 3v5h-5"/>
+          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+          <path d="M3 21v-5h5"/>
+        </svg>
         Refresh
       </button>
     </div>
   </div>
 
-  <!-- System Alerts -->
-  <div class="alerts-section" *ngIf="systemAlerts.length > 0">
-    <h3 class="section-title">
-      <i class="fas fa-bell"></i>
-      System Alerts
-    </h3>
-    <div class="alerts-grid">
-      <div class="alert-card" 
-           *ngFor="let alert of systemAlerts"
-           [ngClass]="getAlertColor(alert.type)">
-        <div class="alert-content">
-          <div class="alert-icon">
-            <i [ngClass]="getAlertIcon(alert.type)"></i>
-          </div>
-          <div class="alert-text">
-            <h4>{{alert.title}}</h4>
-            <p>{{alert.message}}</p>
-          </div>
-        </div>
-        <div class="alert-actions">
-          <button class="btn btn-sm btn-primary" (click)="handleSystemAlert(alert)">
-            <i class="fas fa-cog"></i>
-            Action
-          </button>
-          <button class="btn btn-sm btn-outline" (click)="dismissAlert(alert.id)">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-      </div>
-    </div>
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="loading-spinner"></div>
+    <p>Loading dashboard data...</p>
   </div>
 
-  <!-- Admin Access Warning -->
-  <div class="admin-warning" *ngIf="!currentUser || !authService.isAdmin()">
-    <div class="warning-card">
-      <div class="warning-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-          <line x1="12" y1="9" x2="12" y2="13"></line>
-          <line x1="12" y1="17" x2="12.01" y2="17"></line>
-        </svg>
-      </div>
-      <div class="warning-content">
-        <h3>Admin Access Required</h3>
-        <p>You need admin privileges to access this dashboard. Please log in with an admin account.</p>
-        <div class="admin-credentials">
-          <p><strong>Default Admin Credentials:</strong></p>
-          <p>Username: <code>admin</code></p>
-          <p>Password: <code>admin123</code></p>
-        </div>
-        <button class="btn btn-primary" (click)="goToSignin()">Go to Sign In</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Statistics Overview -->
-  <div class="stats-overview" *ngIf="currentUser && authService.isAdmin()">
-    <h3 class="section-title">
-      <i class="fas fa-chart-bar"></i>
-      Platform Overview
-    </h3>
+  <!-- Dashboard Content -->
+  <div *ngIf="!loading" class="dashboard-content">
+    <!-- Stats Overview -->
     <div class="stats-grid">
-      <!-- Users Stats -->
-      <div class="stat-card primary">
-        <div class="stat-icon">
-          <i class="fas fa-users"></i>
+      <div class="stat-card">
+        <div class="stat-icon users">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
         </div>
         <div class="stat-content">
-          <h4>Total Users</h4>
-          <p class="stat-value">{{dashboardStats.totalUsers | number}}</p>
-          <p class="stat-change">
-            <i class="fas fa-arrow-up text-green-500"></i>
-            {{dashboardStats.activeUsers}} active
-          </p>
+          <h3>{{ dashboardStats?.users?.total || 0 }}</h3>
+          <p>Total Users</p>
+          <div class="stat-details">
+            <span class="active">{{ dashboardStats?.users?.active || 0 }} active</span>
+            <span class="new">{{ dashboardStats?.users?.newThisWeek || 0 }} new this week</span>
+          </div>
         </div>
       </div>
 
-      <!-- Posts Stats -->
-      <div class="stat-card success">
-        <div class="stat-icon">
-          <i class="fas fa-comments"></i>
+      <div class="stat-card">
+        <div class="stat-icon content">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+          </svg>
         </div>
         <div class="stat-content">
-          <h4>Community Posts</h4>
-          <p class="stat-value">{{dashboardStats.totalPosts | number}}</p>
-          <p class="stat-change">
-            <i class="fas fa-image text-blue-500"></i>
-            {{dashboardStats.postsWithMedia}} with media
-          </p>
+          <h3>{{ (dashboardStats?.content?.posts || 0) + (dashboardStats?.content?.itineraries || 0) }}</h3>
+          <p>Total Content</p>
+          <div class="stat-details">
+            <span>{{ dashboardStats?.content?.posts || 0 }} posts</span>
+            <span>{{ dashboardStats?.content?.itineraries || 0 }} itineraries</span>
+          </div>
         </div>
       </div>
 
-      <!-- Orders Stats -->
-      <div class="stat-card warning">
-        <div class="stat-icon">
-          <i class="fas fa-shopping-bag"></i>
+      <div class="stat-card">
+        <div class="stat-icon engagement">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
         </div>
         <div class="stat-content">
-          <h4>Marketplace Orders</h4>
-          <p class="stat-value">{{dashboardStats.totalOrders | number}}</p>
-          <p class="stat-change">
-            <i class="fas fa-clock text-orange-500"></i>
-            {{dashboardStats.pendingOrders}} pending
-          </p>
+          <h3>{{ dashboardStats?.engagement?.chatMessages || 0 }}</h3>
+          <p>Chat Messages</p>
+          <div class="stat-details">
+            <span>{{ dashboardStats?.engagement?.votes || 0 }} votes</span>
+          </div>
         </div>
       </div>
 
-      <!-- Products Stats -->
-      <div class="stat-card info">
-        <div class="stat-icon">
-          <i class="fas fa-box"></i>
+      <div class="stat-card">
+        <div class="stat-icon revenue">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+          </svg>
         </div>
         <div class="stat-content">
-          <h4>Products</h4>
-          <p class="stat-value">{{dashboardStats.totalProducts | number}}</p>
-          <p class="stat-change">
-            <i class="fas fa-check-circle text-green-500"></i>
-            {{dashboardStats.availableProducts}} available
-          </p>
+          <h3>${{ (dashboardStats?.marketplace?.revenue || 0).toFixed(2) }}</h3>
+          <p>Total Revenue</p>
+          <div class="stat-details">
+            <span>{{ dashboardStats?.marketplace?.orders || 0 }} orders</span>
+          </div>
+        </div>
         </div>
       </div>
 
       <!-- System Health -->
-      <div class="stat-card" [ngClass]="'health-' + dashboardStats.systemHealth">
-        <div class="stat-icon">
-          <i class="fas fa-heartbeat"></i>
+    <div class="health-section">
+      <h2>System Health</h2>
+      <div class="health-grid">
+        <div class="health-card">
+          <div class="health-status" [class.healthy]="systemHealth?.database?.connected" [class.unhealthy]="!systemHealth?.database?.connected">
+            <div class="status-indicator"></div>
+            <span>{{ systemHealth?.database?.status || 'Unknown' }}</span>
+          </div>
+          <p>Database</p>
         </div>
-        <div class="stat-content">
-          <h4>System Health</h4>
-          <p class="stat-value">{{dashboardStats.systemHealth | titlecase}}</p>
-          <p class="stat-change">
-            <i class="fas fa-clock text-gray-500"></i>
-            Updated {{formatTimestamp(dashboardStats.lastUpdate)}}
-          </p>
-        </div>
+
+        <div class="health-card">
+          <div class="memory-usage">
+            <div class="memory-bar">
+              <div class="memory-fill" [style.width.%]="(systemHealth?.memory?.usagePercent || 0)"></div>
+            </div>
+            <span>{{ systemHealth?.memory?.usagePercent || 0 }}%</span>
+          </div>
+          <p>Memory Usage</p>
       </div>
 
-      <!-- Media Issues -->
-      <div class="stat-card" [ngClass]="dashboardStats.postsWithInvalidMedia > 0 ? 'danger' : 'success'">
-        <div class="stat-icon">
-          <i class="fas fa-exclamation-triangle"></i>
+        <div class="health-card">
+          <div class="uptime">
+            <span>{{ formatUptime(systemHealth?.system?.uptime) }}</span>
         </div>
-        <div class="stat-content">
-          <h4>Media Issues</h4>
-          <p class="stat-value">{{dashboardStats.postsWithInvalidMedia | number}}</p>
-          <p class="stat-change">
-            <i class="fas fa-link text-red-500"></i>
-            Invalid URLs
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Quick Actions -->
-  <div class="quick-actions">
-    <h3 class="section-title">
-      <i class="fas fa-bolt"></i>
-      Quick Actions
-    </h3>
-    <div class="actions-grid">
-      <a routerLink="/admin/users" class="action-card">
-        <div class="action-icon">
-          <i class="fas fa-users"></i>
-        </div>
-        <h4>Manage Users</h4>
-        <p>View and manage user accounts</p>
-      </a>
-
-      <a routerLink="/admin/posts" class="action-card">
-        <div class="action-icon">
-          <i class="fas fa-comments"></i>
-        </div>
-        <h4>Moderate Content</h4>
-        <p>Review and moderate posts</p>
-      </a>
-
-      <a routerLink="/admin/orders" class="action-card">
-        <div class="action-icon">
-          <i class="fas fa-shopping-cart"></i>
-        </div>
-        <h4>Process Orders</h4>
-        <p>Manage marketplace orders</p>
-      </a>
-
-      <a routerLink="/admin/products" class="action-card">
-        <div class="action-icon">
-          <i class="fas fa-box"></i>
-        </div>
-        <h4>Manage Products</h4>
-        <p>Review and manage products</p>
-      </a>
-
-      <a routerLink="/admin/analytics" class="action-card">
-        <div class="action-icon">
-          <i class="fas fa-chart-line"></i>
-        </div>
-        <h4>View Analytics</h4>
-        <p>Detailed platform analytics</p>
-      </a>
-
-      <a routerLink="/admin/settings" class="action-card">
-        <div class="action-icon">
-          <i class="fas fa-cogs"></i>
-        </div>
-        <h4>System Settings</h4>
-        <p>Configure platform settings</p>
-      </a>
-    </div>
-  </div>
-
-  <!-- Recent Activity -->
-  <div class="recent-activity">
-    <h3 class="section-title">
-      <i class="fas fa-history"></i>
-      Recent Activity
-    </h3>
-    <div class="activity-list">
-      <div class="activity-item" *ngFor="let activity of recentActivities">
-        <div class="activity-icon" [ngClass]="getActivityColor(activity.type)">
-          <i [ngClass]="getActivityIcon(activity.type)"></i>
-        </div>
-        <div class="activity-content">
-          <p class="activity-description">{{activity.description}}</p>
-          <p class="activity-time">{{formatTimestamp(activity.timestamp)}}</p>
-        </div>
+          <p>System Uptime</p>
       </div>
     </div>
   </div>
 
-  <!-- Loading Overlay -->
-  <div class="loading-overlay" *ngIf="isLoading">
-    <div class="loading-content">
-      <div class="spinner"></div>
-      <p>Loading dashboard data...</p>
+    <!-- User Management -->
+    <div class="user-management">
+      <div class="section-header">
+        <h2>User Management</h2>
+        <div class="user-actions">
+          <input type="text" [(ngModel)]="userSearch" placeholder="Search users..." class="search-input">
+          <select [(ngModel)]="selectedRole" class="role-filter">
+            <option value="">All Roles</option>
+            <option value="USER">Users</option>
+            <option value="ADMIN">Admins</option>
+          </select>
+        </div>
+        </div>
+
+      <div class="users-table">
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Joined</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of filteredUsers">
+              <td>
+                <div class="user-info">
+                  <div class="user-avatar">
+                    {{ user.firstName ? user.firstName.charAt(0) : (user.userName ? user.userName.charAt(0) : '') }}
+                  </div>
+                  <div>
+                    <div class="user-name">{{ user.firstName }} {{ user.lastName }}</div>
+                    <div class="user-username">{{ '@' + user.userName }}</div>
+    </div>
+  </div>
+              </td>
+              <td>{{ user.email }}</td>
+              <td>
+                    <span class="role-badge" [class.admin]="user.roles && user.roles.includes('ADMIN')">
+                  {{ user.roles ? user.roles.join(', ') : 'USER' }}
+                </span>
+              </td>
+              <td>
+                <span class="status-badge" [class.active]="user.active" [class.inactive]="!user.active">
+                  {{ user.active ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>{{ formatDate(user.createdAt) }}</td>
+              <td>
+                    <div class="action-buttons">
+                  <button 
+                    class="action-btn activate" 
+                    *ngIf="!user.active"
+                    (click)="activateUser(user.userName)"
+                    [disabled]="loading">
+                    Activate
+                  </button>
+                  <button 
+                    class="action-btn deactivate" 
+                    *ngIf="user.active"
+                    (click)="deactivateUser(user.userName)"
+                    [disabled]="loading">
+                    Deactivate
+                  </button>
+                  <button 
+                    class="action-btn delete" 
+                    (click)="deleteUser(user.userName)"
+                    [disabled]="loading || (user.roles && user.roles.includes('ADMIN'))">
+                    Delete
+                  </button>
+        </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <h2>Quick Actions</h2>
+      <div class="actions-grid">
+        <button class="action-card" (click)="cleanupMediaUrls()" [disabled]="loading">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18"/>
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+          </svg>
+          <h3>Cleanup Media URLs</h3>
+          <p>Remove invalid media references</p>
+        </button>
+
+        <button class="action-card" (click)="exportUserData()" [disabled]="loading">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7,10 12,15 17,10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <h3>Export Data</h3>
+          <p>Export user and content data</p>
+        </button>
+
+        <button class="action-card" (click)="viewSystemLogs()" [disabled]="loading">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10,9 9,9 8,9"/>
+          </svg>
+          <h3>System Logs</h3>
+          <p>View application logs</p>
+        </button>
+      </div>
     </div>
   </div>
 </div>

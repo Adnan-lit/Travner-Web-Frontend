@@ -590,6 +590,26 @@ export class AuthService {
     }
 
     /**
+     * Get authentication data for WebSocket connections
+     */
+    getAuthData(): { username: string; password: string } | null {
+        const authCredentials = localStorage.getItem(AuthService.AUTH_CREDENTIALS_KEY);
+        if (authCredentials) {
+            try {
+                const credentials = JSON.parse(authCredentials);
+                return {
+                    username: credentials.username,
+                    password: credentials.password
+                };
+            } catch (error) {
+                console.error('Error parsing auth credentials:', error);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Check if there's stored authentication data on app initialization
      */
     private checkStoredAuth(): void {
@@ -600,6 +620,9 @@ export class AuthService {
                 const user = JSON.parse(storedUser);
                 this.setCurrentUser(user);
                 console.log('✅ Restored user from localStorage:', user.userName);
+                console.log('✅ User roles restored:', user.roles);
+                console.log('✅ Is authenticated:', this.isAuthenticated());
+                console.log('✅ Is admin:', this.isAdmin());
             } catch (error) {
                 console.error('Error parsing stored user data:', error);
                 this.clearAuthData(); // Clear corrupted data

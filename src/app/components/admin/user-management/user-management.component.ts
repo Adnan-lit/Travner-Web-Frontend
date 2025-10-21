@@ -115,10 +115,11 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       this.filters.role
     ).pipe(takeUntil(this.destroy$))
     .subscribe({
-      next: (response: ApiListResponse<AdminUser>) => {
-        this.users = response.data || [];
-        this.pagination.totalElements = response.pagination?.totalElements || 0;
-        this.pagination.totalPages = response.pagination?.totalPages || 0;
+      next: (response: any) => {
+        // Backend returns data as { content: [...], totalElements: N, totalPages: M, ... }
+        this.users = response.data?.content || [];
+        this.pagination.totalElements = response.data?.totalElements || 0;
+        this.pagination.totalPages = response.data?.totalPages || 0;
         this.isLoading = false;
       },
       error: (error) => {

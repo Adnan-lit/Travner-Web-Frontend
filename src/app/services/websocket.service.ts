@@ -1,346 +1,204 @@
-// Global polyfill removed - no longer needed
-
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { Client, IMessage, StompConfig } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { EnvironmentConfig } from '../config/environment.config';
-import { Message, Conversation } from '../models/common.model';
-
-export interface WebSocketMessage {
-  type: 'SEND_MESSAGE' | 'TYPING' | 'READ_RECEIPT' | 'USER_JOINED' | 'USER_LEFT';
-  conversationId: string;
-  content?: string;
-  messageType?: 'TEXT' | 'IMAGE' | 'FILE';
-  replyToMessageId?: string;
-  isTyping?: boolean;
-  messageId?: string;
-  userId?: string;
-  username?: string;
-}
-
-export interface TypingIndicator {
-  conversationId: string;
-  userId: string;
-  username: string;
-  isTyping: boolean;
-  timestamp: string;
-}
+import { ChatMessage, TypingIndicator } from '../models/chat.model';
+import { ChatService } from './chat.service';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
-export class WebSocketService {
+export class WebSocketService implements OnDestroy {
   private stompClient: Client | null = null;
-  private isConnected = false;
-  private connectionSubject = new BehaviorSubject<boolean>(false);
-  private messageSubject = new Subject<Message>();
-  private typingSubject = new Subject<TypingIndicator>();
-  private connectionStatusSubject = new BehaviorSubject<string>('disconnected');
+  private connectionStatus = new BehaviorSubject<boolean>(false);
+  private destroy$ = new Subject<void>();
+  private subscribedConversations = new Set<string>();
+  
+  private readonly API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
+  private readonly WS_URL = `${this.API_BASE_URL}/ws`;
 
-  // Observable streams
-  public connection$ = this.connectionSubject.asObservable();
-  public isConnected$ = this.connectionSubject.asObservable(); // Alias for compatibility
-  public messages$ = this.messageSubject.asObservable();
-  public typing$ = this.typingSubject.asObservable();
-  public connectionStatus$ = this.connectionStatusSubject.asObservable();
-
-  constructor() { }
+  constructor(
+    private chatService: ChatService,
+    private authService: AuthService
+  ) {}
 
   /**
    * Connect to WebSocket server
    */
-  connect(): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      if (this.isConnected) {
-        resolve(true);
-        return;
-      }
+  connect(): void {
+    if (this.stompClient && this.stompClient.connected) {
+      return;
+    }
 
-      try {
-        const wsUrl = EnvironmentConfig.getWebSocketUrl();
-        console.log('🔌 Connecting to WebSocket:', wsUrl);
+    try {
+      const socket = new SockJS(this.WS_URL);
+      this.stompClient = new Client({
+        webSocketFactory: () => socket,
+        debug: (str) => console.log('WebSocket Debug:', str),
+        connectHeaders: this.getAuthHeaders(),
+      });
 
-        const socket = new SockJS(wsUrl);
-        this.stompClient = new Client({
-          webSocketFactory: () => socket as any,
-          debug: (str) => {
-            if (EnvironmentConfig.isDevelopment()) {
-              console.log('🔌 STOMP Debug:', str);
-            }
-          },
-          reconnectDelay: 5000,
-          heartbeatIncoming: 4000,
-          heartbeatOutgoing: 4000,
-          onConnect: (frame) => {
-            console.log('✅ WebSocket connected:', frame);
-            this.isConnected = true;
-            this.connectionSubject.next(true);
-            this.connectionStatusSubject.next('connected');
-            this.setupSubscriptions();
-            resolve(true);
-          },
-          onStompError: (frame) => {
-            console.error('❌ STOMP error:', frame);
-            this.connectionStatusSubject.next('error');
-            reject(new Error('WebSocket connection failed'));
-          },
-          onWebSocketClose: (event) => {
-            console.log('🔌 WebSocket closed:', event);
-            this.isConnected = false;
-            this.connectionSubject.next(false);
-            this.connectionStatusSubject.next('disconnected');
-          },
-          onWebSocketError: (error) => {
-            console.error('❌ WebSocket error:', error);
-            this.connectionStatusSubject.next('error');
-          }
-        });
+      this.stompClient.onConnect = (frame) => {
+        console.log('WebSocket Connected:', frame);
+        this.connectionStatus.next(true);
+        this.subscribeToChannels();
+      };
 
-        this.stompClient.activate();
-      } catch (error) {
-        console.error('❌ Failed to create WebSocket connection:', error);
-        this.connectionStatusSubject.next('error');
-        reject(error);
-      }
-    });
+      this.stompClient.onStompError = (frame) => {
+        console.error('WebSocket STOMP Error:', frame);
+        this.connectionStatus.next(false);
+      };
+
+      this.stompClient.onWebSocketError = (error) => {
+        console.error('WebSocket Error:', error);
+        this.connectionStatus.next(false);
+      };
+
+      this.stompClient.onWebSocketClose = (event) => {
+        console.log('WebSocket Closed:', event);
+        this.connectionStatus.next(false);
+      };
+
+      this.stompClient.activate();
+    } catch (error) {
+      console.error('Error connecting to WebSocket:', error);
+      this.connectionStatus.next(false);
+    }
   }
 
   /**
    * Disconnect from WebSocket server
    */
   disconnect(): void {
-    if (this.stompClient && this.isConnected) {
-      console.log('🔌 Disconnecting from WebSocket');
+    if (this.stompClient) {
       this.stompClient.deactivate();
-      this.isConnected = false;
-      this.connectionSubject.next(false);
-      this.connectionStatusSubject.next('disconnected');
+      this.stompClient = null;
     }
+    this.connectionStatus.next(false);
+    this.subscribedConversations.clear();
   }
 
   /**
-   * Send a message to a conversation
+   * Subscribe to conversation
    */
-  sendMessage(conversationId: string, content: string, messageType: 'TEXT' | 'IMAGE' | 'FILE' = 'TEXT', replyToMessageId?: string): void {
-    if (!this.isConnected || !this.stompClient) {
-      console.error('❌ WebSocket not connected');
+  subscribeToConversation(conversationId: string): void {
+    if (!this.stompClient || !this.stompClient.connected) {
+      console.warn('WebSocket not connected');
       return;
     }
 
-    const message: WebSocketMessage = {
-      type: 'SEND_MESSAGE',
-      conversationId,
-      content,
-      messageType
-    };
+    if (this.subscribedConversations.has(conversationId)) {
+      return;
+    }
 
-    if (replyToMessageId) {
-      message.replyToMessageId = replyToMessageId;
+    // Subscribe to conversation messages
+    this.stompClient.subscribe(`/topic/conversation/${conversationId}`, (message: IMessage) => {
+      const chatMessage: ChatMessage = JSON.parse(message.body);
+      console.log('WebSocket received message:', chatMessage);
+      this.chatService.addMessageToCache(chatMessage);
+    });
+
+    // Subscribe to typing indicators
+    this.stompClient.subscribe(`/topic/conversation/${conversationId}/typing`, (message: IMessage) => {
+      const typingIndicator: TypingIndicator = JSON.parse(message.body);
+      this.chatService.updateTypingIndicator(
+        conversationId,
+        typingIndicator.userId,
+        typingIndicator.isTyping
+      );
+    });
+
+    this.subscribedConversations.add(conversationId);
+  }
+
+  /**
+   * Unsubscribe from conversation
+   */
+  unsubscribeFromConversation(conversationId: string): void {
+    if (!this.stompClient) {
+      return;
+    }
+
+    this.stompClient.unsubscribe(`/topic/conversation/${conversationId}`);
+    this.stompClient.unsubscribe(`/topic/conversation/${conversationId}/typing`);
+    this.subscribedConversations.delete(conversationId);
+  }
+
+  /**
+   * Send message via WebSocket
+   */
+  sendMessage(request: any): void {
+    if (!this.stompClient || !this.stompClient.connected) {
+      console.warn('WebSocket not connected');
+      return;
     }
 
     this.stompClient.publish({
-      destination: '/app/chat.send',
-      body: JSON.stringify(message)
+      destination: '/app/chat.sendMessage',
+      body: JSON.stringify(request)
     });
-
-    console.log('📤 Message sent:', message);
   }
 
   /**
    * Send typing indicator
    */
   sendTypingIndicator(conversationId: string, isTyping: boolean): void {
-    if (!this.isConnected || !this.stompClient) {
+    if (!this.stompClient || !this.stompClient.connected) {
       return;
     }
 
-    const message: WebSocketMessage = {
-      type: 'TYPING',
+    const typingIndicator = {
       conversationId,
-      isTyping
+      isTyping,
+      timestamp: Date.now()
     };
 
     this.stompClient.publish({
       destination: '/app/chat.typing',
-      body: JSON.stringify(message)
+      body: JSON.stringify(typingIndicator)
     });
-  }
-
-  /**
-   * Send read receipt
-   */
-  sendReadReceipt(conversationId: string, messageId: string): void {
-    if (!this.isConnected || !this.stompClient) {
-      return;
-    }
-
-    const message: WebSocketMessage = {
-      type: 'READ_RECEIPT',
-      conversationId,
-      messageId
-    };
-
-    this.stompClient.publish({
-      destination: '/app/chat.read',
-      body: JSON.stringify(message)
-    });
-  }
-
-  /**
-   * Subscribe to conversation messages
-   */
-  subscribeToConversation(conversationId: string): void {
-    if (!this.isConnected || !this.stompClient) {
-      console.error('❌ WebSocket not connected');
-      return;
-    }
-
-    const subscription = this.stompClient.subscribe(
-      `/topic/conversation/${conversationId}`,
-      (message: IMessage) => {
-        try {
-          const data = JSON.parse(message.body);
-          console.log('📨 Received message:', data);
-          this.messageSubject.next(data);
-        } catch (error) {
-          console.error('❌ Error parsing message:', error);
-        }
-      }
-    );
-
-    console.log(`📡 Subscribed to conversation ${conversationId}`);
-  }
-
-  /**
-   * Subscribe to typing indicators for a conversation
-   */
-  subscribeToTyping(conversationId: string): void {
-    if (!this.isConnected || !this.stompClient) {
-      console.error('❌ WebSocket not connected');
-      return;
-    }
-
-    const subscription = this.stompClient.subscribe(
-      `/topic/conversation/${conversationId}/typing`,
-      (message: IMessage) => {
-        try {
-          const data = JSON.parse(message.body);
-          console.log('⌨️ Received typing indicator:', data);
-          this.typingSubject.next(data);
-        } catch (error) {
-          console.error('❌ Error parsing typing indicator:', error);
-        }
-      }
-    );
-
-    console.log(`⌨️ Subscribed to typing indicators for conversation ${conversationId}`);
-  }
-
-  /**
-   * Subscribe to user-specific messages
-   */
-  subscribeToUserMessages(): void {
-    if (!this.isConnected || !this.stompClient) {
-      console.error('❌ WebSocket not connected');
-      return;
-    }
-
-    const subscription = this.stompClient.subscribe(
-      '/user/queue/messages',
-      (message: IMessage) => {
-        try {
-          const data = JSON.parse(message.body);
-          console.log('📨 Received user message:', data);
-          this.messageSubject.next(data);
-        } catch (error) {
-          console.error('❌ Error parsing user message:', error);
-        }
-      }
-    );
-
-    console.log('📡 Subscribed to user messages');
-  }
-
-  /**
-   * Subscribe to user-specific notifications
-   */
-  subscribeToNotifications(): void {
-    if (!this.isConnected || !this.stompClient) {
-      console.error('❌ WebSocket not connected');
-      return;
-    }
-
-    const subscription = this.stompClient.subscribe(
-      '/user/queue/notifications',
-      (message: IMessage) => {
-        try {
-          const data = JSON.parse(message.body);
-          console.log('🔔 Received notification:', data);
-          // Handle notifications here
-        } catch (error) {
-          console.error('❌ Error parsing notification:', error);
-        }
-      }
-    );
-
-    console.log('📡 Subscribed to notifications');
-  }
-
-  /**
-   * Setup default subscriptions
-   */
-  private setupSubscriptions(): void {
-    this.subscribeToUserMessages();
-    this.subscribeToNotifications();
-  }
-
-  /**
-   * Check if WebSocket is connected
-   */
-  isWebSocketConnected(): boolean {
-    return this.isConnected;
   }
 
   /**
    * Get connection status
    */
-  getConnectionStatus(): string {
-    return this.connectionStatusSubject.value;
+  getConnectionStatus(): Observable<boolean> {
+    return this.connectionStatus.asObservable();
   }
 
   /**
-   * Reconnect to WebSocket
+   * Check if connected
    */
-  reconnect(): Promise<boolean> {
-    console.log('🔄 Attempting to reconnect WebSocket...');
-    this.disconnect();
-    return this.connect();
+  isConnected(): boolean {
+    return this.stompClient?.connected || false;
   }
 
-  /**
-   * Send heartbeat to keep connection alive
-   */
-  sendHeartbeat(): void {
-    if (this.isConnected && this.stompClient) {
-      // STOMP automatically handles heartbeats
-      console.log('💓 Heartbeat sent');
+  private subscribeToChannels(): void {
+    if (!this.stompClient || !this.stompClient.connected) {
+      return;
     }
+
+    // Subscribe to user-specific message notifications
+    this.stompClient.subscribe('/user/queue/messages', (message: IMessage) => {
+      console.log('Received user-specific message:', message.body);
+    });
   }
 
-  /**
-   * Get connection statistics
-   */
-  getConnectionStats(): {
-    isConnected: boolean;
-    status: string;
-    uptime: number;
-  } {
-    return {
-      isConnected: this.isConnected,
-      status: this.connectionStatusSubject.value,
-      uptime: this.isConnected ? Date.now() : 0
-    };
+  private getAuthHeaders(): any {
+    const authData = this.authService.getAuthData();
+    if (authData && authData.username && authData.password) {
+      return {
+        Authorization: `Basic ${btoa(`${authData.username}:${authData.password}`)}`
+      };
+    }
+    return {};
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.disconnect();
   }
 }
-

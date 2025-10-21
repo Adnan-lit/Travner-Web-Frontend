@@ -27,12 +27,12 @@ export class EnvironmentConfig {
         const hostname = window.location.hostname;
 
         if (hostname === 'travner.vercel.app' || hostname.includes('vercel.app')) {
-            return 'wss://travner-web-backend-production.up.railway.app/ws';
+            return 'https://travner-web-backend-production.up.railway.app/ws';
         } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
             // Development: use HTTP for SockJS handshake, proxy will handle WebSocket upgrade
             return '/ws';
         } else {
-            return 'wss://travner-web-backend-production.up.railway.app/ws';
+            return 'https://travner-web-backend-production.up.railway.app/ws';
         }
     }
 

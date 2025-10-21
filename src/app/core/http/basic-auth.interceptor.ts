@@ -11,6 +11,12 @@ import { AuthService } from '../../services/auth.service';
  */
 export const basicAuthInterceptor: HttpInterceptorFn =
     (req: HttpRequest<unknown>, next: HttpHandlerFn): Observable<HttpEvent<unknown>> => {
+        // If request already has Authorization header, skip interceptor
+        if (req.headers.has('Authorization')) {
+            console.log(`🔐 Request already has Authorization header, skipping interceptor: ${req.url}`);
+            return next(req);
+        }
+
         // Skip authentication for public endpoints
         const url = req.url;
         const method = (req.method || 'GET').toUpperCase();
