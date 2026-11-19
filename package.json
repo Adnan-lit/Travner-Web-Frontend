@@ -1,6 +1,10 @@
 {
   "name": "travner-web-frontend",
   "version": "0.0.0",
+  "engines": {
+    "node": ">=20.11.1 <23",
+    "npm": ">=9"
+  },
   "scripts": {
     "ng": "ng",
     "start": "ng serve --proxy-config proxy.conf.json",
