@@ -134,38 +134,19 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
       this.successMessage = '';
 
       const formData = this.signinForm.value;
-      console.log('Testing authentication with:', { username: formData.username });
 
-
-      this.authService.testAuthentication(formData.username, formData.password).subscribe({
-        next: (response: any) => {
+      this.authService.login(formData.username, formData.password).subscribe({
+        next: () => {
           this.isLoading = false;
-          console.log('Authentication test successful:', response);
-
-          // Verify authentication was properly set up
-          const isAuthVerified = this.authService.verifyAuthentication();
-          console.log('Authentication verification result:', isAuthVerified);
-
-          // Show success message
           this.successMessage = 'Login successful! Redirecting...';
 
           // Navigate to appropriate URL based on user role
           setTimeout(() => {
-            const redirectUrl = this.authService.getRedirectUrl();
-            console.log('🔐 Redirecting user to:', redirectUrl);
-            this.router.navigate([redirectUrl]);
+            this.router.navigate([this.authService.getRedirectUrl()]);
           }, 1000);
         },
         error: (error) => {
           this.isLoading = false;
-          console.error('Full signin error details:', {
-            status: error.status,
-            statusText: error.statusText,
-            error: error.error,
-            message: error.message,
-            url: error.url,
-            fullError: error
-          });
 
           // Handle different error scenarios with improved error messages
           if (error.status === 0) {
@@ -183,14 +164,6 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
           } else {
             this.errorMessage = error.message || `Sign in failed with status ${error.status}. Please check your credentials and try again.`;
           }
-
-          // Log debugging information for developers
-          console.log('🔍 Debugging Information:');
-          console.log(`  - Frontend Origin: ${window.location.origin}`);
-          console.log(`  - Backend URL: ${this.authService['API_BASE_URL'] || 'Proxy to backend (empty string in dev mode)'}`);
-          console.log(`  - Error Status: ${error.status}`);
-          console.log(`  - Error Message: ${error.message}`);
-
         }
       });
     } else {

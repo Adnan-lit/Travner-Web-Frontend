@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject, throwError } from 'rxjs';
-import { tap, catchError, map } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { catchError, finalize, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { EnvironmentConfig } from '../config/environment.config';
 import { ApiResponse } from '../models/api-response.model';
@@ -21,297 +21,211 @@ export interface SignupResponse {
     success?: boolean;
     message?: string;
     user?: any;
-    [key: string]: any; // Allow any additional properties
+    [key: string]: any;
 }
 
+/** Public identity returned by the backend's /api/auth endpoints. */
 export interface AuthUser {
-    id?: {
-        timestamp: number;
-        date: string;
-    };
-    userName: string;
-    firstName?: string;
-    lastName?: string;
+    id?: string;
+    username: string;
     email?: string;
-    password?: string;
     roles?: string[];
-    bio?: string | null;
-    profileImageUrl?: string | null;
-    location?: string | null;
-    createdAt?: string;
-    lastLoginAt?: string;
-    active?: boolean;
 }
 
+interface AuthResponseData {
+    accessToken: string;
+    tokenType: string;
+    expiresIn: number;
+    user: AuthUser;
+}
+
+/**
+ * Authentication state. The access token lives only in memory; the rotating
+ * refresh token is an HttpOnly cookie set by the backend and is never readable
+ * by JavaScript. No credentials or tokens are written to localStorage.
+ */
 @Injectable({
     providedIn: 'root'
 })
 export class AuthService {
-    // Storage keys for authentication data - using the key specified in the frontend guide
-    private static readonly AUTH_CREDENTIALS_KEY = 'authCredentials';
-    private static readonly CURRENT_USER_KEY = 'currentUser';
-
-    // API URL configuration for different environments (proxied via Vercel in prod)
     private readonly API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
-    /**
-     * Ensure base URL has no trailing slash (except a lone "/api") to prevent double slashes
-     */
-    private normalizeBaseUrl(url: string): string {
-        if (!url) return '';
-        // Keep exactly '/api' as-is (development proxy usage)
-        if (url === '/api') return url;
-        return url.replace(/\/+$/, '');
-    }
+
+    private accessTokenSubject = new BehaviorSubject<string | null>(null);
+    public accessToken$ = this.accessTokenSubject.asObservable();
 
     private currentUserSubject = new BehaviorSubject<User | null>(null);
     public currentUser$ = this.currentUserSubject.asObservable();
+
     private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
     public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
-    // Track user roles
     private userRoles: string[] = [];
+
+    /** Single-flight refresh so parallel 401s trigger only one rotation. */
+    private refreshInFlight$: Observable<AuthResponseData> | null = null;
 
     constructor(
         private http: HttpClient,
         private router: Router
-    ) {
-        // Clean up old localStorage keys and migrate to new ones
-        this.migrateOldAuthData();
-        // Check if user is already logged in on service initialization
-        this.checkStoredAuth();
+    ) {}
+
+    // ------------------------------------------------------------------
+    // Session lifecycle
+    // ------------------------------------------------------------------
+
+    /** Called once at startup; the refresh cookie restores the session. */
+    initializeSession(): Observable<boolean> {
+        return this.refresh().pipe(
+            map(() => true),
+            catchError(() => {
+                this.clearAuthData();
+                return of(false);
+            })
+        );
     }
 
-    /**
-     * Check if the current user has a specific role
-     */
+    /** Exchange username/password for an access token and refresh cookie. */
+    login(username: string, password: string): Observable<AuthResponseData> {
+        const endpoint = `${this.API_BASE_URL}/api/auth/login`;
+        return this.http.post<ApiResponse<AuthResponseData>>(
+            endpoint,
+            { username: username.toLowerCase(), password },
+            { withCredentials: true }
+        ).pipe(
+            map(response => this.unwrap(response, 'Invalid username or password')),
+            tap(data => this.applySession(data))
+        );
+    }
+
+    /** Rotate the refresh cookie and replace the in-memory access token. */
+    refresh(): Observable<AuthResponseData> {
+        if (this.refreshInFlight$) {
+            return this.refreshInFlight$;
+        }
+
+        const endpoint = `${this.API_BASE_URL}/api/auth/refresh`;
+        this.refreshInFlight$ = this.http.post<ApiResponse<AuthResponseData>>(
+            endpoint, {}, { withCredentials: true }
+        ).pipe(
+            map(response => this.unwrap(response, 'Session expired')),
+            tap(data => this.applySession(data)),
+            catchError(error => {
+                this.clearAuthData();
+                return throwError(() => error);
+            }),
+            finalize(() => { this.refreshInFlight$ = null; }),
+            shareReplay(1)
+        );
+
+        return this.refreshInFlight$;
+    }
+
+    /** Revoke the refresh token on the server and clear local state. */
+    logout(): void {
+        const endpoint = `${this.API_BASE_URL}/api/auth/logout`;
+        this.http.post(endpoint, {}, { withCredentials: true })
+            .pipe(catchError(() => of(null)))
+            .subscribe(() => undefined);
+        this.clearAuthData();
+        this.router.navigate(['/signin']);
+    }
+
+    /** Fetch the authenticated user (used to enrich the profile after login). */
+    me(): Observable<AuthUser> {
+        return this.http.get<ApiResponse<AuthUser>>(`${this.API_BASE_URL}/api/auth/me`).pipe(
+            map(response => this.unwrap(response, 'Unable to load user'))
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // Identity / state accessors used across the app
+    // ------------------------------------------------------------------
+
+    getAccessToken(): string | null {
+        return this.accessTokenSubject.value;
+    }
+
+    /** Backwards-compatible alias; no longer reads localStorage. */
+    getToken(): string | null {
+        return this.getAccessToken();
+    }
+
+    getCurrentUser(): User | null {
+        return this.currentUserSubject.value;
+    }
+
+    isAuthenticated(): boolean {
+        return this.isAuthenticatedSubject.value;
+    }
+
+    /** Kept for callers that check before navigating; backed by auth state. */
+    verifyAuthentication(): boolean {
+        return this.isAuthenticated();
+    }
+
     hasRole(role: string): boolean {
         return this.userRoles.includes(role);
     }
 
-    /**
-     * Check if the current user is an admin
-     */
     isAdmin(): boolean {
         return this.hasRole('ADMIN');
     }
 
-    /**
-     * Determine the appropriate API base URL based on environment
-     */
-    private getApiBaseUrl(): string {
-        return EnvironmentConfig.getApiBaseUrl();
+    getRedirectUrl(): string {
+        if (!this.isAuthenticated()) {
+            return '/signin';
+        }
+        return this.isAdmin() ? '/admin' : '/dashboard';
     }
 
-    /**
-     * Check if we're running in production environment
-     */
-    private isProduction(): boolean {
-        return window.location.hostname !== 'localhost' &&
-            window.location.hostname !== '127.0.0.1' &&
-            !window.location.hostname.includes('localhost');
-    }
+    // ------------------------------------------------------------------
+    // Existing account/profile APIs (all use the auth interceptor)
+    // ------------------------------------------------------------------
 
-    /**
-     * Create a new user account
-     */
     signup(signupData: SignupRequest): Observable<ApiResponse<User>> {
         const endpoint = `${this.API_BASE_URL}/api/public/register`;
-        
-        // Normalize username to lowercase to match signin behavior
-        const normalizedSignupData = {
-            ...signupData,
-            userName: signupData.userName.toLowerCase()
-        };
-        
-        
-        return this.http.post<ApiResponse<User>>(endpoint, normalizedSignupData)
-            .pipe(
-                catchError(error => {
-                    throw error;
-                })
-            );
+        const normalizedSignupData = { ...signupData, userName: signupData.userName.toLowerCase() };
+        return this.http.post<ApiResponse<User>>(endpoint, normalizedSignupData);
     }
 
-    /**
-     * Health check endpoint
-     */
     healthCheck(): Observable<ApiResponse<{ status: string; timestamp: string }>> {
-        const endpoint = `${this.API_BASE_URL}/actuator/health`;
-        return this.http.get<ApiResponse<{ status: string; timestamp: string }>>(endpoint)
-            .pipe(
-                catchError(error => {
-                    throw error;
-                })
-            );
+        return this.http.get<ApiResponse<{ status: string; timestamp: string }>>(
+            `${this.API_BASE_URL}/actuator/health`);
     }
 
-    /**
-     * Test authentication by making a request to a protected endpoint
-     * Since there's no separate sign-in endpoint, we test auth by accessing a protected resource
-     */
-    testAuthentication(username: string, password: string): Observable<ApiResponse<User>> {
-        // Use the user profile endpoint to test authentication
-        const endpoint = `${this.API_BASE_URL}/api/user/profile`;
-
-        // Normalize username to lowercase to match backend expectations
-        const normalizedUsername = username.toLowerCase();
-
-        // Create Basic Auth header for this specific request
-        const credentials = btoa(`${normalizedUsername}:${password}`);
-        const headers = {
-            'Authorization': `Basic ${credentials}`
-        };
-
-        return this.http.get<ApiResponse<User>>(endpoint, { headers })
-            .pipe(
-                tap(response => {
-                    if (response.success && response.data) {
-                        // Store authentication data with normalized username
-                        this.setCurrentUser(response.data);
-                        this.storeAuthData(normalizedUsername, password, response.data);
-                    }
-                }),
-                catchError(error => {
-                    // Clear any stored auth data on error
-                    this.clearAuthData();
-                    
-                    // Provide more specific error messages
-                    if (error.status === 401) {
-                        throw new Error('Invalid username or password');
-                    } else if (error.status === 403) {
-                        throw new Error('Account is disabled or access denied');
-                    } else if (error.status === 0) {
-                        throw new Error('Network error: Unable to connect to server');
-                    } else {
-                        throw new Error(`Authentication failed: ${error.message || 'Unknown error'}`);
-                    }
-                })
-            );
-    }
-
-    /**
-     * Delete the current user account
-     */
     deleteUser(): Observable<void> {
-        const endpoint = `${this.API_BASE_URL}/api/user/account`;
-        return this.http.delete<void>(endpoint)
-            .pipe(
-                tap(() => {
-                    this.logout();
-                }),
-                catchError(error => {
-                    throw error;
-                })
-            );
+        return this.http.delete<void>(`${this.API_BASE_URL}/api/user/account`)
+            .pipe(tap(() => this.logout()));
     }
 
-    /**
-     * Check username availability
-     */
     checkUsername(username: string): Observable<ApiResponse<{ available: boolean }>> {
-        const endpoint = `${this.API_BASE_URL}/api/public/check-username/${username}`;
-        return this.http.get<ApiResponse<{ available: boolean }>>(endpoint)
-            .pipe(
-                catchError(error => {
-                    throw error;
-                })
-            );
+        return this.http.get<ApiResponse<{ available: boolean }>>(
+            `${this.API_BASE_URL}/api/public/check-username/${username}`);
     }
 
-    /**
-     * Request password reset (Not implemented in backend yet)
-     * TODO: Implement when backend adds password reset functionality
-     */
-    requestPasswordReset(username: string): Observable<ApiResponse<{ message: string; resetToken?: string }>> {
-        // Backend doesn't implement password reset yet
-        return throwError(() => new Error('Password reset not implemented in backend yet'));
+    requestPasswordReset(): Observable<ApiResponse<{ message: string }>> {
+        return throwError(() => new Error('Password reset is not available yet'));
     }
 
-    /**
-     * Reset password with token (Not implemented in backend yet)
-     * TODO: Implement when backend adds password reset functionality
-     */
-    resetPasswordWithToken(token: string, newPassword: string): Observable<ApiResponse<{ message: string }>> {
-        // Backend doesn't implement password reset yet
-        return throwError(() => new Error('Password reset not implemented in backend yet'));
+    resetPasswordWithToken(): Observable<ApiResponse<{ message: string }>> {
+        return throwError(() => new Error('Password reset is not available yet'));
     }
 
-    /**
-     * Update user profile (full update)
-     */
     updateProfile(profileData: UpdateProfileRequest): Observable<ApiResponse<User>> {
-        const endpoint = `${this.API_BASE_URL}/api/user/profile`;
-        return this.http.put<ApiResponse<User>>(endpoint, profileData)
-            .pipe(
-                tap(response => {
-                    // Update local user data
-                    if (response.success && response.data) {
-                        this.setCurrentUser(response.data);
-                        const authData = this.getStoredAuthData();
-                        if (authData) {
-                            // Use normalized username when storing updated credentials
-                            this.storeAuthData(authData.username, authData.password, response.data);
-                        }
-                    }
-                }),
-                catchError(error => {
-                    throw error;
-                })
-            );
+        return this.http.put<ApiResponse<User>>(`${this.API_BASE_URL}/api/user/profile`, profileData)
+            .pipe(tap(response => this.updateCurrentUser(response.data)));
     }
 
-    /**
-     * Update user profile (partial update)
-     */
     updateProfilePartial(profileData: Partial<UpdateProfileRequest>): Observable<ApiResponse<User>> {
-        const endpoint = `${this.API_BASE_URL}/api/user/profile`;
-        return this.http.patch<ApiResponse<User>>(endpoint, profileData)
-            .pipe(
-                tap(response => {
-                    // Update local user data
-                    if (response.success && response.data) {
-                        this.setCurrentUser(response.data);
-                        const authData = this.getStoredAuthData();
-                        if (authData) {
-                            // Use normalized username when storing updated credentials
-                            this.storeAuthData(authData.username, authData.password, response.data);
-                        }
-                    }
-                }),
-                catchError(error => {
-                    throw error;
-                })
-            );
+        return this.http.patch<ApiResponse<User>>(`${this.API_BASE_URL}/api/user/profile`, profileData)
+            .pipe(tap(response => this.updateCurrentUser(response.data)));
     }
 
-    /**
-     * Change user password
-     */
     changePassword(currentPassword: string, newPassword: string): Observable<ApiResponse<{ message: string }>> {
-        const requestBody = { currentPassword, newPassword };
-        const endpoint = `${this.API_BASE_URL}/api/user/password`;
-        return this.http.put<ApiResponse<{ message: string }>>(endpoint, requestBody)
-            .pipe(
-                tap(response => {
-                    // Update stored credentials with new password
-                    if (response.success) {
-                        const authData = this.getStoredAuthData();
-                        const currentUser = this.getCurrentUser();
-                        if (authData && currentUser) {
-                            // Use normalized username when storing updated credentials
-                            this.storeAuthData(authData.username, newPassword, currentUser);
-                        }
-                    }
-                }),
-                catchError(error => {
-                    throw error;
-                })
-            );
+        return this.http.put<ApiResponse<{ message: string }>>(
+            `${this.API_BASE_URL}/api/user/password`, { currentPassword, newPassword });
     }
 
-    /**
-     * Create first admin user (only works if no admin exists)
-     */
     createFirstAdmin(userData: {
         userName: string;
         password: string;
@@ -319,368 +233,80 @@ export class AuthService {
         lastName: string;
         email: string;
     }): Observable<ApiResponse<{ message: string }>> {
-        const endpoint = `${this.API_BASE_URL}/api/public/create-first-admin`;
-        return this.http.post<ApiResponse<{ message: string }>>(endpoint, userData)
-            .pipe(
-                catchError(error => {
-                    throw error;
-                })
-            );
+        return this.http.post<ApiResponse<{ message: string }>>(
+            `${this.API_BASE_URL}/api/public/create-first-admin`, userData);
     }
 
-    /**
-     * Sign out the current user
-     */
-    logout(): void {
-        this.clearAuthData();
-        this.router.navigate(['/']);
-    }
-
-    /**
-     * Clear all authentication data (for debugging)
-     */
-    clearAllAuthData(): void {
-        this.clearAuthData();
-        
-        // Also clear any other potential auth-related keys
-        const allPossibleKeys = [
-            'authCredentials',
-            'currentUser',
-            'travner_credentials',
-            'travner_auth',
-            'travner_user',
-            'travner_user_data',
-            'travner_login_attempts'
-        ];
-        
-        allPossibleKeys.forEach(key => {
-            if (localStorage.getItem(key)) {
-                localStorage.removeItem(key);
-            }
-        });
-        
-    }
-
-    /**
-     * Test cart authentication specifically
-     */
     testCartAuthentication(): Observable<any> {
-        
         return this.http.get(`${this.API_BASE_URL}/api/cart/count`);
     }
 
-    /**
-     * Get current user
-     */
-    getCurrentUser(): User | null {
-        return this.currentUserSubject.value;
+    getUsers(): Observable<ApiResponse<User[]>> {
+        return this.http.get<ApiResponse<User[]>>(`${this.API_BASE_URL}/api/admin/users`);
     }
 
-    /**
-     * Get stored authentication token
-     */
-    getToken(): string | null {
-        // Return the stored credentials directly
-        return localStorage.getItem(AuthService.AUTH_CREDENTIALS_KEY);
+    getUserById(userId: string): Observable<ApiResponse<User>> {
+        return this.http.get<ApiResponse<User>>(`${this.API_BASE_URL}/api/admin/users/${userId}`);
     }
 
-    /**
-     * Check if user is authenticated
-     */
-    isAuthenticated(): boolean {
-        return this.isAuthenticatedSubject.value;
+    updateUser(userId: string, userData: Partial<User>): Observable<ApiResponse<User>> {
+        return this.http.put<ApiResponse<User>>(`${this.API_BASE_URL}/api/admin/users/${userId}`, userData);
     }
 
-    /**
-     * Get the appropriate redirect URL based on user role
-     */
-    getRedirectUrl(): string {
-        if (!this.isAuthenticated()) {
-            return '/signin';
+    deleteUserById(userId: string): Observable<ApiResponse<void>> {
+        return this.http.delete<ApiResponse<void>>(`${this.API_BASE_URL}/api/admin/users/${userId}`);
+    }
+
+    activateUser(userId: string): Observable<ApiResponse<void>> {
+        return this.http.post<ApiResponse<void>>(`${this.API_BASE_URL}/api/admin/users/${userId}/activate`, {});
+    }
+
+    deactivateUser(userId: string): Observable<ApiResponse<void>> {
+        return this.http.post<ApiResponse<void>>(`${this.API_BASE_URL}/api/admin/users/${userId}/deactivate`, {});
+    }
+
+    // ------------------------------------------------------------------
+    // Internals
+    // ------------------------------------------------------------------
+
+    private applySession(data: AuthResponseData): void {
+        this.accessTokenSubject.next(data.accessToken);
+        this.userRoles = data.user.roles ?? [];
+        this.setCurrentUser(this.toUser(data.user));
+    }
+
+    private toUser(authUser: AuthUser): User {
+        return {
+            id: authUser.id ?? '',
+            userName: authUser.username,
+            email: authUser.email,
+            roles: authUser.roles ?? []
+        } as User;
+    }
+
+    private updateCurrentUser(user?: User | null): void {
+        if (!user) {
+            return;
         }
-        
-        // Admin users should go directly to admin dashboard
-        if (this.isAdmin()) {
-            return '/admin';
-        }
-        
-        // Regular users go to dashboard
-        return '/dashboard';
+        this.setCurrentUser(user);
     }
 
-    /**
-     * Verify if user is authenticated by checking stored data
-     */
-    verifyAuthentication(): boolean {
-        const authData = this.getStoredAuthData();
-        const isAuthenticated = !!authData && !!authData.username && !!authData.password;
-        return isAuthenticated;
-    }
-
-    /**
-     * Set current user and update authentication status
-     */
     private setCurrentUser(user: User | null): void {
         this.currentUserSubject.next(user);
         this.isAuthenticatedSubject.next(!!user);
-
-        // Update roles when setting a new user
-        if (user && user.roles) {
-            this.userRoles = user.roles;
-        } else {
-            this.userRoles = [];
-        }
+        this.userRoles = user?.roles ?? [];
     }
 
-    /**
-     * Store authentication data in localStorage
-     */
-    private storeAuthData(username: string, password: string, user: User): void {
-        // Normalize username to lowercase to match backend expectations
-        const normalizedUsername = username.toLowerCase();
-        
-        // Store base64-encoded credentials as per the frontend guide
-        const credentials = btoa(`${normalizedUsername}:${password}`);
-        localStorage.setItem(AuthService.AUTH_CREDENTIALS_KEY, credentials);
-        localStorage.setItem(AuthService.CURRENT_USER_KEY, JSON.stringify(user));
-    }
-
-    /**
-     * Get stored authentication data
-     */
-    getStoredAuthData(): { username: string; password: string; user: User } | null {
-        const storedCredentials = localStorage.getItem(AuthService.AUTH_CREDENTIALS_KEY);
-        const storedUser = localStorage.getItem(AuthService.CURRENT_USER_KEY);
-
-        if (storedCredentials && storedUser) {
-            try {
-                const credentials = this.decodeCredentials(storedCredentials);
-                if (!credentials) {
-                    this.clearAuthData();
-                    return null;
-                }
-                return {
-                    username: credentials.username,
-                    password: credentials.password,
-                    user: JSON.parse(storedUser) as User
-                };
-            } catch {
-                this.clearAuthData(); // Clear corrupted data
-                return null;
-            }
-        }
-        return null;
-    }
-
-    /** Decode stored Basic credentials, splitting at the first colon only. */
-    private decodeCredentials(raw: string): { username: string; password: string } | null {
-        const decoded = atob(raw);
-        const separator = decoded.indexOf(':');
-        if (separator <= 0 || separator === decoded.length - 1) {
-            return null;
-        }
-        return {
-            username: decoded.substring(0, separator),
-            password: decoded.substring(separator + 1)
-        };
-    }
-
-    /**
-     * Clear authentication data
-     */
     private clearAuthData(): void {
-        
-        // Clear current keys
-        localStorage.removeItem(AuthService.AUTH_CREDENTIALS_KEY);
-        localStorage.removeItem(AuthService.CURRENT_USER_KEY);
-        
-        // Clear old keys to prevent conflicts
-        const oldKeys = [
-            'travner_credentials',
-            'travner_auth', 
-            'travner_user',
-            'travner_user_data'
-        ];
-        
-        oldKeys.forEach(key => {
-            if (localStorage.getItem(key)) {
-                localStorage.removeItem(key);
-            }
-        });
-        
-        this.userRoles = []; // Clear roles
+        this.accessTokenSubject.next(null);
+        this.userRoles = [];
         this.setCurrentUser(null);
     }
 
-    /**
-     * Migrate old localStorage keys to new ones
-     */
-    private migrateOldAuthData(): void {
-        
-        // Check for old keys and migrate them
-        const oldCredentialKeys = ['travner_credentials', 'travner_auth'];
-        const oldUserKeys = ['travner_user', 'travner_user_data'];
-        
-        // Migrate credentials
-        for (const oldKey of oldCredentialKeys) {
-            const oldCredentials = localStorage.getItem(oldKey);
-            if (oldCredentials && !localStorage.getItem(AuthService.AUTH_CREDENTIALS_KEY)) {
-                localStorage.setItem(AuthService.AUTH_CREDENTIALS_KEY, oldCredentials);
-                localStorage.removeItem(oldKey);
-                break;
-            }
+    private unwrap<T>(response: ApiResponse<T> | null | undefined, fallbackMessage: string): T {
+        if (!response || response.success === false) {
+            throw new Error(response?.message || fallbackMessage);
         }
-        
-        // Migrate user data
-        for (const oldKey of oldUserKeys) {
-            const oldUser = localStorage.getItem(oldKey);
-            if (oldUser && !localStorage.getItem(AuthService.CURRENT_USER_KEY)) {
-                localStorage.setItem(AuthService.CURRENT_USER_KEY, oldUser);
-                localStorage.removeItem(oldKey);
-                break;
-            }
-        }
-    }
-
-    /**
-     * Get authentication data for WebSocket connections
-     */
-    getAuthData(): { username: string; password: string } | null {
-        const authCredentials = localStorage.getItem(AuthService.AUTH_CREDENTIALS_KEY);
-        if (!authCredentials) {
-            return null;
-        }
-        try {
-            return this.decodeCredentials(authCredentials);
-        } catch {
-            return null;
-        }
-    }
-
-    /**
-     * Check if there's stored authentication data on app initialization
-     */
-    private checkStoredAuth(): void {
-        const storedUser = localStorage.getItem(AuthService.CURRENT_USER_KEY);
-        if (storedUser) {
-            try {
-                const user = JSON.parse(storedUser);
-                this.setCurrentUser(user);
-            } catch {
-                this.clearAuthData(); // Clear corrupted data
-            }
-        }
-    }
-
-    /**
-     * Refresh user data (re-authenticate with stored credentials)
-     */
-    refreshUserData(): Observable<ApiResponse<User>> | null {
-        const authData = this.getStoredAuthData();
-        if (!authData) {
-            return null;
-        }
-
-        return this.testAuthentication(authData.username, authData.password);
-    }
-
-    /**
-     * Get client IP address (simplified implementation)
-     */
-    private getClientIp(): string {
-        // In a real implementation, you would get the actual IP from the server
-        // For now, we'll use a hash of the user agent as a placeholder
-        return this.hashCode(navigator.userAgent).toString();
-    }
-
-    /**
-     * Simple hash function for generating consistent identifiers
-     */
-    private hashCode(str: string): number {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash; // Convert to 32-bit integer
-        }
-        return Math.abs(hash);
-    }
-
-    /**
-     * Get all users (admin only)
-     */
-    getUsers(): Observable<ApiResponse<User[]>> {
-        const endpoint = `${this.API_BASE_URL}/api/admin/users`;
-        return this.http.get<ApiResponse<User[]>>(endpoint)
-            .pipe(
-                catchError(error => {
-                    throw error;
-                })
-            );
-    }
-
-    /**
-     * Get user by ID (admin only)
-     */
-    getUserById(userId: string): Observable<ApiResponse<User>> {
-        const endpoint = `${this.API_BASE_URL}/api/admin/users/${userId}`;
-        return this.http.get<ApiResponse<User>>(endpoint)
-            .pipe(
-                catchError(error => {
-                    throw error;
-                })
-            );
-    }
-
-    /**
-     * Update user (admin only)
-     */
-    updateUser(userId: string, userData: Partial<User>): Observable<ApiResponse<User>> {
-        const endpoint = `${this.API_BASE_URL}/api/admin/users/${userId}`;
-        return this.http.put<ApiResponse<User>>(endpoint, userData)
-            .pipe(
-                catchError(error => {
-                    throw error;
-                })
-            );
-    }
-
-    /**
-     * Delete user (admin only)
-     */
-    deleteUserById(userId: string): Observable<ApiResponse<void>> {
-        const endpoint = `${this.API_BASE_URL}/api/admin/users/${userId}`;
-        return this.http.delete<ApiResponse<void>>(endpoint)
-            .pipe(
-                catchError(error => {
-                    throw error;
-                })
-            );
-    }
-
-    /**
-     * Activate user (admin only)
-     */
-    activateUser(userId: string): Observable<ApiResponse<void>> {
-        const endpoint = `${this.API_BASE_URL}/api/admin/users/${userId}/activate`;
-        return this.http.post<ApiResponse<void>>(endpoint, {})
-            .pipe(
-                catchError(error => {
-                    throw error;
-                })
-            );
-    }
-
-    /**
-     * Deactivate user (admin only)
-     */
-    deactivateUser(userId: string): Observable<ApiResponse<void>> {
-        const endpoint = `${this.API_BASE_URL}/api/admin/users/${userId}/deactivate`;
-        return this.http.post<ApiResponse<void>>(endpoint, {})
-            .pipe(
-                catchError(error => {
-                    throw error;
-                })
-            );
+        return response.data as T;
     }
 }

@@ -104,14 +104,8 @@ export const apiEnvelopeInterceptor: HttpInterceptorFn = (req, next) => {
                         }
                         break;
                     case 401:
+                        // Refresh + logout is handled once by authTokenInterceptor.
                         errorMessage = 'Unauthorized: Please sign in to continue.';
-                        // Don't automatically trigger logout for cart endpoints - they might be failing due to other issues
-                        if (typeof window !== 'undefined' && !req.url.includes('/api/cart')) {
-                            console.warn('🚫 Received 401 Unauthorized - triggering logout for:', req.url);
-                            // You might want to dispatch an auth logout action here
-                        } else if (req.url.includes('/api/cart')) {
-                            console.warn('🚫 Received 401 for cart endpoint - not triggering logout, might be a temporary issue');
-                        }
                         break;
                     case 403:
                         errorMessage = 'Forbidden: You do not have permission to perform this action.';

@@ -1,5 +1,5 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, Subscription, filter, skip, takeUntil } from 'rxjs';
 import { Client, IMessage, StompConfig } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { EnvironmentConfig } from '../config/environment.config';
@@ -15,6 +15,7 @@ export class WebSocketService implements OnDestroy {
   private connectionStatus = new BehaviorSubject<boolean>(false);
   private destroy$ = new Subject<void>();
   private subscribedConversations = new Set<string>();
+  private tokenSubscription?: Subscription;
   
   private readonly API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
   private readonly WS_URL = `${this.API_BASE_URL}/ws`;
@@ -31,6 +32,8 @@ export class WebSocketService implements OnDestroy {
     if (this.stompClient && this.stompClient.connected) {
       return;
     }
+
+    this.watchTokenForReconnect();
 
     try {
       const socket = new SockJS(this.WS_URL);
@@ -183,19 +186,34 @@ export class WebSocketService implements OnDestroy {
     });
   }
 
-  private getAuthHeaders(): any {
-    const authData = this.authService.getAuthData();
-    if (authData && authData.username && authData.password) {
-      return {
-        Authorization: `Basic ${btoa(`${authData.username}:${authData.password}`)}`
-      };
+  private getAuthHeaders(): Record<string, string> {
+    const token = this.authService.getAccessToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  /** A refreshed access token requires a fresh STOMP CONNECT frame. */
+  private watchTokenForReconnect(): void {
+    if (this.tokenSubscription) {
+      return;
     }
-    return {};
+    this.tokenSubscription = this.authService.accessToken$
+      .pipe(
+        skip(1),
+        filter((token): token is string => !!token),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        if (this.stompClient) {
+          this.disconnect();
+          this.connect();
+        }
+      });
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.tokenSubscription?.unsubscribe();
     this.disconnect();
   }
 }
