@@ -224,8 +224,8 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
-    // Placeholder for forgot password functionality
-    console.log('Forgot password requested for:', username);
+    // Placeholder for forgot password functionality. The username is
+    // intentionally not logged (it is a credential identifier).
     this.showSuccessMessage('Password reset functionality coming soon!');
   }
 

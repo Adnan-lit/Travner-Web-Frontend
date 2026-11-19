@@ -36,34 +36,34 @@ export class WebSocketService implements OnDestroy {
       const socket = new SockJS(this.WS_URL);
       this.stompClient = new Client({
         webSocketFactory: () => socket,
-        debug: (str) => console.log('WebSocket Debug:', str),
+        // STOMP debug output includes CONNECT frames with authorization headers.
         connectHeaders: this.getAuthHeaders(),
       });
 
-      this.stompClient.onConnect = (frame) => {
-        console.log('WebSocket Connected:', frame);
+      this.stompClient.onConnect = () => {
         this.connectionStatus.next(true);
         this.subscribeToChannels();
       };
 
-      this.stompClient.onStompError = (frame) => {
-        console.error('WebSocket STOMP Error:', frame);
+      // Log errors without the frame/error object: CONNECT frames can carry
+      // authorization headers, so logging them would leak credentials.
+      this.stompClient.onStompError = () => {
+        console.error('WebSocket STOMP error');
         this.connectionStatus.next(false);
       };
 
-      this.stompClient.onWebSocketError = (error) => {
-        console.error('WebSocket Error:', error);
+      this.stompClient.onWebSocketError = () => {
+        console.error('WebSocket connection error');
         this.connectionStatus.next(false);
       };
 
-      this.stompClient.onWebSocketClose = (event) => {
-        console.log('WebSocket Closed:', event);
+      this.stompClient.onWebSocketClose = () => {
         this.connectionStatus.next(false);
       };
 
       this.stompClient.activate();
-    } catch (error) {
-      console.error('Error connecting to WebSocket:', error);
+    } catch {
+      console.error('WebSocket connection could not be established');
       this.connectionStatus.next(false);
     }
   }
@@ -85,7 +85,6 @@ export class WebSocketService implements OnDestroy {
    */
   subscribeToConversation(conversationId: string): void {
     if (!this.stompClient || !this.stompClient.connected) {
-      console.warn('WebSocket not connected');
       return;
     }
 
@@ -96,7 +95,6 @@ export class WebSocketService implements OnDestroy {
     // Subscribe to conversation messages
     this.stompClient.subscribe(`/topic/conversation/${conversationId}`, (message: IMessage) => {
       const chatMessage: ChatMessage = JSON.parse(message.body);
-      console.log('WebSocket received message:', chatMessage);
       this.chatService.addMessageToCache(chatMessage);
     });
 
@@ -131,7 +129,6 @@ export class WebSocketService implements OnDestroy {
    */
   sendMessage(request: any): void {
     if (!this.stompClient || !this.stompClient.connected) {
-      console.warn('WebSocket not connected');
       return;
     }
 
@@ -181,8 +178,8 @@ export class WebSocketService implements OnDestroy {
     }
 
     // Subscribe to user-specific message notifications
-    this.stompClient.subscribe('/user/queue/messages', (message: IMessage) => {
-      console.log('Received user-specific message:', message.body);
+    this.stompClient.subscribe('/user/queue/messages', () => {
+      // Message delivery is handled through the conversation subscriptions.
     });
   }
 

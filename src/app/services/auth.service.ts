@@ -123,17 +123,10 @@ export class AuthService {
             userName: signupData.userName.toLowerCase()
         };
         
-        console.log(`🔐 Signup: Normalizing username "${signupData.userName}" -> "${normalizedSignupData.userName}"`);
         
         return this.http.post<ApiResponse<User>>(endpoint, normalizedSignupData)
             .pipe(
-                tap(response => {
-                    if (response.success && response.data) {
-                        console.log('Signup successful:', response.data);
-                    }
-                }),
                 catchError(error => {
-                    console.error('Signup error:', error);
                     throw error;
                 })
             );
@@ -147,7 +140,6 @@ export class AuthService {
         return this.http.get<ApiResponse<{ status: string; timestamp: string }>>(endpoint)
             .pipe(
                 catchError(error => {
-                    console.error('Health check error:', error);
                     throw error;
                 })
             );
@@ -163,7 +155,6 @@ export class AuthService {
 
         // Normalize username to lowercase to match backend expectations
         const normalizedUsername = username.toLowerCase();
-        console.log(`🔐 Normalizing username: "${username}" -> "${normalizedUsername}"`);
 
         // Create Basic Auth header for this specific request
         const credentials = btoa(`${normalizedUsername}:${password}`);
@@ -178,11 +169,9 @@ export class AuthService {
                         // Store authentication data with normalized username
                         this.setCurrentUser(response.data);
                         this.storeAuthData(normalizedUsername, password, response.data);
-                        console.log('✅ Authentication successful for user:', response.data.userName);
                     }
                 }),
                 catchError(error => {
-                    console.error('❌ Authentication failed:', error);
                     // Clear any stored auth data on error
                     this.clearAuthData();
                     
@@ -351,7 +340,6 @@ export class AuthService {
      * Clear all authentication data (for debugging)
      */
     clearAllAuthData(): void {
-        console.log('🧹 Clearing ALL authentication data');
         this.clearAuthData();
         
         // Also clear any other potential auth-related keys
@@ -368,40 +356,17 @@ export class AuthService {
         allPossibleKeys.forEach(key => {
             if (localStorage.getItem(key)) {
                 localStorage.removeItem(key);
-                console.log(`🧹 Cleared key: ${key}`);
             }
         });
         
-        console.log('✅ All authentication data cleared');
     }
 
     /**
      * Test cart authentication specifically
      */
     testCartAuthentication(): Observable<any> {
-        console.log('🛒 Testing cart authentication...');
-        console.log('🛒 Current auth status:', this.isAuthenticated());
-        console.log('🛒 Current user:', this.getCurrentUser());
-        console.log('🛒 Stored credentials:', !!localStorage.getItem(AuthService.AUTH_CREDENTIALS_KEY));
         
-        return this.http.get(`${this.API_BASE_URL}/api/cart/count`).pipe(
-            tap(response => {
-                console.log('✅ Cart authentication successful:', response);
-            }),
-            catchError(error => {
-                console.error('❌ Cart authentication failed:', {
-                    status: error.status,
-                    statusText: error.statusText,
-                    error: error.error,
-                    url: error.url
-                });
-                if (error.status === 401) {
-                    console.warn('🛒 Cart access denied - user not authenticated');
-                    console.warn('🛒 This might indicate an authentication issue with the cart endpoint');
-                }
-                throw error;
-            })
-        );
+        return this.http.get(`${this.API_BASE_URL}/api/cart/count`);
     }
 
     /**
@@ -449,12 +414,6 @@ export class AuthService {
     verifyAuthentication(): boolean {
         const authData = this.getStoredAuthData();
         const isAuthenticated = !!authData && !!authData.username && !!authData.password;
-        console.log('🔐 Authentication verification:', {
-            hasStoredAuth: !!authData,
-            hasUsername: !!authData?.username,
-            hasPassword: !!authData?.password,
-            isAuthenticated: isAuthenticated
-        });
         return isAuthenticated;
     }
 
@@ -468,7 +427,6 @@ export class AuthService {
         // Update roles when setting a new user
         if (user && user.roles) {
             this.userRoles = user.roles;
-            console.log('🔐 User roles set:', user.roles);
         } else {
             this.userRoles = [];
         }
@@ -485,7 +443,6 @@ export class AuthService {
         const credentials = btoa(`${normalizedUsername}:${password}`);
         localStorage.setItem(AuthService.AUTH_CREDENTIALS_KEY, credentials);
         localStorage.setItem(AuthService.CURRENT_USER_KEY, JSON.stringify(user));
-        console.log('🔐 Authentication data stored:', { username: normalizedUsername, userId: user.id });
     }
 
     /**
@@ -497,18 +454,17 @@ export class AuthService {
 
         if (storedCredentials && storedUser) {
             try {
-                // Decode base64 credentials
-                const decodedCredentials = atob(storedCredentials);
-                const [username, password] = decodedCredentials.split(':');
-                
-                const userData = JSON.parse(storedUser);
+                const credentials = this.decodeCredentials(storedCredentials);
+                if (!credentials) {
+                    this.clearAuthData();
+                    return null;
+                }
                 return {
-                    username,
-                    password,
-                    user: userData
+                    username: credentials.username,
+                    password: credentials.password,
+                    user: JSON.parse(storedUser) as User
                 };
-            } catch (error) {
-                console.error('Error parsing stored auth data:', error);
+            } catch {
                 this.clearAuthData(); // Clear corrupted data
                 return null;
             }
@@ -516,11 +472,23 @@ export class AuthService {
         return null;
     }
 
+    /** Decode stored Basic credentials, splitting at the first colon only. */
+    private decodeCredentials(raw: string): { username: string; password: string } | null {
+        const decoded = atob(raw);
+        const separator = decoded.indexOf(':');
+        if (separator <= 0 || separator === decoded.length - 1) {
+            return null;
+        }
+        return {
+            username: decoded.substring(0, separator),
+            password: decoded.substring(separator + 1)
+        };
+    }
+
     /**
      * Clear authentication data
      */
     private clearAuthData(): void {
-        console.log('🧹 Clearing authentication data');
         
         // Clear current keys
         localStorage.removeItem(AuthService.AUTH_CREDENTIALS_KEY);
@@ -537,7 +505,6 @@ export class AuthService {
         oldKeys.forEach(key => {
             if (localStorage.getItem(key)) {
                 localStorage.removeItem(key);
-                console.log(`🧹 Cleared old key: ${key}`);
             }
         });
         
@@ -549,14 +516,10 @@ export class AuthService {
      * Migrate old localStorage keys to new ones
      */
     private migrateOldAuthData(): void {
-        console.log('🔄 Checking for old authentication data to migrate...');
         
         // Check for old keys and migrate them
         const oldCredentialKeys = ['travner_credentials', 'travner_auth'];
         const oldUserKeys = ['travner_user', 'travner_user_data'];
-        
-        let migratedCredentials = false;
-        let migratedUser = false;
         
         // Migrate credentials
         for (const oldKey of oldCredentialKeys) {
@@ -564,8 +527,6 @@ export class AuthService {
             if (oldCredentials && !localStorage.getItem(AuthService.AUTH_CREDENTIALS_KEY)) {
                 localStorage.setItem(AuthService.AUTH_CREDENTIALS_KEY, oldCredentials);
                 localStorage.removeItem(oldKey);
-                migratedCredentials = true;
-                console.log(`✅ Migrated credentials from ${oldKey} to ${AuthService.AUTH_CREDENTIALS_KEY}`);
                 break;
             }
         }
@@ -576,16 +537,8 @@ export class AuthService {
             if (oldUser && !localStorage.getItem(AuthService.CURRENT_USER_KEY)) {
                 localStorage.setItem(AuthService.CURRENT_USER_KEY, oldUser);
                 localStorage.removeItem(oldKey);
-                migratedUser = true;
-                console.log(`✅ Migrated user data from ${oldKey} to ${AuthService.CURRENT_USER_KEY}`);
                 break;
             }
-        }
-        
-        if (migratedCredentials || migratedUser) {
-            console.log('✅ Authentication data migration completed');
-        } else {
-            console.log('ℹ️ No old authentication data found to migrate');
         }
     }
 
@@ -594,41 +547,28 @@ export class AuthService {
      */
     getAuthData(): { username: string; password: string } | null {
         const authCredentials = localStorage.getItem(AuthService.AUTH_CREDENTIALS_KEY);
-        if (authCredentials) {
-            try {
-                const credentials = JSON.parse(authCredentials);
-                return {
-                    username: credentials.username,
-                    password: credentials.password
-                };
-            } catch (error) {
-                console.error('Error parsing auth credentials:', error);
-                return null;
-            }
+        if (!authCredentials) {
+            return null;
         }
-        return null;
+        try {
+            return this.decodeCredentials(authCredentials);
+        } catch {
+            return null;
+        }
     }
 
     /**
      * Check if there's stored authentication data on app initialization
      */
     private checkStoredAuth(): void {
-        console.log('🔍 Checking for stored authentication data on app initialization');
         const storedUser = localStorage.getItem(AuthService.CURRENT_USER_KEY);
         if (storedUser) {
             try {
                 const user = JSON.parse(storedUser);
                 this.setCurrentUser(user);
-                console.log('✅ Restored user from localStorage:', user.userName);
-                console.log('✅ User roles restored:', user.roles);
-                console.log('✅ Is authenticated:', this.isAuthenticated());
-                console.log('✅ Is admin:', this.isAdmin());
-            } catch (error) {
-                console.error('Error parsing stored user data:', error);
+            } catch {
                 this.clearAuthData(); // Clear corrupted data
             }
-        } else {
-            console.log('ℹ️ No stored user data found');
         }
     }
 
