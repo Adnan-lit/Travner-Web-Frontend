@@ -1,0 +1,53 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # GitHub-hosted ubuntu runners ship Chrome here; Karma's ChromeHeadless
+  # launcher needs CHROME_BIN set explicitly in some runner images.
+  CHROME_BIN: /usr/bin/google-chrome
+
+jobs:
+  build-and-test:
+    name: Build and test (Node 22)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production build
+        run: npm run build
+
+      - name: Unit tests (headless Chrome)
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+
+      # Lint will be added here in P3-05 once ESLint is configured.
+      - name: Upload build output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: dist/
+          if-no-files-found: ignore

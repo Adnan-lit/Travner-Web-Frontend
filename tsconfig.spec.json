@@ -1,0 +1,15 @@
+/* TypeScript configuration for unit tests (Karma/Jasmine). */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/spec",
+    "types": ["jasmine"]
+  },
+  "files": [
+    "src/karma-globals.ts"
+  ],
+  "include": [
+    "src/**/*.spec.ts",
+    "src/**/*.d.ts"
+  ]
+}
