@@ -188,7 +188,7 @@ export class MediaUploadComponent implements OnInit, OnDestroy {
   @Input() entityId?: string;
   @Input() entityType: string = 'post';
   @Input() maxFiles: number = 10;
-  @Input() maxFileSize: number = 10 * 1024 * 1024; // 10MB
+  @Input() maxFileSize: number = 20 * 1024 * 1024; // matches backend FileValidationUtil
   
   @Output() filesUploaded = new EventEmitter<MediaFile[]>();
   @Output() uploadProgress = new EventEmitter<number>();

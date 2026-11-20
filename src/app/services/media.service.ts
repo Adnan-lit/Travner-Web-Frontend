@@ -145,16 +145,18 @@ export class MediaService {
    * Validate file before upload
    */
   validateFile(file: File): { valid: boolean; error?: string } {
-    // Check file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Keep in sync with the backend's FileValidationUtil (P2-04).
+    const maxSize = 20 * 1024 * 1024;
     if (file.size > maxSize) {
-      return { valid: false, error: 'File size must be less than 10MB' };
+      return { valid: false, error: 'File size must be less than 20MB' };
     }
 
-    // Check file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp',
+      'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-ms-wmv'
+    ];
     if (!allowedTypes.includes(file.type)) {
-      return { valid: false, error: 'Only image files (JPEG, PNG, GIF, WebP) are allowed' };
+      return { valid: false, error: 'Only supported images and videos are allowed' };
     }
 
     return { valid: true };
