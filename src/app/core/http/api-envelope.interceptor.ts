@@ -5,8 +5,10 @@ import { ApiResponse, ApiErrorResponse } from '../../models/api-response.model';
 
 /**
  * API Envelope Interceptor
- * Handles the standard API response format { success, message, data, pagination? }
- * Maps HTTP error codes to descriptive messages
+ * Handles the standard API response format
+ * { success, message, data, pagination?, code?, traceId? }
+ * Maps HTTP error codes to descriptive messages and preserves stable error codes
+ * and correlation IDs from the backend contract.
  * Unwraps successful responses while preserving error information
  * Handles HTML error responses gracefully
  */
@@ -139,6 +141,15 @@ export const apiEnvelopeInterceptor: HttpInterceptorFn = (req, next) => {
                 }
             }
 
+            // Preserve the backend's stable error code / correlation ID when present.
+            // The X-Correlation-Id header is the fallback for non-envelope errors
+            // (e.g. rate limiting, which is produced by a servlet filter).
+            const backendBody = (error.error && typeof error.error === 'object') ? error.error as Record<string, any> : {};
+            const errorCode: string | undefined = backendBody['code'];
+            const traceId: string | undefined = backendBody['traceId']
+                || error.headers?.get('X-Correlation-Id')
+                || undefined;
+
             // Create a standardized error response
             const errorResponse: ApiResponse<null> = {
                 success: false,
@@ -146,7 +157,9 @@ export const apiEnvelopeInterceptor: HttpInterceptorFn = (req, next) => {
                 data: null,
                 error: errorDetails,
                 status: error.status,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                code: errorCode,
+                traceId
             };
 
             return throwError(() => new HttpErrorResponse({

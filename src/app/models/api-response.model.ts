@@ -28,6 +28,10 @@ export interface ApiResponse<T> {
     message?: string;
     data?: T;
     pagination?: ApiPaginationInfo;
+    /** Stable machine-readable error code (error responses only). */
+    code?: string;
+    /** Correlation ID for support/log correlation (error responses only). */
+    traceId?: string;
     // The backend sometimes may include other keys; we allow index signature
     [key: string]: any;
 }
@@ -43,6 +47,10 @@ export interface ApiErrorResponse {
     error?: any;
     status?: number;
     timestamp?: string;
+    /** Stable machine-readable code from the backend, e.g. AUTH_INVALID_CREDENTIALS. */
+    code?: string;
+    /** Correlation ID from the backend response or X-Correlation-Id header. */
+    traceId?: string;
 }
 
 // Health check response
