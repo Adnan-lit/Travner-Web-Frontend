@@ -1,2 +1,87 @@
-/* user-profile Component Styles */
-.container { max-width: 1200px; }
+.profile-page {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.6rem;
+}
+
+header p {
+  margin: 0 0 1.5rem;
+  color: #5c6773;
+}
+
+.profile-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.profile-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.profile-form .full-width {
+  grid-column: 1 / -1;
+}
+
+.profile-form input,
+.profile-form textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+  padding: 0.6rem;
+  width: 100%;
+}
+
+.profile-form small {
+  color: #b91c1c;
+  font-weight: 400;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.actions button {
+  background: #2563eb;
+  border: 0;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  padding: 0.6rem 1.2rem;
+}
+
+.actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.message {
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.message.error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.message.success {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+@media (max-width: 600px) {
+  .profile-form {
+    grid-template-columns: 1fr;
+  }
+}

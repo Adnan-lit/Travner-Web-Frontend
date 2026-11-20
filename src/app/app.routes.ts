@@ -5,6 +5,8 @@ import { SignupComponent } from './components/signup/signup.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { AdminComponent } from './components/admin/admin.component';
 import { AdminDashboardComponent } from './components/admin/admin-dashboard/admin-dashboard.component';
+import { AdminAnalyticsComponent } from './components/admin/admin-analytics/admin-analytics.component';
+import { AdminSettingsComponent } from './components/admin/admin-settings/admin-settings.component';
 import { UserManagementComponent } from './components/admin/user-management/user-management.component';
 import { OrderManagementComponent } from './components/admin/order-management/order-management.component';
 import { PostListComponent } from './components/posts/post-list.component';
@@ -18,7 +20,6 @@ import { MainLayoutComponent } from './layout/main-layout/main-layout.component'
 import { PostOwnerGuard } from './guards/post-owner.guard';
 import { ChatComponent } from './components/chat/chat.component';
 import { AIChatComponent } from './components/ai-chat/ai-chat.component';
-import { ProductListComponent } from './components/marketplace/product-list/product-list.component';
 import { ProductListFixedComponent } from './components/marketplace/product-list/product-list-fixed.component';
 
 // Marketplace components
@@ -29,17 +30,25 @@ import { OrderListComponent } from './components/marketplace/order-list/order-li
 import { OrderDetailComponent } from './components/marketplace/order-detail/order-detail.component';
 import { ProductManagementComponent } from './components/marketplace/admin/product-management/product-management.component';
 // import { AuthDebugComponent } from './components/auth-debug/auth-debug.component';
-import { TripListComponent } from './components/trips/trip-list/trip-list.component';
 
-// Location-based components
+// Trip and location-based components
+import { TripListComponent } from './components/trips/trip-list/trip-list.component';
+import { TripCreateComponent } from './components/trips/trip-create/trip-create.component';
+import { TripDetailComponent } from './components/trips/trip-detail/trip-detail.component';
 import { ItineraryListComponent } from './components/itineraries/itinerary-list/itinerary-list.component';
 import { ItineraryDetailComponent } from './components/itineraries/itinerary-detail/itinerary-detail.component';
 import { ItineraryCreateComponent } from './components/itineraries/itinerary-create/itinerary-create.component';
-import { ItineraryCreateMinimalComponent } from './components/itineraries/itinerary-create/itinerary-create-minimal.component';
-import { ItineraryCreateSimpleComponent } from './components/itineraries/itinerary-create/itinerary-create-simple.component';
-// import { ItineraryListTestComponent } from './components/itineraries/itinerary-list/itinerary-list-test.component';
 import { TravelBuddyListComponent } from './components/travel-buddies/travel-buddy-list/travel-buddy-list.component';
+import { TravelBuddyCreateComponent } from './components/travel-buddies/travel-buddy-create/travel-buddy-create.component';
+import { TravelBuddyDetailComponent } from './components/travel-buddies/travel-buddy-detail/travel-buddy-detail.component';
 import { LocalGuideListComponent } from './components/local-guides/local-guide-list/local-guide-list.component';
+import { LocalGuideCreateComponent } from './components/local-guides/local-guide-create/local-guide-create.component';
+import { LocalGuideDetailComponent } from './components/local-guides/local-guide-detail/local-guide-detail.component';
+
+// Account and error pages
+import { UserProfileComponent } from './components/user/user-profile/user-profile.component';
+import { SettingsComponent } from './components/user/settings/settings.component';
+import { NotFoundComponent } from './components/error/not-found/not-found.component';
 
 export const routes: Routes = [
   {
@@ -48,9 +57,9 @@ export const routes: Routes = [
     children: [
       { path: '', component: LandingComponent },
       { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
-      { 
-        path: 'admin', 
-        component: AdminComponent, 
+      {
+        path: 'admin',
+        component: AdminComponent,
         canActivate: [AdminGuard],
         children: [
           { path: '', component: AdminDashboardComponent },
@@ -58,10 +67,10 @@ export const routes: Routes = [
           { path: 'posts', component: PostListComponent },
           { path: 'orders', component: OrderManagementComponent },
           { path: 'products', component: ProductManagementComponent },
-          { path: 'analytics', component: AdminDashboardComponent }, // Placeholder
+          { path: 'analytics', component: AdminAnalyticsComponent },
           { path: 'chat', component: ChatComponent },
           { path: 'chat/:id', component: ChatComponent },
-          { path: 'settings', component: AdminDashboardComponent } // Placeholder
+          { path: 'settings', component: AdminSettingsComponent }
         ]
       },
       { path: 'community', component: PostListComponent },
@@ -73,27 +82,26 @@ export const routes: Routes = [
       { path: 'chat', component: ChatComponent, canActivate: [AuthGuard] },
       { path: 'chat/:id', component: ChatComponent, canActivate: [AuthGuard] },
       { path: 'ai-chat', component: AIChatComponent },
-      
-      // Trip Routes
+
+      // Trip routes
       { path: 'trips', component: TripListComponent },
-      { path: 'trips/create', component: TripListComponent, canActivate: [AuthGuard] },
-      { path: 'trips/:id', component: TripListComponent },
+      { path: 'trips/create', component: TripCreateComponent, canActivate: [AuthGuard] },
+      { path: 'trips/:id', component: TripDetailComponent },
 
-      // Itinerary Routes
+      // Itinerary routes
       { path: 'itineraries', component: ItineraryListComponent },
-      // { path: 'itineraries/test', component: ItineraryListTestComponent },
-      { path: 'itineraries/create', component: ItineraryCreateMinimalComponent },
+      { path: 'itineraries/create', component: ItineraryCreateComponent, canActivate: [AuthGuard] },
       { path: 'itineraries/:id', component: ItineraryDetailComponent },
-      
-      { path: 'travel-buddies', component: TravelBuddyListComponent },
-      { path: 'travel-buddies/create', component: TravelBuddyListComponent, canActivate: [AuthGuard] },
-      { path: 'travel-buddies/:id', component: TravelBuddyListComponent },
-      
-      { path: 'local-guides', component: LocalGuideListComponent },
-      { path: 'local-guides/create', component: LocalGuideListComponent, canActivate: [AuthGuard] },
-      { path: 'local-guides/:id', component: LocalGuideListComponent },
 
-      // Marketplace Routes
+      { path: 'travel-buddies', component: TravelBuddyListComponent },
+      { path: 'travel-buddies/create', component: TravelBuddyCreateComponent, canActivate: [AuthGuard] },
+      { path: 'travel-buddies/:id', component: TravelBuddyDetailComponent },
+
+      { path: 'local-guides', component: LocalGuideListComponent },
+      { path: 'local-guides/create', component: LocalGuideCreateComponent, canActivate: [AuthGuard] },
+      { path: 'local-guides/:id', component: LocalGuideDetailComponent },
+
+      // Marketplace routes
       { path: 'marketplace', component: ProductListFixedComponent },
       { path: 'marketplace/products', redirectTo: 'marketplace', pathMatch: 'full' },
       { path: 'marketplace/products/:id', component: ProductDetailComponent },
@@ -102,9 +110,14 @@ export const routes: Routes = [
       { path: 'marketplace/orders', component: OrderListComponent, canActivate: [AuthGuard] },
       { path: 'marketplace/orders/:id', component: OrderDetailComponent, canActivate: [AuthGuard] },
 
-      // Admin Marketplace Routes
+      // Admin marketplace routes
       { path: 'admin/marketplace/products', component: ProductManagementComponent, canActivate: [AdminGuard] },
       { path: 'admin/marketplace/orders', component: OrderManagementComponent, canActivate: [AdminGuard] },
+
+      // Account routes
+      { path: 'profile', component: UserProfileComponent, canActivate: [AuthGuard] },
+      { path: 'settings', component: SettingsComponent, canActivate: [AuthGuard] },
+      { path: 'user/profile', redirectTo: 'profile', pathMatch: 'full' }
 
       // Debug Routes (development only)
       // { path: 'debug/auth', component: AuthDebugComponent },
@@ -112,5 +125,6 @@ export const routes: Routes = [
   },
   { path: 'signin', component: SigninComponent, canActivate: [NoAuthGuard] },
   { path: 'signup', component: SignupComponent, canActivate: [NoAuthGuard] },
-  { path: '**', redirectTo: '' } // Wildcard route for 404 pages
+  { path: '404', component: NotFoundComponent },
+  { path: '**', component: NotFoundComponent }
 ];

@@ -1,4 +1,65 @@
-<div class="container mx-auto p-4">
-  <h2 class="text-2xl font-bold text-center mb-6">Trip Detail</h2>
-  <p class="text-center text-gray-600">This component is under development.</p>
-</div>
+<section class="trip-detail">
+  <header class="page-header">
+    <h1>Trip details</h1>
+    <a routerLink="/trips" class="back-link">Back to trips</a>
+  </header>
+
+  <div class="state" *ngIf="state === 'loading'" role="status">Loading trip…</div>
+
+  <div class="state state-error" *ngIf="state === 'missing-id'" role="alert">
+    No trip was specified.
+  </div>
+
+  <div class="state state-error" *ngIf="state === 'not-found'" role="alert">
+    {{ errorMessage }}
+  </div>
+
+  <div class="state state-error" *ngIf="state === 'error'" role="alert">
+    {{ errorMessage }}
+  </div>
+
+  <article class="trip-card" *ngIf="state === 'ready'">
+    <div *ngIf="trip as currentTrip">
+      <h2>{{ currentTrip.title }}</h2>
+
+      <dl class="trip-meta">
+        <div>
+          <dt>Destination</dt>
+          <dd>{{ currentTrip.destination }}</dd>
+        </div>
+        <div>
+          <dt>Start date</dt>
+          <dd>{{ currentTrip.startDate | date: 'mediumDate' }}</dd>
+        </div>
+        <div>
+          <dt>End date</dt>
+          <dd>{{ currentTrip.endDate | date: 'mediumDate' }}</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>{{ currentTrip.status }}</dd>
+        </div>
+        <div>
+          <dt>Visibility</dt>
+          <dd>{{ currentTrip.visibility }}</dd>
+        </div>
+        <div>
+          <dt>Author</dt>
+          <dd>{{ currentTrip.authorUsername }}</dd>
+        </div>
+      </dl>
+
+      <div class="trip-section">
+        <h3>Description</h3>
+        <p>{{ currentTrip.description }}</p>
+      </div>
+
+      <div class="trip-section" *ngIf="currentTrip.tags?.length">
+        <h3>Tags</h3>
+        <ul class="tags">
+          <li *ngFor="let tag of currentTrip.tags">{{ tag }}</li>
+        </ul>
+      </div>
+    </div>
+  </article>
+</section>

@@ -1,4 +1,49 @@
-<div class="container mx-auto p-4">
-  <h2 class="text-2xl font-bold text-center mb-6">Settings</h2>
-  <p class="text-center text-gray-600">This component is under development.</p>
+<div class="settings-page">
+  <header>
+    <h1>Account settings</h1>
+    <p>Manage your password and active session.</p>
+  </header>
+
+  <section class="panel">
+    <h2>Session</h2>
+    <dl>
+      <div>
+        <dt>Username</dt>
+        <dd>{{ currentUser?.userName || 'Not available' }}</dd>
+      </div>
+      <div>
+        <dt>Roles</dt>
+        <dd>{{ rolesLabel }}</dd>
+      </div>
+      <div>
+        <dt>Last sign-in</dt>
+        <dd>{{ currentUser?.lastLoginAt || 'Not available' }}</dd>
+      </div>
+    </dl>
+    <button type="button" class="button secondary" (click)="signOut()">Sign out</button>
+  </section>
+
+  <section class="panel">
+    <h2>Change password</h2>
+    <p class="message error" role="alert" *ngIf="errorMessage">{{ errorMessage }}</p>
+    <p class="message success" role="status" *ngIf="successMessage">{{ successMessage }}</p>
+
+    <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="password-form" novalidate>
+      <label>
+        <span>Current password</span>
+        <input type="password" formControlName="currentPassword" autocomplete="current-password" />
+      </label>
+      <label>
+        <span>New password</span>
+        <input type="password" formControlName="newPassword" autocomplete="new-password" />
+      </label>
+      <label>
+        <span>Confirm new password</span>
+        <input type="password" formControlName="confirmPassword" autocomplete="new-password" />
+      </label>
+      <button type="submit" [disabled]="saving">
+        {{ saving ? 'Changing…' : 'Change password' }}
+      </button>
+    </form>
+  </section>
 </div>

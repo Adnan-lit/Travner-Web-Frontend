@@ -1,0 +1,59 @@
+<div class="admin-settings">
+  <header class="settings-header">
+    <div>
+      <h1>System Settings</h1>
+      <p>Runtime health and safe maintenance actions.</p>
+    </div>
+    <button type="button" class="button secondary" (click)="loadHealth()" [disabled]="loadingHealth">
+      {{ loadingHealth ? 'Refreshing…' : 'Refresh health' }}
+    </button>
+  </header>
+
+  <p class="message error" role="alert" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="message success" role="status" *ngIf="successMessage">{{ successMessage }}</p>
+
+  <section class="panel" *ngIf="health as currentHealth; else healthUnavailable">
+    <h2>Health</h2>
+    <dl class="health-grid">
+      <div>
+        <dt>Status</dt>
+        <dd>{{ currentHealth.status }}</dd>
+      </div>
+      <div>
+        <dt>Database</dt>
+        <dd>{{ currentHealth.database ? 'Connected' : 'Unavailable' }}</dd>
+      </div>
+      <div>
+        <dt>Storage</dt>
+        <dd>{{ currentHealth.storage ? 'Available' : 'Unavailable' }}</dd>
+      </div>
+      <div>
+        <dt>Cache</dt>
+        <dd>{{ currentHealth.cache ? 'Available' : 'Unavailable' }}</dd>
+      </div>
+      <div>
+        <dt>Uptime</dt>
+        <dd>{{ formatUptime(currentHealth.uptime) }}</dd>
+      </div>
+      <div>
+        <dt>Version</dt>
+        <dd>{{ currentHealth.version }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <ng-template #healthUnavailable>
+    <section class="panel" *ngIf="!loadingHealth">
+      <h2>Health</h2>
+      <p class="muted">Health information is not available right now.</p>
+    </section>
+  </ng-template>
+
+  <section class="panel">
+    <h2>Maintenance</h2>
+    <p class="muted">Clear the application cache. This does not delete user content.</p>
+    <button type="button" class="button danger" (click)="clearCache()" [disabled]="clearingCache">
+      {{ clearingCache ? 'Clearing…' : 'Clear cache' }}
+    </button>
+  </section>
+</div>

@@ -1,4 +1,99 @@
-<div class="container mx-auto p-4">
-  <h2 class="text-2xl font-bold text-center mb-6">Trip Create</h2>
-  <p class="text-center text-gray-600">This component is under development.</p>
-</div>
+<section class="trip-create">
+  <header class="page-header">
+    <h1>Create a trip</h1>
+    <a routerLink="/trips" class="back-link">Back to trips</a>
+  </header>
+
+  <div class="notice notice-success" *ngIf="createdTrip as trip" role="status">
+    <p>Trip created.</p>
+    <a [routerLink]="['/trips', trip.id]">View trip</a>
+  </div>
+
+  <div class="notice notice-error" *ngIf="errorMessage" role="alert">{{ errorMessage }}</div>
+
+  <form [formGroup]="tripForm" (ngSubmit)="onSubmit()" novalidate>
+    <fieldset [disabled]="submitting">
+      <p class="notice notice-error" *ngIf="formSubmitted && tripForm.invalid" role="alert">
+        Please complete the required fields before creating the trip.
+      </p>
+
+      <div class="field">
+        <label for="trip-title">Title</label>
+        <input id="trip-title" type="text" formControlName="title" maxlength="200" />
+        <p class="field-error" *ngIf="isInvalid('title')">A title is required.</p>
+      </div>
+
+      <div class="field">
+        <label for="trip-description">Description</label>
+        <textarea id="trip-description" rows="4" formControlName="description" maxlength="2000"></textarea>
+        <p class="field-error" *ngIf="isInvalid('description')">A description is required.</p>
+      </div>
+
+      <div class="field">
+        <label for="trip-destination">Destination</label>
+        <input id="trip-destination" type="text" formControlName="destination" maxlength="200" />
+        <p class="field-error" *ngIf="isInvalid('destination')">A destination is required.</p>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="trip-start-date">Start date</label>
+          <input id="trip-start-date" type="date" formControlName="startDate" />
+          <p class="field-error" *ngIf="isInvalid('startDate')">A start date is required.</p>
+        </div>
+
+        <div class="field">
+          <label for="trip-end-date">End date</label>
+          <input id="trip-end-date" type="date" formControlName="endDate" />
+          <p class="field-error" *ngIf="isInvalid('endDate')">An end date is required.</p>
+        </div>
+      </div>
+
+      <p class="field-error" *ngIf="tripForm.hasError('dateRange') && (formSubmitted || tripForm.touched)">
+        The end date must be on or after the start date.
+      </p>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="trip-budget">Budget (optional)</label>
+          <input id="trip-budget" type="number" min="0" step="0.01" formControlName="budget" />
+          <p class="field-error" *ngIf="isInvalid('budget')">Enter a non-negative budget.</p>
+        </div>
+
+        <div class="field">
+          <label for="trip-currency">Currency</label>
+          <select id="trip-currency" formControlName="currency">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="AED">AED</option>
+          </select>
+          <p class="field-error" *ngIf="isInvalid('currency')">A currency is required.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="trip-visibility">Visibility</label>
+        <select id="trip-visibility" formControlName="visibility">
+          <option value="PRIVATE">Private</option>
+          <option value="PUBLIC">Public</option>
+          <option value="FRIENDS_ONLY">Friends only</option>
+        </select>
+        <p class="field-error" *ngIf="isInvalid('visibility')">Choose a visibility.</p>
+      </div>
+
+      <div class="field">
+        <label for="trip-tags">Tags (optional)</label>
+        <input id="trip-tags" type="text" formControlName="tags" placeholder="beach, food, hiking" />
+        <p class="field-hint">Separate tags with commas.</p>
+        <p class="field-error" *ngIf="isInvalid('tags')">The tag list is too long.</p>
+      </div>
+
+      <div class="actions">
+        <button type="submit" [disabled]="submitting">
+          {{ submitting ? 'Creating…' : 'Create trip' }}
+        </button>
+      </div>
+    </fieldset>
+  </form>
+</section>

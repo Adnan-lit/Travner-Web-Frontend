@@ -1,4 +1,54 @@
-<div class="container mx-auto p-4">
-  <h2 class="text-2xl font-bold text-center mb-6">Travel Buddy Detail</h2>
-  <p class="text-center text-gray-600">This component is under development.</p>
+<div class="page">
+  <a routerLink="/travel-buddies" class="back-link">&larr; Back to travel buddies</a>
+
+  <div *ngIf="loading" class="state" role="status">Loading travel buddy request…</div>
+
+  <div *ngIf="error" class="state state-error" role="alert">
+    <p>{{ error }}</p>
+    <button type="button" (click)="retry()">Try again</button>
+  </div>
+
+  <div *ngIf="notFound" class="state" role="status">
+    <h1>Travel buddy request not found</h1>
+    <p>This request may have been removed, or the link may be incorrect.</p>
+  </div>
+
+  <ng-container *ngIf="!loading && !error && !notFound">
+    <ng-container *ngIf="travelBuddy as buddy">
+      <article class="card">
+        <div class="card-heading">
+          <h1>{{ buddy.destination }}</h1>
+          <span class="badge">{{ statusLabels[buddy.status] || buddy.status }}</span>
+        </div>
+
+        <p class="requester">Requested by {{ requesterName }}</p>
+        <p *ngIf="buddy.description" class="description">{{ buddy.description }}</p>
+
+        <dl class="details">
+          <dt>Travel dates</dt>
+          <dd>{{ formatDate(buddy.startDate) }} – {{ formatDate(buddy.endDate) }}</dd>
+
+          <dt>Interests</dt>
+          <dd>
+            <span *ngIf="buddy.interests?.length; else noInterests" class="tags">
+              <span *ngFor="let interest of buddy.interests" class="tag">{{ interest }}</span>
+            </span>
+            <ng-template #noInterests>Not specified</ng-template>
+          </dd>
+
+          <dt>Preferred age</dt>
+          <dd>{{ buddy.minAge || 'Any' }} – {{ buddy.maxAge || 'Any' }}</dd>
+
+          <dt>Preferred gender</dt>
+          <dd>{{ buddy.preferredGender || 'Any' }}</dd>
+
+          <dt>Budget</dt>
+          <dd>{{ buddy.budgetRange || 'Not specified' }}</dd>
+
+          <dt>Expires</dt>
+          <dd>{{ formatDate(buddy.expiryDate) }}</dd>
+        </dl>
+      </article>
+    </ng-container>
+  </ng-container>
 </div>

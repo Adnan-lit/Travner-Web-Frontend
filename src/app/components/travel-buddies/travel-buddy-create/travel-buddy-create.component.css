@@ -1,4 +1,116 @@
-/* Travel Buddy Create Component Styles */
-.container {
-  max-width: 1200px;
+:host {
+  display: block;
+}
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.back-link,
+.cancel-link {
+  color: #2e7d32;
+  text-decoration: none;
+}
+
+.back-link:hover,
+.cancel-link:hover {
+  text-decoration: underline;
+}
+
+h1 {
+  margin: 1rem 0 0.25rem;
+  font-size: 1.6rem;
+}
+
+.intro {
+  margin: 0 0 1.25rem;
+  color: #555;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin-bottom: 1rem;
+}
+
+.field-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+label {
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+input,
+select {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  font: inherit;
+}
+
+.hint {
+  margin: 0.3rem 0 0;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.field-error {
+  margin: 0.3rem 0 0;
+  color: #b71c1c;
+  font-size: 0.85rem;
+}
+
+.alert {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+}
+
+.alert-error {
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  color: #b71c1c;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+button {
+  padding: 0.6rem 1.1rem;
+  border: 0;
+  border-radius: 4px;
+  background: #2e7d32;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .field-row {
+    flex-direction: column;
+    gap: 0;
+  }
 }

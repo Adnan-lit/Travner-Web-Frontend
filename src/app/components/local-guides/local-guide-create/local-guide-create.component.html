@@ -1,4 +1,87 @@
-<div class="container mx-auto p-4">
-  <h2 class="text-2xl font-bold text-center mb-6">Local Guide Create</h2>
-  <p class="text-center text-gray-600">This component is under development.</p>
-</div>
+<section class="create-page">
+  <a class="back-link" routerLink="/local-guides">Back to local guides</a>
+
+  <header class="page-header">
+    <h1>Create a local guide profile</h1>
+    <p>Share what you know about your city with other travellers.</p>
+  </header>
+
+  <div class="alert" role="alert" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <form class="guide-form" [formGroup]="guideForm" (ngSubmit)="onSubmit()" novalidate>
+    <div class="field">
+      <label for="location">Location *</label>
+      <input id="location" type="text" formControlName="location" autocomplete="address-level2" />
+      <span class="field-error" *ngIf="guideForm.get('location')?.touched && guideForm.get('location')?.invalid">
+        Location is required.
+      </span>
+    </div>
+
+    <div class="field">
+      <label for="bio">Bio *</label>
+      <textarea id="bio" rows="4" formControlName="bio"></textarea>
+      <span class="field-error" *ngIf="guideForm.get('bio')?.touched && guideForm.get('bio')?.invalid">
+        Bio is required.
+      </span>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="hourlyRate">Hourly rate *</label>
+        <input id="hourlyRate" type="number" min="0" step="0.01" formControlName="hourlyRate" />
+        <span class="field-error" *ngIf="guideForm.get('hourlyRate')?.touched && guideForm.get('hourlyRate')?.invalid">
+          Enter a non-negative hourly rate.
+        </span>
+      </div>
+
+      <div class="field">
+        <label for="currency">Currency *</label>
+        <input id="currency" type="text" formControlName="currency" placeholder="EUR" maxlength="3" />
+        <span class="field-error" *ngIf="guideForm.get('currency')?.touched && guideForm.get('currency')?.invalid">
+          Currency is required.
+        </span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="languages">Languages *</label>
+      <input id="languages" type="text" formControlName="languages" placeholder="English, Portuguese" />
+      <small>Separate multiple languages with commas.</small>
+      <span class="field-error" *ngIf="guideForm.get('languages')?.touched && guideForm.get('languages')?.invalid">
+        Enter at least one language.
+      </span>
+    </div>
+
+    <div class="field">
+      <label for="specialties">Specialties *</label>
+      <input id="specialties" type="text" formControlName="specialties" placeholder="History, Food" />
+      <small>Separate multiple specialties with commas.</small>
+      <span class="field-error" *ngIf="guideForm.get('specialties')?.touched && guideForm.get('specialties')?.invalid">
+        Enter at least one specialty.
+      </span>
+    </div>
+
+    <div class="field">
+      <label for="availability">Availability (optional)</label>
+      <input id="availability" type="text" formControlName="availability" placeholder="Weekends" />
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="contactMethod">Contact method (optional)</label>
+        <input id="contactMethod" type="text" formControlName="contactMethod" placeholder="email" />
+      </div>
+
+      <div class="field">
+        <label for="contactInfo">Contact info (optional)</label>
+        <input id="contactInfo" type="text" formControlName="contactInfo" />
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="submit" [disabled]="guideForm.invalid || submitting" [attr.aria-busy]="submitting">
+        {{ submitting ? 'Creating…' : 'Create profile' }}
+      </button>
+    </div>
+  </form>
+</section>

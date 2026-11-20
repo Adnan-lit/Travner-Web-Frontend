@@ -1,4 +1,46 @@
-<div class="container mx-auto p-4">
-  <h2 class="text-2xl font-bold text-center mb-6">User Profile</h2>
-  <p class="text-center text-gray-600">This component is under development.</p>
+<div class="profile-page">
+  <header>
+    <h1>Your profile</h1>
+    <p *ngIf="user as currentUser; else loadingUser">
+      Signed in as <strong>{{ currentUser.userName }}</strong>
+    </p>
+    <ng-template #loadingUser>
+      <p>Loading your account details…</p>
+    </ng-template>
+  </header>
+
+  <p class="message error" role="alert" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="message success" role="status" *ngIf="successMessage">{{ successMessage }}</p>
+
+  <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="profile-form" novalidate>
+    <label>
+      <span>First name</span>
+      <input type="text" formControlName="firstName" autocomplete="given-name" />
+    </label>
+    <label>
+      <span>Last name</span>
+      <input type="text" formControlName="lastName" autocomplete="family-name" />
+    </label>
+    <label class="full-width">
+      <span>Email</span>
+      <input type="email" formControlName="email" autocomplete="email" />
+      <small *ngIf="profileForm.controls.email.touched && profileForm.controls.email.invalid">
+        Enter a valid email address.
+      </small>
+    </label>
+    <label class="full-width">
+      <span>Bio</span>
+      <textarea formControlName="bio" rows="4"></textarea>
+    </label>
+    <label class="full-width">
+      <span>Location</span>
+      <input type="text" formControlName="location" autocomplete="address-level2" />
+    </label>
+
+    <div class="actions full-width">
+      <button type="submit" [disabled]="saving">
+        {{ saving ? 'Saving…' : 'Save profile' }}
+      </button>
+    </div>
+  </form>
 </div>
