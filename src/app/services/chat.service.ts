@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable, map, tap, catchError, of } from 'rxjs';
 import {
   ChatMessage,
+  ChatAttachment,
   ChatConversation,
   ChatParticipant,
   ChatUser,
@@ -256,12 +257,13 @@ export class ChatService {
   }
 
   /**
-   * Upload file for chat
+   * Upload a validated file into a conversation (P2-03).
+   * The returned attachment ID is sent with the FILE/IMAGE message.
    */
-  uploadFile(formData: FormData): Observable<{ fileUrl: string; fileName: string }> {
+  uploadFile(formData: FormData): Observable<ChatAttachment> {
     const endpoint = `${this.API_BASE_URL}/api/chat/upload`;
-    
-    return this.http.post<ApiResponse<{ fileUrl: string; fileName: string }>>(endpoint, formData).pipe(
+
+    return this.http.post<ApiResponse<ChatAttachment>>(endpoint, formData).pipe(
       map(response => {
         if (!response.data) {
           throw new Error('No file data received');
@@ -273,5 +275,17 @@ export class ChatService {
         throw error;
       })
     );
+  }
+
+  /** Download an attachment with the Bearer token (never exposed in a URL). */
+  downloadAttachment(attachmentId: string): Observable<Blob> {
+    const endpoint = `${this.API_BASE_URL}/api/chat/attachments/${encodeURIComponent(attachmentId)}/download`;
+    return this.http.get(endpoint, { responseType: 'blob' });
+  }
+
+  /** Best-effort cleanup when a message referencing an attachment fails to send. */
+  deleteAttachment(attachmentId: string): Observable<void> {
+    const endpoint = `${this.API_BASE_URL}/api/chat/attachments/${encodeURIComponent(attachmentId)}`;
+    return this.http.delete<ApiResponse<void>>(endpoint).pipe(map(() => undefined));
   }
 }

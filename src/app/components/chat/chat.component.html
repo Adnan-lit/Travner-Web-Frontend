@@ -122,7 +122,22 @@
           </div>
           
           <div class="message-bubble">
-            <p>{{ message.content }}</p>
+            <p *ngIf="message.content">{{ message.content }}</p>
+
+            <div class="attachment" *ngIf="message.attachment">
+              <img *ngIf="isImageAttachment(message) && getAttachmentUrl(message) as imageUrl"
+                   class="attachment-image"
+                   [src]="imageUrl"
+                   [alt]="message.attachment.fileName"
+                   (click)="downloadAttachment(message)" />
+              <span *ngIf="isImageAttachment(message) && !getAttachmentUrl(message)" class="attachment-loading">
+                Loading image…
+              </span>
+              <button type="button" class="attachment-file" *ngIf="!isImageAttachment(message)"
+                      (click)="downloadAttachment(message)">
+                📎 {{ message.attachment.fileName }} ({{ formatFileSize(message.attachment.size) }})
+              </button>
+            </div>
           </div>
           
           <div class="message-footer">

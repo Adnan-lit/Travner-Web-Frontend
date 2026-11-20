@@ -52,6 +52,10 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     private destroy$ = new Subject<void>();
   private typingTimeout: any;
 
+  // Attachments: blob URLs are created from authenticated downloads (P2-03).
+  private attachmentUrls = new Map<string, string>();
+  private loadingAttachments = new Set<string>();
+
   constructor(
     private authService: AuthService,
     private chatService: ChatService,
@@ -82,6 +86,9 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.typingTimeout) {
       clearTimeout(this.typingTimeout);
     }
+
+    this.attachmentUrls.forEach(url => URL.revokeObjectURL(url));
+    this.attachmentUrls.clear();
   }
 
   private checkAuthentication(): boolean {
@@ -444,7 +451,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   attachFile(): void {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = 'image/*,.pdf,.doc,.docx,.txt';
+    fileInput.accept = 'image/jpeg,image/png,image/gif,image/webp,image/bmp,.pdf,.doc,.docx,.txt,.text,.md,.csv';
     fileInput.multiple = false;
     
     fileInput.onchange = (event: any) => {
@@ -462,39 +469,117 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
-    // Check file size (max 10MB)
+    // Mirror the server-side limits as UX validation; the backend is authoritative.
     if (file.size > 10 * 1024 * 1024) {
       alert('File size must be less than 10MB');
       return;
     }
 
-    // Check file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    if (!allowedTypes.includes(file.type)) {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp',
+      'application/pdf', 'text/plain', 'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const allowedExtension = /\.(jpe?g|png|gif|webp|bmp|pdf|docx?|txt|text|md|csv)$/i;
+    if (!allowedTypes.includes(file.type) && !allowedExtension.test(file.name)) {
       alert('File type not supported. Please select an image, PDF, or document file.');
       return;
     }
 
+    const conversationId = this.selectedConversation.id;
     this.sendingMessage = true;
-    
-    // For now, just send the file name as a text message
-    // TODO: Implement proper file upload when backend endpoint is ready
-    const request: SendMessageRequest = {
-      conversationId: this.selectedConversation.id,
-      content: `📎 ${file.name} (File upload feature coming soon)`,
-      messageType: 'TEXT'
-    };
-    
-    this.chatService.sendMessage(request).subscribe({
-      next: (message) => {
-        this.sendingMessage = false;
-        console.log('File message sent:', message);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('conversationId', conversationId);
+
+    this.chatService.uploadFile(formData).subscribe({
+      next: (attachment) => {
+        const request: SendMessageRequest = {
+          conversationId,
+          content: `📎 ${attachment.fileName}`,
+          messageType: attachment.contentType.startsWith('image/') ? 'IMAGE' : 'FILE',
+          attachmentId: attachment.id
+        };
+        this.chatService.sendMessage(request).subscribe({
+          next: () => {
+            this.sendingMessage = false;
+          },
+          error: (error: any) => {
+            console.error('Error sending attachment message:', error);
+            this.sendingMessage = false;
+            alert('Failed to send file. Please try again.');
+            // Best-effort cleanup so a failed send does not leave an orphan.
+            this.chatService.deleteAttachment(attachment.id).subscribe({
+              error: (cleanupError) => console.error('Unable to clean up attachment:', cleanupError)
+            });
+          }
+        });
       },
       error: (error: any) => {
-        console.error('Error sending file message:', error);
+        console.error('Error uploading file:', error);
         this.sendingMessage = false;
-        alert('Failed to send file. Please try again.');
+        alert('Failed to upload file. Please try again.');
       }
+    });
+  }
+
+  /** Whether a message carries an image attachment. */
+  isImageAttachment(message: ChatMessage): boolean {
+    return !!message.attachment?.contentType.startsWith('image/');
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes < 1024) { return `${bytes} B`; }
+    if (bytes < 1024 * 1024) { return `${(bytes / 1024).toFixed(1)} KB`; }
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  /**
+   * Lazily fetches the attachment with the auth interceptor's Bearer token and
+   * returns an object URL suitable for <img>/<a>. Repeated calls are cached.
+   */
+  getAttachmentUrl(message: ChatMessage): string | null {
+    const attachment = message.attachment;
+    if (!attachment) {
+      return null;
+    }
+    const cached = this.attachmentUrls.get(attachment.id);
+    if (cached) {
+      return cached;
+    }
+    if (!this.loadingAttachments.has(attachment.id)) {
+      this.loadingAttachments.add(attachment.id);
+      this.chatService.downloadAttachment(attachment.id).subscribe({
+        next: (blob: Blob) => {
+          this.attachmentUrls.set(attachment.id, URL.createObjectURL(blob));
+        },
+        error: (error: any) => {
+          console.error('Unable to download attachment:', error);
+          this.loadingAttachments.delete(attachment.id);
+        },
+        complete: () => this.loadingAttachments.delete(attachment.id)
+      });
+    }
+    return null;
+  }
+
+  /** Downloads the file to the user's device using the authenticated blob. */
+  downloadAttachment(message: ChatMessage): void {
+    const attachment = message.attachment;
+    if (!attachment) {
+      return;
+    }
+    this.chatService.downloadAttachment(attachment.id).subscribe({
+      next: (blob: Blob) => {
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = attachment.fileName;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(url);
+      },
+      error: (error: any) => console.error('Unable to download attachment:', error)
     });
   }
 

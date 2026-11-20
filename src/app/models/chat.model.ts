@@ -8,6 +8,19 @@ export interface ChatParticipant {
   avatarUrl?: string | null;
 }
 
+/** Metadata for a GridFS-backed chat file (P2-03). */
+export interface ChatAttachment {
+  id: string;
+  conversationId?: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+  /** Authorized endpoint; requires the Bearer token. */
+  downloadUrl: string;
+  fileUrl?: string;
+  uploadedAt?: string;
+}
+
 export interface ChatMessage {
   id: string;
   conversationId: string;
@@ -23,6 +36,8 @@ export interface ChatMessage {
   replyToMessageId?: string;
   readBy: string[];
   status: 'SENT' | 'DELIVERED' | 'READ';
+  attachmentId?: string;
+  attachment?: ChatAttachment;
 }
 
 export interface ChatConversation {
@@ -55,6 +70,7 @@ export interface SendMessageRequest {
   content: string;
   messageType: 'TEXT' | 'IMAGE' | 'FILE';
   replyToMessageId?: string;
+  attachmentId?: string;
 }
 
 export interface ChatUser {

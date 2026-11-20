@@ -19,7 +19,10 @@ describe('ChatComponent', () => {
   let mockRouter: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    const chatServiceSpy = jasmine.createSpyObj('ChatService', ['getConversations', 'getMessages', 'sendMessage']);
+    const chatServiceSpy = jasmine.createSpyObj('ChatService', [
+      'getConversations', 'getMessages', 'sendMessage', 'markMessagesAsRead',
+      'uploadFile', 'downloadAttachment', 'deleteAttachment'
+    ]);
     const webSocketServiceSpy = jasmine.createSpyObj('WebSocketService', ['connect', 'disconnect', 'subscribeToConversation']);
     const authServiceSpy = jasmine.createSpyObj('AuthService', ['isAuthenticated', 'getCurrentUser']);
     const userServiceSpy = jasmine.createSpyObj('UserService', ['searchUsers']);
@@ -224,6 +227,110 @@ describe('ChatComponent', () => {
     component.selectedConversation = null;
 
     expect(component.getSenderDisplayName(message)).toBe('Bob B.');
+  });
+
+  // ---- P2-03: authenticated chat attachments ----
+
+  function attachment(overrides: any = {}): any {
+    return {
+      id: 'att1',
+      conversationId: 'conv1',
+      fileName: 'notes.txt',
+      contentType: 'text/plain',
+      size: 5,
+      downloadUrl: '/api/chat/attachments/att1/download',
+      ...overrides
+    };
+  }
+
+  function selectConversation(): void {
+    component.selectedConversation = {
+      id: 'conv1',
+      participantIds: ['user1', 'user2'],
+      title: 'Direct Message',
+      type: 'DIRECT',
+      participants: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      unreadCount: 0,
+      isActive: true
+    } as any;
+  }
+
+  it('uploads a file then sends a FILE message referencing the attachment ID', () => {
+    selectConversation();
+    mockChatService.uploadFile.and.returnValue(of(attachment()));
+    mockChatService.sendMessage.and.returnValue(of({ id: 'msg1' } as any));
+
+    (component as any).uploadFile(new File(['hello'], 'notes.txt', { type: 'text/plain' }));
+
+    expect(mockChatService.uploadFile).toHaveBeenCalled();
+    const formData = mockChatService.uploadFile.calls.mostRecent().args[0] as FormData;
+    expect(formData.get('conversationId')).toBe('conv1');
+    expect((formData.get('file') as File).name).toBe('notes.txt');
+    expect(mockChatService.sendMessage).toHaveBeenCalledWith(jasmine.objectContaining({
+      conversationId: 'conv1',
+      messageType: 'FILE',
+      attachmentId: 'att1'
+    }));
+    expect(component.sendingMessage).toBeFalse();
+  });
+
+  it('sends an IMAGE message for an uploaded image', () => {
+    selectConversation();
+    mockChatService.uploadFile.and.returnValue(of(attachment({ fileName: 'photo.png', contentType: 'image/png' })));
+    mockChatService.sendMessage.and.returnValue(of({ id: 'msg2' } as any));
+
+    (component as any).uploadFile(new File(['img'], 'photo.png', { type: 'image/png' }));
+
+    expect(mockChatService.sendMessage).toHaveBeenCalledWith(jasmine.objectContaining({
+      messageType: 'IMAGE',
+      attachmentId: 'att1'
+    }));
+  });
+
+  it('rejects oversized and unsupported files before upload', () => {
+    selectConversation();
+    const bigFile = new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'big.txt', { type: 'text/plain' });
+    (component as any).uploadFile(bigFile);
+    expect(mockChatService.uploadFile).not.toHaveBeenCalled();
+
+    const badFile = new File(['x'], 'payload.exe', { type: 'application/octet-stream' });
+    (component as any).uploadFile(badFile);
+    expect(mockChatService.uploadFile).not.toHaveBeenCalled();
+  });
+
+  it('detects image attachments and formats file sizes', () => {
+    expect(component.isImageAttachment({ attachment: attachment({ contentType: 'image/png' }) } as any)).toBeTrue();
+    expect(component.isImageAttachment({ attachment: attachment() } as any)).toBeFalse();
+    expect(component.isImageAttachment({} as any)).toBeFalse();
+    expect(component.formatFileSize(512)).toBe('512 B');
+    expect(component.formatFileSize(2048)).toBe('2.0 KB');
+  });
+
+  it('lazily fetches an attachment once and caches its object URL', () => {
+    mockChatService.downloadAttachment.and.returnValue(of(new Blob(['data'], { type: 'text/plain' })));
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:mock');
+    const message = { attachment: attachment() } as any;
+
+    expect(component.getAttachmentUrl(message)).toBeNull();
+    expect(mockChatService.downloadAttachment).toHaveBeenCalledTimes(1);
+    expect(component.getAttachmentUrl(message)).toBe('blob:mock');
+    expect(mockChatService.downloadAttachment).toHaveBeenCalledTimes(1);
+  });
+
+  it('downloads an attachment as a blob and revokes the temporary URL', () => {
+    mockChatService.downloadAttachment.and.returnValue(of(new Blob(['data'])));
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:download');
+    const revokeSpy = spyOn(URL, 'revokeObjectURL');
+    const clickSpy = spyOn(HTMLAnchorElement.prototype, 'click');
+    const message = { attachment: attachment() } as any;
+
+    component.downloadAttachment(message);
+
+    expect(mockChatService.downloadAttachment).toHaveBeenCalledWith('att1');
+    expect(clickSpy).toHaveBeenCalled();
+    expect(revokeSpy).toHaveBeenCalledWith('blob:download');
   });
 });
 
