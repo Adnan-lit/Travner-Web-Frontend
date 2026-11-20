@@ -184,6 +184,47 @@ describe('ChatComponent', () => {
     expect(isOwnMessage1).toBe(true);
     expect(isOwnMessage2).toBe(false);
   });
+
+  // P2-02: display names come from resolved summaries, never raw ObjectIds.
+  it('prefers resolved displayName over username for participants', () => {
+    expect(component.getParticipantDisplayName({
+      id: '507f1f77bcf86cd799439011',
+      username: 'alice',
+      displayName: 'Alice A.'
+    })).toBe('Alice A.');
+  });
+
+  it('never renders a raw ObjectId or "Unknown User" when display data is missing', () => {
+    const label = component.getParticipantDisplayName({
+      id: '507f1f77bcf86cd799439011',
+      username: '507f1f77bcf86cd799439011',
+      displayName: ''
+    });
+    expect(label).toBe('Former user');
+    expect(label).not.toContain('507f1f77bcf86cd799439011');
+  });
+
+  it('uses the resolved sender summary before the legacy senderUsername', () => {
+    const currentUser: any = { id: 'user1', userName: 'currentuser' };
+    const message: ChatMessage = {
+      id: 'msg1',
+      conversationId: 'conv1',
+      senderId: 'user2',
+      senderUsername: 'bob',
+      sender: { id: 'user2', username: 'bob', displayName: 'Bob B.' },
+      content: 'Hello',
+      messageType: 'TEXT',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isEdited: false,
+      readBy: ['user2'],
+      status: 'DELIVERED'
+    };
+    component.currentUser = currentUser;
+    component.selectedConversation = null;
+
+    expect(component.getSenderDisplayName(message)).toBe('Bob B.');
+  });
 });
 
 

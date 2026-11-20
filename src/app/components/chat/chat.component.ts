@@ -7,12 +7,14 @@ import { AuthService } from '../../services/auth.service';
 import { ChatService } from '../../services/chat.service';
 import { WebSocketService } from '../../services/websocket.service';
 import { UserService } from '../../services/user.service';
-import { 
-  ChatMessage, 
-  ChatConversation, 
-  ConversationWithParticipants, 
+import {
+  ChatMessage,
+  ChatConversation,
+  ChatParticipant,
+  ChatUser,
+  ConversationWithParticipants,
   SendMessageRequest,
-  TypingIndicator 
+  TypingIndicator
 } from '../../models/chat.model';
 import { User } from '../../models/common.model';
 import { UserSearchComponent } from './user-search/user-search.component';
@@ -280,23 +282,13 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     return conversation.title || 'Group Chat';
   }
 
-  private getOtherParticipantFromConversation(conversation: ConversationWithParticipants): User | null {
+  private getOtherParticipantFromConversation(conversation: ConversationWithParticipants): ChatUser | null {
     if (!this.currentUser || !conversation.participants) {
       return null;
     }
-    
-    const otherParticipant = conversation.participants.find(participant => participant.id !== this.currentUser!.id);
-    if (otherParticipant) {
-      return {
-        id: otherParticipant.id,
-        userName: otherParticipant.username || otherParticipant.id,
-        firstName: otherParticipant.firstName || 'User',
-        lastName: otherParticipant.lastName || 'Name',
-        isOnline: otherParticipant.isOnline || false
-      };
-    }
-    
-    return null;
+    // Return the resolved participant summary as-is: its displayName/avatar
+    // would be lost by converting to the legacy User shape (P2-02).
+    return conversation.participants.find(participant => participant.id !== this.currentUser!.id) ?? null;
   }
 
   getSenderDisplayName(message: ChatMessage): string {
@@ -323,8 +315,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     }
 
-    // Fallback to message sender username or a default
-    return message.senderUsername || 'Unknown User';
+    // Prefer the resolved sender summary; the backend also fills senderUsername.
+    return message.sender?.displayName || message.senderUsername || 'Former user';
   }
 
   getConversationLastMessage(conversation: ConversationWithParticipants): string {
@@ -351,7 +343,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.currentUser.id === message.senderId;
   }
 
-  getOtherParticipant(): User | null {
+  getOtherParticipant(): ChatUser | null {
     if (!this.selectedConversation || !this.currentUser) {
       return null;
     }
@@ -359,29 +351,36 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.getOtherParticipantFromConversation(this.selectedConversation);
   }
 
-  getParticipantDisplayName(participant: any): string {
+  getParticipantDisplayName(participant: ChatUser | ChatParticipant | null | undefined): string {
     if (!participant) {
-      return 'Unknown User';
+      return 'Former user';
     }
-    
-    // Try different property names that might exist
-    const userName = participant.userName || participant.username;
-    const firstName = participant.firstName;
-    const lastName = participant.lastName;
-    
-    if (userName) {
+
+    // displayName is the resolved human-readable label from the backend.
+    const displayName = (participant as ChatUser).displayName
+      || (participant as ChatParticipant).displayName;
+    if (displayName) {
+      return displayName;
+    }
+
+    const looksLikeObjectId = (value: string) => /^[0-9a-fA-F]{24}$/.test(value);
+
+    const userName = (participant as ChatUser).userName || participant.username;
+    if (userName && !looksLikeObjectId(userName)) {
       return userName;
     }
-    
-    if (firstName && lastName) {
+
+    const firstName = (participant as ChatUser).firstName;
+    const lastName = (participant as ChatUser).lastName;
+    if (firstName && lastName && !looksLikeObjectId(firstName)) {
       return `${firstName} ${lastName}`.trim();
     }
-    
-    if (firstName) {
+    if (firstName && firstName !== 'User' && !looksLikeObjectId(firstName)) {
       return firstName;
     }
-    
-    return 'Unknown User';
+
+    // Never expose a raw ObjectId as a display name.
+    return 'Former user';
   }
 
   getChatHeaderTitle(): string {

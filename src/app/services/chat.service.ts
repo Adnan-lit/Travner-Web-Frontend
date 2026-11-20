@@ -1,7 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable, map, tap, catchError, of } from 'rxjs';
-import { ChatMessage, ChatConversation, SendMessageRequest, ConversationWithParticipants } from '../models/chat.model';
+import {
+  ChatMessage,
+  ChatConversation,
+  ChatParticipant,
+  ChatUser,
+  SendMessageRequest,
+  ConversationWithParticipants
+} from '../models/chat.model';
 import { User } from '../models/common.model';
 import { ApiResponse } from '../models/common.model';
 import { EnvironmentConfig } from '../config/environment.config';
@@ -39,20 +46,14 @@ export class ChatService {
           return [];
         }
         return response.data.content.map((conv: any) => {
-          // Create proper participant objects with user details
-          const participants = conv.participantIds.map((id: string) => ({
-            id,
-            userName: id, // Will be updated with proper user details
-            firstName: 'User',
-            lastName: 'Name',
-            isOnline: false
-          }));
-          
+          const participants = this.toChatUsers(conv);
           return {
             ...conv,
             participants,
-            // For direct conversations, set the title to the other user's name
-            title: conv.type === 'DIRECT' ? this.generateDirectConversationTitle(conv.participantIds, conv.title) : conv.title
+            // For direct conversations, prefer the resolved participant name
+            title: conv.type === 'DIRECT'
+              ? this.generateDirectConversationTitle(conv.title, participants)
+              : conv.title
           };
         });
       }),
@@ -66,17 +67,41 @@ export class ChatService {
     );
   }
 
-  private generateDirectConversationTitle(participantIds: string[], fallbackTitle: string): string {
-    // For direct conversations, try to extract username from the title or participant IDs
+  /**
+   * Map the backend participant summaries to the legacy ChatUser shape.
+   * Falls back to neutral labels for old payloads — never a raw ObjectId.
+   */
+  private toChatUsers(conv: any): ChatUser[] {
+    if (Array.isArray(conv.participants) && conv.participants.length > 0) {
+      return conv.participants.map((p: ChatParticipant) => ({
+        id: p.id,
+        username: p.username,
+        userName: p.username,
+        displayName: p.displayName,
+        avatarUrl: p.avatarUrl,
+        firstName: '',
+        lastName: '',
+        profilePicture: p.avatarUrl ?? undefined,
+        isOnline: false
+      }));
+    }
+    return (conv.participantIds || []).map((id: string) => ({
+      id,
+      username: '',
+      userName: '',
+      displayName: 'Former user',
+      firstName: '',
+      lastName: '',
+      isOnline: false
+    }));
+  }
+
+  private generateDirectConversationTitle(fallbackTitle: string, participants: ChatUser[]): string {
     if (fallbackTitle && fallbackTitle !== 'Direct Message') {
-      // If the title contains a username pattern, extract it
-      if (fallbackTitle.includes('@')) {
-        return fallbackTitle.split('@')[1] || fallbackTitle;
-      }
       return fallbackTitle;
     }
-    // If no proper title, return a generic one
-    return 'Direct Message';
+    const first = participants[0];
+    return first ? (first.displayName || first.username || 'Direct Message') : 'Direct Message';
   }
 
   /**
@@ -92,7 +117,7 @@ export class ChatService {
         }
         return {
           ...response.data,
-          participants: response.data.participantIds.map((id: string) => ({ id, username: id })) // Placeholder
+          participants: this.toChatUsers(response.data)
         };
       }),
       tap(conversation => {
