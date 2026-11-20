@@ -78,7 +78,7 @@
         <button 
           class="btn btn-outline" 
           (click)="cancelOrder()" 
-          *ngIf="order.status === 'PLACED'">
+          *ngIf="order.status === 'PENDING' || order.status === 'CONFIRMED'">
           Cancel Order
         </button>
         

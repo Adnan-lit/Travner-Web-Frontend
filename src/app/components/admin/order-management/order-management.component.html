@@ -148,10 +148,6 @@
     <div class="bulk-actions-content">
       <span class="selected-count">{{selectedOrders.size}} orders selected</span>
       <div class="bulk-buttons">
-        <button class="btn btn-sm btn-info" (click)="bulkAction('mark_paid')">
-          <i class="fas fa-check"></i>
-          Mark as Paid
-        </button>
         <button class="btn btn-sm btn-primary" (click)="bulkAction('mark_shipped')">
           <i class="fas fa-truck"></i>
           Mark as Shipped
@@ -219,8 +215,8 @@
             </span>
           </td>
           <td>
-            <span class="badge" [ngClass]="getPaymentStatusBadgeClass(order.paymentInfo?.status || 'PENDING')">
-              {{order.paymentInfo?.status || 'PENDING'}}
+            <span class="badge" [ngClass]="getPaymentStatusBadgeClass(order.paymentInfo?.paymentStatus || 'PENDING')">
+              {{order.paymentInfo?.paymentStatus || 'PENDING'}}
             </span>
           </td>
           <td class="date-cell">
@@ -301,8 +297,8 @@
             </div>
             <div class="detail-row">
               <label>Payment Status:</label>
-              <span class="badge" [ngClass]="getPaymentStatusBadgeClass(selectedOrder.paymentInfo?.status || 'PENDING')">
-                {{selectedOrder.paymentInfo?.status || 'PENDING'}}
+              <span class="badge" [ngClass]="getPaymentStatusBadgeClass(selectedOrder.paymentInfo?.paymentStatus || 'PENDING')">
+                {{selectedOrder.paymentInfo?.paymentStatus || 'PENDING'}}
               </span>
             </div>
             <div class="detail-row">

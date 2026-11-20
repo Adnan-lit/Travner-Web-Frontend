@@ -11,10 +11,13 @@
         (change)="onStatusFilterChange()"
         class="form-control">
         <option value="ALL">All Orders</option>
-        <option value="PLACED">Placed</option>
+        <option value="PENDING">Pending</option>
+        <option value="CONFIRMED">Confirmed</option>
         <option value="PAID">Paid</option>
         <option value="FULFILLED">Fulfilled</option>
-        <option value="CANCELED">Canceled</option>
+        <option value="SHIPPED">Shipped</option>
+        <option value="DELIVERED">Delivered</option>
+        <option value="CANCELLED">Cancelled</option>
       </select>
     </div>
   </div>
@@ -83,7 +86,7 @@
         <button 
           class="btn btn-outline" 
           (click)="cancelOrder(order)" 
-          *ngIf="order.status === 'PLACED'">
+          *ngIf="order.status === 'PENDING' || order.status === 'CONFIRMED'">
           Cancel Order
         </button>
       </div>

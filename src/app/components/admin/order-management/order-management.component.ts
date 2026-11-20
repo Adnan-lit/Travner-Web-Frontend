@@ -147,10 +147,10 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
       filteredOrders = filteredOrders.filter(order => order.status === this.filters.status);
     }
 
-    // Apply payment status filter
+    // Apply payment status filter (backend field is paymentStatus)
     if (this.filters.paymentStatus) {
-      filteredOrders = filteredOrders.filter(order => 
-        order.paymentInfo?.status === this.filters.paymentStatus
+      filteredOrders = filteredOrders.filter(order =>
+        order.paymentInfo?.paymentStatus === this.filters.paymentStatus
       );
     }
 
@@ -256,11 +256,11 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
   confirmStatusUpdate(): void {
     if (!this.selectedOrder) return;
 
-    // Call the appropriate service method based on status
+    // Only transitions exposed by the backend state machine are offered.
     let updateMethod;
     switch (this.newStatus) {
       case 'PAID':
-        updateMethod = this.marketplaceService.payOrder(this.selectedOrder.id);
+        updateMethod = this.marketplaceService.confirmCashOrder(this.selectedOrder.id);
         break;
       case 'FULFILLED':
         updateMethod = this.marketplaceService.fulfillOrder(this.selectedOrder.id);
@@ -291,10 +291,6 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
     const orderIds = Array.from(this.selectedOrders);
     
     switch (action) {
-      case 'mark_paid':
-        // Implement bulk mark as paid
-        console.log('Bulk mark as paid:', orderIds);
-        break;
       case 'mark_shipped':
         // Implement bulk mark as shipped
         console.log('Bulk mark as shipped:', orderIds);
@@ -373,19 +369,13 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
   }
 
   getStatusOptions(currentStatus: string): string[] {
+    // Mirrors OrderService.ALLOWED_TRANSITIONS; only endpoints wired here are listed.
     switch (currentStatus) {
       case 'PENDING':
+      case 'CONFIRMED':
         return ['PAID', 'CANCELLED'];
       case 'PAID':
         return ['FULFILLED', 'CANCELLED'];
-      case 'FULFILLED':
-        return ['SHIPPED', 'CANCELLED'];
-      case 'SHIPPED':
-        return ['DELIVERED', 'CANCELLED'];
-      case 'DELIVERED':
-        return ['REFUNDED'];
-      case 'CANCELLED':
-        return ['PENDING'];
       default:
         return [];
     }

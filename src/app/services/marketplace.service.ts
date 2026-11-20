@@ -310,8 +310,7 @@ export class MarketplaceService {
                 phoneNumber: customerInfo.phone
             },
             paymentInfo: {
-                paymentMethod: paymentMethod,
-                transactionId: null
+                paymentMethod: paymentMethod
             },
             notes: ''
         };
@@ -390,13 +389,14 @@ export class MarketplaceService {
     }
 
     /**
-     * Pay order
+     * Confirm cash-on-delivery payment (seller/admin only).
+     * The buyer self-pay endpoint was removed with the payment gateway (D4).
      */
-    payOrder(orderId: string): Observable<ApiResponse<Order>> {
-        const endpoint = `${this.API_BASE_URL}/api/market/orders/${orderId}/pay`;
+    confirmCashOrder(orderId: string): Observable<ApiResponse<Order>> {
+        const endpoint = `${this.API_BASE_URL}/api/market/orders/${orderId}/confirm-cash`;
         return this.http.post<ApiResponse<Order>>(endpoint, {}).pipe(
             catchError(error => {
-                console.error('Error paying order:', error);
+                console.error('Error confirming cash payment:', error);
                 throw error;
             })
         );
@@ -423,19 +423,6 @@ export class MarketplaceService {
         return this.http.post<ApiResponse<Order>>(endpoint, {}).pipe(
             catchError(error => {
                 console.error('Error admin cancelling order:', error);
-                throw error;
-            })
-        );
-    }
-
-    /**
-     * Mark order as paid
-     */
-    markOrderPaid(orderId: string, notes?: string): Observable<ApiResponse<Order>> {
-        const endpoint = `${this.API_BASE_URL}/api/market/orders/${orderId}/pay`;
-        return this.http.post<ApiResponse<Order>>(endpoint, { notes }).pipe(
-            catchError(error => {
-                console.error(`Error marking order ${orderId} as paid:`, error);
                 throw error;
             })
         );

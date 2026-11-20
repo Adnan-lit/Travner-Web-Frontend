@@ -66,8 +66,8 @@ export class OrderDetailComponent implements OnInit {
     cancelOrder(): void {
         if (!this.order) return;
 
-        if (this.order.status !== 'PLACED') {
-            this.toastService.error('Only orders with PLACED status can be canceled', '');
+        if (this.order.status !== 'PENDING' && this.order.status !== 'CONFIRMED') {
+            this.toastService.error('Only pending or confirmed orders can be canceled', '');
             return;
         }
 
@@ -89,8 +89,10 @@ export class OrderDetailComponent implements OnInit {
 
     getStatusClass(status: Order['status']): string {
         switch (status) {
-            case 'PLACED': return 'status-placed';
+            case 'PENDING': return 'status-pending';
             case 'CONFIRMED': return 'status-confirmed';
+            case 'PAID': return 'status-paid';
+            case 'FULFILLED': return 'status-fulfilled';
             case 'SHIPPED': return 'status-shipped';
             case 'DELIVERED': return 'status-delivered';
             case 'CANCELLED': return 'status-canceled';
@@ -100,11 +102,13 @@ export class OrderDetailComponent implements OnInit {
 
     getStatusText(status: Order['status']): string {
         switch (status) {
-            case 'PLACED': return 'Placed';
+            case 'PENDING': return 'Pending';
             case 'CONFIRMED': return 'Confirmed';
+            case 'PAID': return 'Paid';
+            case 'FULFILLED': return 'Fulfilled';
             case 'SHIPPED': return 'Shipped';
             case 'DELIVERED': return 'Delivered';
-            case 'CANCELLED': return 'Canceled';
+            case 'CANCELLED': return 'Cancelled';
             default: return status;
         }
     }

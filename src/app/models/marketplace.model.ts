@@ -105,20 +105,21 @@ export interface CustomerInfo {
 
 export interface Order {
     id: string;
+    version?: number; // optimistic lock for status transitions
     userId: string;
     items: OrderItem[];
     amountTotal: number;
     totalAmount?: number; // Alternative property name
     itemCount: number;
-    status: 'PLACED' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'PENDING' | 'PAID' | 'FULFILLED' | 'REFUNDED';
+    status: 'PENDING' | 'CONFIRMED' | 'PAID' | 'FULFILLED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED';
     customerInfo: CustomerInfo;
     customerName?: string; // For admin display
     customerEmail?: string; // For admin display
     shippingAddress?: string; // For admin display
     paymentInfo?: {
-        status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
-        method?: string;
-        transactionId?: string;
+        paymentStatus: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
+        paymentMethod?: string;
+        paidAt?: string;
     };
     createdAt: string;
     updatedAt: string;
