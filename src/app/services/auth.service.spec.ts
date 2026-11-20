@@ -35,6 +35,11 @@ describe('AuthService (bearer + refresh cookie)', () => {
 
   afterEach(() => httpMock.verify());
 
+  it('does not expose placeholder password-reset stubs', () => {
+    expect((service as any).requestPasswordReset).toBeUndefined();
+    expect((service as any).resetPasswordWithToken).toBeUndefined();
+  });
+
   it('logs in with credentials in the body and keeps the token in memory only', () => {
     service.login('Alice', 'pw').subscribe();
 

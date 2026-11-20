@@ -364,19 +364,6 @@
   transform: rotate(45deg);
 }
 
-.forgot-password {
-  color: #e74c3c;
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.forgot-password:hover {
-  color: #c0392b;
-  text-decoration: underline;
-}
-
 /* Submit Button */
 .btn {
   display: inline-flex;

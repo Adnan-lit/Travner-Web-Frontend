@@ -207,14 +207,6 @@ export class AuthService {
             `${this.API_BASE_URL}/api/public/check-username/${encodeURIComponent(username.trim().toLowerCase())}`);
     }
 
-    requestPasswordReset(): Observable<ApiResponse<{ message: string }>> {
-        return throwError(() => new Error('Password reset is not available yet'));
-    }
-
-    resetPasswordWithToken(): Observable<ApiResponse<{ message: string }>> {
-        return throwError(() => new Error('Password reset is not available yet'));
-    }
-
     updateProfile(profileData: UpdateProfileRequest): Observable<ApiResponse<User>> {
         return this.http.put<ApiResponse<User>>(`${this.API_BASE_URL}/api/user/profile`, profileData)
             .pipe(tap(response => this.updateCurrentUser(response.data)));

@@ -189,19 +189,6 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
     this.showSuccessMessage('Facebook Sign-In integration coming soon!');
   }
 
-  forgotPassword(event: Event): void {
-    event.preventDefault();
-    const username = this.username?.value;
-    if (!username) {
-      this.errorMessage = 'Please enter your username first';
-      return;
-    }
-
-    // Placeholder for forgot password functionality. The username is
-    // intentionally not logged (it is a credential identifier).
-    this.showSuccessMessage('Password reset functionality coming soon!');
-  }
-
   private showSuccessMessage(message: string): void {
     this.successMessage = message;
     setTimeout(() => {
