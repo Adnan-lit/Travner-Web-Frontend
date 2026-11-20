@@ -1,7 +1,7 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { NgIf, NgFor, NgClass } from '@angular/common';
+import { NgIf, NgFor, NgClass, NgOptimizedImage } from '@angular/common';
 import { Observable, Subscription, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, tap, catchError } from 'rxjs/operators';
 import { Product, ProductListResponse, ProductSearchParams } from '../../../models/marketplace.model';
@@ -13,11 +13,13 @@ import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
 @Component({
   selector: 'app-product-list-fixed',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
     NgIf,
     NgFor,
     NgClass,
+    NgOptimizedImage,
     CartSummaryComponent
   ],
   template: `
@@ -51,7 +53,7 @@ import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
                   class="category-select"
                 >
                   <option value="">All Categories</option>
-                  <option *ngFor="let category of categories" [value]="category">
+                  <option *ngFor="let category of categories; trackBy: trackByCategory" [value]="category">
                     {{ category.charAt(0).toUpperCase() + category.slice(1) }}
                   </option>
                 </select>
@@ -86,15 +88,17 @@ import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
       <div *ngIf="!loading && !error" class="products-grid">
         <div *ngIf="products && products.length > 0" class="grid">
           <div
-            *ngFor="let product of products"
+            *ngFor="let product of products; trackBy: trackByProductId"
             class="product-card"
             [ngClass]="getStockClass(product.stockQuantity)"
           >
             <div class="product-image-container">
               <img
-                [src]="getProductImage(product)"
+                [ngSrc]="getProductImage(product)"
                 [alt]="product.name"
                 class="product-image"
+                fill
+                disableOptimizedSrcset
                 (error)="handleImageError($event)"
               />
               <div *ngIf="product.stockQuantity === 0" class="out-of-stock-overlay">
@@ -201,6 +205,7 @@ export class ProductListFixedComponent implements OnInit, OnDestroy {
   loading = false;
   error: string | null = null;
   searchForm: FormGroup;
+  private readonly cdr = inject(ChangeDetectorRef);
   private searchSubscription: Subscription | null = null;
 
   // Pagination
@@ -262,6 +267,7 @@ export class ProductListFixedComponent implements OnInit, OnDestroy {
       if (params['page']) {
         this.currentPage = parseInt(params['page']) || 0;
       }
+      this.cdr.markForCheck();
     });
   }
 
@@ -306,6 +312,7 @@ export class ProductListFixedComponent implements OnInit, OnDestroy {
         }
         
         this.loading = false;
+        this.cdr.markForCheck();
         console.log('✅ ProductListFixedComponent: Products loaded:', this.products.length);
       },
       error: (err) => {
@@ -313,6 +320,7 @@ export class ProductListFixedComponent implements OnInit, OnDestroy {
         this.error = 'Failed to load products. Please try again later.';
         this.loading = false;
         this.products = [];
+        this.cdr.markForCheck();
         this.toastService.error('Failed to load products', '');
       }
     });
@@ -360,13 +368,27 @@ export class ProductListFixedComponent implements OnInit, OnDestroy {
     });
   }
 
+  trackByProductId(_index: number, product: Product): string {
+    return product.id;
+  }
+
+  trackByCategory(_index: number, category: string): string {
+    return category;
+  }
+
   handleImageError(event: any): void {
     event.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
   }
 
   getProductImage(product: Product): string {
+    // Use placehold.co for placeholder images with product-specific dimensions and text
+    const placeholder = `https://placehold.co/300x300/cccccc/969696?text=${encodeURIComponent(product.name || 'Product')}`;
     if (product.images && product.images.length > 0) {
       const imageUrl = product.images[0];
+      // NgOptimizedImage requires a non-empty ngSrc.
+      if (!imageUrl) {
+        return placeholder;
+      }
       // Check if it's a full URL
       if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
         return imageUrl;
@@ -374,8 +396,7 @@ export class ProductListFixedComponent implements OnInit, OnDestroy {
       // Otherwise, assume it's a local image
       return imageUrl;
     }
-    // Use placehold.co for placeholder images with product-specific dimensions and text
-    return `https://placehold.co/300x300/cccccc/969696?text=${encodeURIComponent(product.name || 'Product')}`;
+    return placeholder;
   }
 
   formatPrice(price: number): string {
@@ -438,6 +459,7 @@ export class ProductListFixedComponent implements OnInit, OnDestroy {
       this.toastService.error('Failed to add item to cart', '');
     } finally {
       this.isAddingToCart = false;
+      this.cdr.markForCheck();
     }
   }
 }

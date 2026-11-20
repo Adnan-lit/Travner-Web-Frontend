@@ -42,8 +42,11 @@
     <div class="nav-user">
       <div class="user-info" *ngIf="currentUser">
         <div class="user-avatar">
-          <img src="https://ui-avatars.com/api/?name={{currentUser.firstName}}+{{currentUser.lastName}}&background=e74c3c&color=fff&size=32" 
-               alt="{{currentUser.firstName}} {{currentUser.lastName}}" 
+          <img [ngSrc]="'https://ui-avatars.com/api/?name=' + currentUser.firstName + '+' + currentUser.lastName + '&background=e74c3c&color=fff&size=32'"
+               alt="{{currentUser.firstName}} {{currentUser.lastName}}"
+               width="40"
+               height="40"
+               disableOptimizedSrcset
                *ngIf="currentUser.profileImageUrl; else defaultAvatar">
           <ng-template #defaultAvatar>
             <div class="avatar-placeholder">

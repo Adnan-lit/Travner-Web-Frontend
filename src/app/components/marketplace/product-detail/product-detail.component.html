@@ -7,8 +7,11 @@
     <div class="product-images">
       <div class="main-image">
         <img
-          [src]="product.images[selectedImageIndex] || getPlaceholderImage(product.name)"
+          [ngSrc]="product.images[selectedImageIndex] || getPlaceholderImage(product.name)"
           alt="{{ product.name }}"
+          fill
+          priority
+          disableOptimizedSrcset
           (error)="handleImageError($event)"
         />
       </div>
@@ -24,8 +27,11 @@
           (click)="selectImage(i)"
         >
           <img
-            [src]="image"
+            [ngSrc]="image"
             alt="{{ product.name }} thumbnail"
+            width="80"
+            height="80"
+            disableOptimizedSrcset
             (error)="handleImageError($event)"
           />
         </div>

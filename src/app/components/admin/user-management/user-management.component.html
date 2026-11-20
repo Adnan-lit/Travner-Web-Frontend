@@ -32,7 +32,7 @@
           <p>Total Users</p>
         </div>
       </div>
-      
+
       <div class="stat-card">
         <div class="stat-icon">
           <i class="fas fa-user-check"></i>
@@ -42,7 +42,7 @@
           <p>Active Users</p>
         </div>
       </div>
-      
+
       <div class="stat-card">
         <div class="stat-icon">
           <i class="fas fa-user-shield"></i>
@@ -52,7 +52,7 @@
           <p>Admin Users</p>
         </div>
       </div>
-      
+
       <div class="stat-card">
         <div class="stat-icon">
           <i class="fas fa-user-times"></i>
@@ -62,7 +62,7 @@
           <p>Banned Users</p>
         </div>
       </div>
-      
+
       <div class="stat-card">
         <div class="stat-icon">
           <i class="fas fa-user-plus"></i>
@@ -72,7 +72,7 @@
           <p>New Today</p>
         </div>
       </div>
-      
+
       <div class="stat-card">
         <div class="stat-icon">
           <i class="fas fa-calendar-week"></i>
@@ -90,21 +90,21 @@
     <div class="filters-grid">
       <div class="search-box">
         <i class="fas fa-search"></i>
-        <input 
-          type="text" 
+        <input
+          type="text"
           placeholder="Search users by name, email, or username..."
           [(ngModel)]="filters.search"
           (input)="onSearchChange($any($event.target).value)"
           class="search-input">
       </div>
-      
+
       <select [(ngModel)]="filters.role" (change)="onFilterChange()" class="filter-select">
         <option value="">All Roles</option>
         <option value="USER">User</option>
         <option value="ADMIN">Admin</option>
         <option value="MODERATOR">Moderator</option>
       </select>
-      
+
       <select [(ngModel)]="filters.status" (change)="onFilterChange()" class="filter-select">
         <option value="">All Status</option>
         <option value="ACTIVE">Active</option>
@@ -112,14 +112,14 @@
         <option value="BANNED">Banned</option>
         <option value="PENDING">Pending</option>
       </select>
-      
+
       <select [(ngModel)]="filters.sortBy" (change)="onSortChange()" class="filter-select">
         <option value="createdAt">Sort by Date</option>
         <option value="firstName">Sort by Name</option>
         <option value="email">Sort by Email</option>
         <option value="lastLogin">Sort by Last Login</option>
       </select>
-      
+
       <select [(ngModel)]="filters.sortOrder" (change)="onSortChange()" class="filter-select">
         <option value="desc">Newest First</option>
         <option value="asc">Oldest First</option>
@@ -158,8 +158,8 @@
       <thead>
         <tr>
           <th class="checkbox-column">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               [checked]="selectedUsers.size === users.length && users.length > 0"
               [indeterminate]="selectedUsers.size > 0 && selectedUsers.size < users.length"
               (change)="selectAllUsers()">
@@ -175,17 +175,20 @@
       <tbody>
         <tr *ngFor="let user of users" class="user-row">
           <td class="checkbox-column">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               [checked]="selectedUsers.has(user.id)"
               (change)="toggleUserSelection(user.id)">
           </td>
           <td class="user-info">
             <div class="user-avatar">
-              <img 
+              <img
                 *ngIf="user.profileImageUrl; else defaultAvatar"
-                [src]="user.profileImageUrl" 
-                [alt]="user.firstName + ' ' + user.lastName">
+                [ngSrc]="user.profileImageUrl"
+                [alt]="user.firstName + ' ' + user.lastName"
+                width="50"
+                height="50"
+                disableOptimizedSrcset>
               <ng-template #defaultAvatar>
                 <div class="avatar-placeholder">
                   {{getInitials(user.firstName || '', user.lastName || '')}}
@@ -254,7 +257,7 @@
     <div class="pagination-info">
       Showing {{getPaginationInfo()}} users
     </div>
-    
+
     <div class="pagination-controls">
       <select [(ngModel)]="pagination.size" (change)="onPageSizeChange($any($event.target).value)" class="page-size-select">
         <option value="10">10 per page</option>
@@ -262,25 +265,25 @@
         <option value="50">50 per page</option>
         <option value="100">100 per page</option>
       </select>
-      
+
       <div class="pagination-buttons">
-        <button 
-          class="btn btn-outline btn-sm" 
+        <button
+          class="btn btn-outline btn-sm"
           [disabled]="pagination.page === 0"
           (click)="onPageChange(pagination.page - 1)">
           <i class="fas fa-chevron-left"></i>
         </button>
-        
-        <button 
+
+        <button
           *ngFor="let page of getPageNumbers()"
           class="btn btn-sm"
           [ngClass]="page === pagination.page ? 'btn-primary' : 'btn-outline'"
           (click)="onPageChange(page)">
           {{page + 1}}
         </button>
-        
-        <button 
-          class="btn btn-outline btn-sm" 
+
+        <button
+          class="btn btn-outline btn-sm"
           [disabled]="pagination.page === pagination.totalPages - 1"
           (click)="onPageChange(pagination.page + 1)">
           <i class="fas fa-chevron-right"></i>
@@ -302,10 +305,13 @@
     <div class="modal-body">
       <div class="user-profile">
         <div class="profile-avatar">
-          <img 
+          <img
             *ngIf="selectedUser.profileImageUrl; else defaultAvatar"
-            [src]="selectedUser.profileImageUrl" 
-            [alt]="selectedUser.firstName + ' ' + selectedUser.lastName">
+            [ngSrc]="selectedUser.profileImageUrl"
+            [alt]="selectedUser.firstName + ' ' + selectedUser.lastName"
+            width="80"
+            height="80"
+            disableOptimizedSrcset>
           <ng-template #defaultAvatar>
             <div class="avatar-placeholder-large">
               {{getInitials(selectedUser.firstName || '', selectedUser.lastName || '')}}
@@ -326,7 +332,7 @@
           </div>
         </div>
       </div>
-      
+
       <div class="profile-info">
         <div class="info-row">
           <label>Created:</label>

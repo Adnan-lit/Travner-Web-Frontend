@@ -1,12 +1,15 @@
+import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
+import { ChangeDetectorRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ChatComponent } from './chat.component';
+import { By } from '@angular/platform-browser';
+import { Router } from '@angular/router';
+import { BehaviorSubject, Subject, of } from 'rxjs';
+import { ChatAutosizeVirtualScrollStrategy, ChatComponent } from './chat.component';
 import { ChatService } from '../../services/chat.service';
 import { WebSocketService } from '../../services/websocket.service';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
-import { Router } from '@angular/router';
-import { of } from 'rxjs';
-import { ChatMessage } from '../../models/chat.model';
+import { ChatMessage, ConversationWithParticipants } from '../../models/chat.model';
 import { User } from '../../models/common.model';
 
 describe('ChatComponent', () => {
@@ -23,13 +26,30 @@ describe('ChatComponent', () => {
       'getConversations', 'getMessages', 'sendMessage', 'markMessagesAsRead',
       'uploadFile', 'downloadAttachment', 'deleteAttachment'
     ]);
-    const webSocketServiceSpy = jasmine.createSpyObj('WebSocketService', ['connect', 'disconnect', 'subscribeToConversation']);
+    const webSocketServiceSpy = jasmine.createSpyObj('WebSocketService', [
+      'connect', 'disconnect', 'subscribeToConversation', 'unsubscribeFromConversation',
+      'getConnectionStatus', 'sendTypingIndicator'
+    ]);
     const authServiceSpy = jasmine.createSpyObj('AuthService', ['isAuthenticated', 'getCurrentUser']);
     const userServiceSpy = jasmine.createSpyObj('UserService', ['searchUsers']);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
+    // The component subscribes to these streams in ngOnInit; virtual-scroll DOM
+    // tests call detectChanges(), so the streams must exist on the spy.
+    Object.assign(chatServiceSpy, {
+      conversations$: new BehaviorSubject<ConversationWithParticipants[]>([]).asObservable(),
+      messages$: new BehaviorSubject<Map<string, ChatMessage[]>>(new Map()).asObservable()
+    });
+
+    chatServiceSpy.getConversations.and.returnValue(of([]));
+    chatServiceSpy.getMessages.and.returnValue(of([]));
+    chatServiceSpy.markMessagesAsRead.and.returnValue(of(void 0));
+    webSocketServiceSpy.getConnectionStatus.and.returnValue(of(false));
+    authServiceSpy.isAuthenticated.and.returnValue(true);
+    authServiceSpy.getCurrentUser.and.returnValue({ id: 'user1', userName: 'currentuser' } as any);
+
     await TestBed.configureTestingModule({
-      imports: [ChatComponent],
+      imports: [ChatComponent, ScrollingModule],
       providers: [
         { provide: ChatService, useValue: chatServiceSpy },
         { provide: WebSocketService, useValue: webSocketServiceSpy },
@@ -257,6 +277,139 @@ describe('ChatComponent', () => {
     } as any;
   }
 
+  // ---- P3-02: virtualized chat lists ----
+
+  function detectChanges(): void {
+    // Tests mutate OnPush state directly, so mark the component view dirty and check it.
+    fixture.debugElement.injector.get(ChangeDetectorRef).markForCheck();
+    fixture.componentRef.changeDetectorRef.detectChanges();
+  }
+
+  function makeMessage(id: string): ChatMessage {
+    return {
+      id,
+      conversationId: 'conv1',
+      senderId: 'user2',
+      senderUsername: 'otheruser',
+      content: `Message ${id}`,
+      messageType: 'TEXT',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isEdited: false,
+      readBy: [],
+      status: 'DELIVERED'
+    };
+  }
+
+  function makeConversation(id: string): ConversationWithParticipants {
+    return {
+      id,
+      participantIds: ['user1', 'user2'],
+      title: `Conversation ${id}`,
+      type: 'GROUP',
+      participants: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      unreadCount: 0,
+      isActive: true
+    };
+  }
+
+  async function measureViewport(selector: string): Promise<void> {
+    const element = fixture.nativeElement.querySelector(selector) as HTMLElement;
+    expect(element).withContext(selector).toBeTruthy();
+    // Karma's iframe can report a zero-height viewport; give CDK a real size.
+    element.style.height = '300px';
+    element.style.width = '400px';
+    const viewport = fixture.debugElement.query(By.css(selector)).componentInstance as CdkVirtualScrollViewport;
+    viewport.checkViewportSize();
+    detectChanges();
+    await fixture.whenStable();
+    detectChanges();
+  }
+
+  it('uses stable identities for both virtualized lists', () => {
+    expect(component.trackByConversationId(0, makeConversation('c1'))).toBe('c1');
+    expect(component.trackByMessageId(0, makeMessage('m1'))).toBe('m1');
+  });
+
+  it('recalculates the target offset after variable-height rows are measured', () => {
+    const viewport = jasmine.createSpyObj('viewport', [
+      'scrollToOffset', 'setTotalContentSize', 'setRenderedRange', 'setRenderedContentOffset',
+      'getDataLength', 'getViewportSize', 'measureScrollOffset', 'getRenderedRange', 'measureRangeSize'
+    ]) as unknown as CdkVirtualScrollViewport;
+    (viewport.getDataLength as jasmine.Spy).and.returnValue(3);
+    (viewport.getViewportSize as jasmine.Spy).and.returnValue(100);
+    (viewport.measureScrollOffset as jasmine.Spy).and.returnValue(0);
+    (viewport.getRenderedRange as jasmine.Spy).and.returnValue({ start: 0, end: 3 });
+    (viewport.measureRangeSize as jasmine.Spy).and.returnValue(200);
+
+    const strategy = new ChatAutosizeVirtualScrollStrategy(0, 0);
+    strategy.attach(viewport);
+    strategy.scrollToIndex(2, 'auto');
+
+    const scrollSpy = viewport.scrollToOffset as jasmine.Spy;
+    const initialOffset = scrollSpy.calls.mostRecent().args[0] as number;
+    strategy.onContentRendered();
+    const measuredOffset = scrollSpy.calls.mostRecent().args[0] as number;
+    strategy.onContentRendered();
+
+    expect(measuredOffset).toBeGreaterThan(initialOffset);
+    expect(scrollSpy.calls.mostRecent().args[0]).toBe(measuredOffset);
+  });
+
+  it('renders messages through the virtual viewport with a measured height', async () => {
+    detectChanges(); // ngOnInit with mocked service streams
+    selectConversation();
+    component.messages = [makeMessage('m1'), makeMessage('m2')];
+    detectChanges();
+
+    await measureViewport('.messages-viewport');
+
+    const rendered = fixture.nativeElement.querySelectorAll('.messages-viewport .message-item');
+    expect(rendered.length).toBe(2);
+    expect(rendered[0].textContent).toContain('Message m1');
+    expect(rendered[1].textContent).toContain('Message m2');
+  });
+
+  it('supports scroll-to-index with the variable-size message strategy', async () => {
+    detectChanges();
+    selectConversation();
+    component.messages = [makeMessage('m1'), makeMessage('m2')];
+    detectChanges();
+
+    await measureViewport('.messages-viewport');
+
+    expect(component.messagesViewport).toBeTruthy();
+    expect(() => component.messagesViewport!.scrollToIndex(1, 'auto')).not.toThrow();
+  });
+
+  it('resolves the message viewport even when the conversation list is virtualized', async () => {
+    detectChanges();
+    component.filteredConversations = [makeConversation('c1')];
+    selectConversation();
+    component.messages = [makeMessage('m1')];
+    detectChanges();
+
+    await measureViewport('.conversations-viewport');
+    await measureViewport('.messages-viewport');
+
+    const element = (component.messagesViewport as any).elementRef.nativeElement as HTMLElement;
+    expect(element.classList).toContain('messages-viewport');
+  });
+
+  it('renders conversations through the fixed-size virtual viewport', async () => {
+    detectChanges();
+    component.filteredConversations = [makeConversation('c1'), makeConversation('c2')];
+    detectChanges();
+
+    await measureViewport('.conversations-viewport');
+
+    const rendered = fixture.nativeElement.querySelectorAll('.conversations-viewport .conversation-item');
+    expect(rendered.length).toBe(2);
+    expect(rendered[0].textContent).toContain('Conversation c1');
+  });
+
   it('uploads a file then sends a FILE message referencing the attachment ID', () => {
     selectConversation();
     mockChatService.uploadFile.and.returnValue(of(attachment()));
@@ -317,6 +470,32 @@ describe('ChatComponent', () => {
     expect(mockChatService.downloadAttachment).toHaveBeenCalledTimes(1);
     expect(component.getAttachmentUrl(message)).toBe('blob:mock');
     expect(mockChatService.downloadAttachment).toHaveBeenCalledTimes(1);
+  });
+
+  it('revokes cached attachment URLs when the chat is destroyed', () => {
+    mockChatService.downloadAttachment.and.returnValue(of(new Blob(['data'], { type: 'text/plain' })));
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:cached');
+    const revokeSpy = spyOn(URL, 'revokeObjectURL');
+    const message = { attachment: attachment() } as any;
+
+    expect(component.getAttachmentUrl(message)).toBeNull();
+    expect(component.getAttachmentUrl(message)).toBe('blob:cached');
+    fixture.destroy();
+
+    expect(revokeSpy).toHaveBeenCalledWith('blob:cached');
+  });
+
+  it('does not create an object URL when an attachment fetch completes after destroy', () => {
+    const response$ = new Subject<Blob>();
+    mockChatService.downloadAttachment.and.returnValue(response$.asObservable());
+    const createSpy = spyOn(URL, 'createObjectURL').and.returnValue('blob:late');
+    const message = { attachment: attachment() } as any;
+
+    expect(component.getAttachmentUrl(message)).toBeNull();
+    fixture.destroy();
+    response$.next(new Blob(['data'], { type: 'text/plain' }));
+
+    expect(createSpy).not.toHaveBeenCalled();
   });
 
   it('downloads an attachment as a blob and revokes the temporary URL', () => {

@@ -1,5 +1,5 @@
 import { ApplicationConfig, inject, provideAppInitializer, provideZoneChangeDetection } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withPreloading } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
@@ -7,6 +7,7 @@ import { routes } from './app.routes';
 import { authTokenInterceptor } from './core/http/auth-token.interceptor';
 import { apiEnvelopeInterceptor } from './core/http/api-envelope.interceptor';
 import { AuthService } from './services/auth.service';
+import { SelectivePreloadingStrategy } from './core/routing/selective-preloading.strategy';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -14,7 +15,7 @@ export const appConfig: ApplicationConfig = {
       eventCoalescing: true,
       runCoalescing: true
     }),
-    provideRouter(routes),
+    provideRouter(routes, withPreloading(SelectivePreloadingStrategy)),
     provideAnimationsAsync(),
     // Restore the session from the HttpOnly refresh cookie before first render.
     provideAppInitializer(() => inject(AuthService).initializeSession()),

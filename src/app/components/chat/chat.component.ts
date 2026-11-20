@@ -1,5 +1,26 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  Directive,
+  ElementRef,
+  forwardRef,
+  Input,
+  numberAttribute,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  ViewChild
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ListRange } from '@angular/cdk/collections';
+import {
+  CdkVirtualScrollViewport,
+  ScrollingModule,
+  VIRTUAL_SCROLL_STRATEGY,
+  VirtualScrollStrategy
+} from '@angular/cdk/scrolling';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -19,16 +40,220 @@ import {
 import { User } from '../../models/common.model';
 import { UserSearchComponent } from './user-search/user-search.component';
 
+/**
+ * CDK 19's stable scrolling package only ships a fixed-size strategy; autosize lives in
+ * @angular/cdk-experimental, which is deliberately not a dependency of this app. This small
+ * strategy measures the items CDK has rendered and uses their average size for unseen rows.
+ */
+export class ChatAutosizeVirtualScrollStrategy implements VirtualScrollStrategy {
+  readonly scrolledIndexChange = new Subject<number>();
+
+  private viewport: CdkVirtualScrollViewport | null = null;
+  private readonly measuredSizes = new Map<number, number>();
+  private readonly defaultItemSize = 120;
+  private pendingScrollIndex: number | null = null;
+  private lastAppliedScrollOffset: number | null = null;
+
+  constructor(private minBufferPx: number, private maxBufferPx: number) {}
+
+  attach(viewport: CdkVirtualScrollViewport): void {
+    this.viewport = viewport;
+    this.measuredSizes.clear();
+    this.updateRange(0);
+  }
+
+  detach(): void {
+    this.viewport = null;
+    this.pendingScrollIndex = null;
+    this.lastAppliedScrollOffset = null;
+  }
+
+  onContentScrolled(): void {
+    if (this.viewport) {
+      this.updateRange(this.viewport.measureScrollOffset());
+    }
+  }
+
+  onDataLengthChanged(): void {
+    if (!this.viewport) {
+      return;
+    }
+    const length = this.viewport.getDataLength();
+    for (const index of this.measuredSizes.keys()) {
+      if (index >= length) {
+        this.measuredSizes.delete(index);
+      }
+    }
+    this.updateRange(this.viewport.measureScrollOffset());
+    this.applyPendingScroll('auto');
+  }
+
+  onContentRendered(): void {
+    if (!this.viewport) {
+      return;
+    }
+    const range = this.viewport.getRenderedRange();
+    for (let index = range.start; index < range.end; index++) {
+      const size = this.viewport.measureRangeSize({ start: index, end: index + 1 });
+      if (size > 0) {
+        this.measuredSizes.set(index, size);
+      }
+    }
+    this.updateTotalSize();
+    if (this.applyPendingScroll('auto')) {
+      // The target and the rows before it have now been measured; further
+      // renders should no longer override the user's scroll position.
+      this.pendingScrollIndex = null;
+      this.lastAppliedScrollOffset = null;
+    }
+  }
+
+  onRenderedOffsetChanged(): void {
+    // This strategy owns the rendered offset, so there is nothing to recalculate here.
+  }
+
+  scrollToIndex(index: number, behavior: ScrollBehavior): void {
+    if (!this.viewport) {
+      return;
+    }
+    const maxIndex = Math.max(0, this.viewport.getDataLength() - 1);
+    this.pendingScrollIndex = Math.min(Math.max(0, index), maxIndex);
+    this.lastAppliedScrollOffset = null;
+    this.applyPendingScroll(behavior);
+  }
+
+  /** Re-applies an in-flight scroll after variable-height rows have been measured. */
+  private applyPendingScroll(behavior: ScrollBehavior): boolean {
+    if (!this.viewport || this.pendingScrollIndex === null) {
+      return true;
+    }
+    const offset = this.offsetForIndex(this.pendingScrollIndex);
+    const stable = this.lastAppliedScrollOffset !== null
+      && Math.abs(offset - this.lastAppliedScrollOffset) < 1
+      && this.measuredSizes.has(this.pendingScrollIndex);
+    this.lastAppliedScrollOffset = offset;
+    this.viewport.scrollToOffset(offset, behavior);
+    return stable;
+  }
+
+  updateBufferSize(minBufferPx: number, maxBufferPx: number): void {
+    this.minBufferPx = minBufferPx;
+    this.maxBufferPx = maxBufferPx;
+    if (this.viewport) {
+      this.updateRange(this.viewport.measureScrollOffset());
+    }
+  }
+
+  private sizeFor(index: number): number {
+    return this.measuredSizes.get(index) ?? this.defaultItemSize;
+  }
+
+  private averageSize(): number {
+    if (this.measuredSizes.size === 0) {
+      return this.defaultItemSize;
+    }
+    let total = 0;
+    this.measuredSizes.forEach(size => total += size);
+    return total / this.measuredSizes.size;
+  }
+
+  private offsetForIndex(index: number): number {
+    let offset = 0;
+    for (let i = 0; i < index; i++) {
+      offset += this.sizeFor(i);
+    }
+    return offset;
+  }
+
+  private indexForOffset(offset: number): number {
+    const length = this.viewport?.getDataLength() ?? 0;
+    let consumed = 0;
+    for (let index = 0; index < length; index++) {
+      consumed += this.sizeFor(index);
+      if (consumed > offset) {
+        return index;
+      }
+    }
+    return Math.max(0, length - 1);
+  }
+
+  private updateTotalSize(): void {
+    if (!this.viewport) {
+      return;
+    }
+    let total = 0;
+    for (let index = 0; index < this.viewport.getDataLength(); index++) {
+      total += this.sizeFor(index);
+    }
+    this.viewport.setTotalContentSize(total);
+  }
+
+  private updateRange(offset: number): void {
+    if (!this.viewport) {
+      return;
+    }
+    const viewport = this.viewport;
+    const length = viewport.getDataLength();
+    this.updateTotalSize();
+    if (length === 0) {
+      viewport.setRenderedRange({ start: 0, end: 0 });
+      return;
+    }
+
+    const itemSize = this.averageSize();
+    const firstVisible = this.indexForOffset(offset);
+    const visibleCount = Math.ceil((viewport.getViewportSize() || itemSize) / itemSize) + 1;
+    const bufferPx = Math.max(this.minBufferPx, this.maxBufferPx);
+    const bufferCount = Math.ceil(bufferPx / itemSize);
+    const range: ListRange = {
+      start: Math.max(0, firstVisible - bufferCount),
+      end: Math.min(length, firstVisible + visibleCount + bufferCount)
+    };
+    viewport.setRenderedRange(range);
+    viewport.setRenderedContentOffset(this.offsetForIndex(range.start));
+    this.scrolledIndexChange.next(firstVisible);
+  }
+}
+
+/** Activates the local autosize strategy via the familiar `autosize` viewport attribute. */
+@Directive({
+  selector: 'cdk-virtual-scroll-viewport[autosize]',
+  standalone: true,
+  providers: [
+    {
+      provide: VIRTUAL_SCROLL_STRATEGY,
+      useFactory: (directive: ChatAutosizeViewportDirective) => directive.strategy,
+      deps: [forwardRef(() => ChatAutosizeViewportDirective)]
+    }
+  ]
+})
+export class ChatAutosizeViewportDirective implements OnChanges {
+  @Input({ transform: numberAttribute }) minBufferPx = 300;
+  @Input({ transform: numberAttribute }) maxBufferPx = 900;
+
+  readonly strategy = new ChatAutosizeVirtualScrollStrategy(this.minBufferPx, this.maxBufferPx);
+
+  ngOnChanges(): void {
+    this.strategy.updateBufferSize(this.minBufferPx, this.maxBufferPx);
+  }
+}
+
 @Component({
-    selector: 'app-chat',
-    standalone: true,
-  imports: [CommonModule, FormsModule, UserSearchComponent],
-    templateUrl: './chat.component.html',
-    styleUrls: ['./chat.component.css']
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CommonModule, FormsModule, ScrollingModule, ChatAutosizeViewportDirective, UserSearchComponent],
+  templateUrl: './chat.component.html',
+  styleUrls: ['./chat.component.css'],
+  // Chat state is mutated by service/WebSocket/blob callbacks rather than templates,
+  // so every async path below explicitly calls markForCheck().
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
   @ViewChild('messageInput') messageInput!: ElementRef;
+  // The conversation viewport is also a CdkVirtualScrollViewport, so resolve the
+  // message viewport through its template reference rather than by directive type.
+  @ViewChild('messagesContainer', { read: CdkVirtualScrollViewport }) messagesViewport?: CdkVirtualScrollViewport;
 
     // Data
   conversations: ConversationWithParticipants[] = [];
@@ -51,6 +276,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   // WebSocket
     private destroy$ = new Subject<void>();
   private typingTimeout: any;
+  private destroyed = false;
 
   // Attachments: blob URLs are created from authenticated downloads (P2-03).
   private attachmentUrls = new Map<string, string>();
@@ -59,9 +285,10 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(
     private authService: AuthService,
     private chatService: ChatService,
-        private webSocketService: WebSocketService,
+    private webSocketService: WebSocketService,
     private userService: UserService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -79,9 +306,10 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy(): void {
-        this.destroy$.next();
-        this.destroy$.complete();
-        this.webSocketService.disconnect();
+    this.destroyed = true;
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.webSocketService.disconnect();
     
     if (this.typingTimeout) {
       clearTimeout(this.typingTimeout);
@@ -108,10 +336,12 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
         this.conversations = conversations;
         this.filteredConversations = conversations;
         this.loadingConversations = false;
+        this.cdr.markForCheck();
       },
-      error: (error) => {
-        console.error('Error loading conversations:', error);
+      error: () => {
+        console.error('Unable to load conversations.');
         this.loadingConversations = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -122,6 +352,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
       .pipe(takeUntil(this.destroy$))
       .subscribe(connected => {
         this.isConnected = connected;
+        this.cdr.markForCheck();
         if (connected) {
           console.log('WebSocket connected successfully');
         } else {
@@ -137,6 +368,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
       .subscribe(conversations => {
         this.conversations = conversations;
         this.filteredConversations = conversations;
+        this.cdr.markForCheck();
       });
 
     // Subscribe to messages updates
@@ -145,6 +377,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
       .subscribe(messagesMap => {
         if (this.selectedConversation) {
           this.messages = messagesMap.get(this.selectedConversation.id) || [];
+          this.cdr.markForCheck();
           setTimeout(() => this.scrollToBottom(), 100);
         }
       });
@@ -162,6 +395,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     
     // Subscribe to conversation WebSocket channel
     this.webSocketService.subscribeToConversation(conversation.id);
+    this.cdr.markForCheck();
   }
 
   private loadMessages(conversationId: string): void {
@@ -170,20 +404,22 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
       next: (messages) => {
         this.messages = messages;
         this.loadingMessages = false;
+        this.cdr.markForCheck();
         setTimeout(() => this.scrollToBottom(), 100);
       },
-      error: (error) => {
-        console.error('Error loading messages:', error);
+      error: () => {
+        console.error('Unable to load messages.');
         this.messages = [];
         this.loadingMessages = false;
+        this.cdr.markForCheck();
       }
     });
   }
 
   private markMessagesAsRead(conversationId: string): void {
     this.chatService.markMessagesAsRead(conversationId).subscribe({
-      error: (error) => {
-        console.error('Error marking messages as read:', error);
+      error: () => {
+        console.error('Unable to mark messages as read.');
       }
     });
   }
@@ -209,14 +445,15 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     };
 
     this.chatService.sendMessage(request).subscribe({
-      next: (message) => {
-                this.sendingMessage = false;
-        console.log('Message sent successfully:', message);
-            },
+      next: () => {
+        this.sendingMessage = false;
+        this.cdr.markForCheck();
+      },
       error: (error) => {
-                console.error('Error sending message:', error);
-                this.sendingMessage = false;
+        console.error('Unable to send message.');
+        this.sendingMessage = false;
         this.newMessage = messageContent; // Restore message on error
+        this.cdr.markForCheck();
         
         if (error.status === 401) {
           alert('Authentication failed. Please sign in again.');
@@ -416,29 +653,45 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private scrollToBottom(): void {
-      if (this.messagesContainer) {
-      const element = this.messagesContainer.nativeElement;
+    if (this.messagesViewport && this.messages.length > 0) {
+      // Autosize measures asynchronously; refresh dimensions before jumping to the last item.
+      this.messagesViewport.checkViewportSize();
+      this.messagesViewport.scrollToIndex(this.messages.length - 1, 'auto');
+      return;
+    }
+
+    // Fallback for the brief window before the virtual viewport is instantiated.
+    if (this.messagesContainer) {
+      const element = this.messagesContainer.nativeElement as HTMLElement;
       element.scrollTop = element.scrollHeight;
     }
   }
 
+  /** Stable identity for the virtualized conversation list. */
+  trackByConversationId(_index: number, conversation: ConversationWithParticipants): string {
+    return conversation.id;
+  }
+
+  /** Stable identity for the virtualized message list. */
+  trackByMessageId(index: number, message: ChatMessage): string {
+    return message.id || `${message.conversationId}:${message.createdAt}:${index}`;
+  }
+
   // User search functionality
   onUserSelected(user: User): void {
-    console.log('User selected for chat:', user);
-    
     // Create or get direct conversation with selected user
     this.chatService.getDirectConversation(user.id).subscribe({
       next: (conversation) => {
         this.selectConversation(conversation);
         this.showUserSearch = false;
-        console.log('Started conversation with:', user.userName);
-                },
-                error: (error) => {
-        console.error('Error creating conversation:', error);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        console.error('Unable to start conversation.');
         alert('Failed to start conversation. Please try again.');
-                }
-            });
-        }
+      }
+    });
+  }
 
   toggleUserSearch(): void {
     this.showUserSearch = !this.showUserSearch;
@@ -502,21 +755,24 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
         this.chatService.sendMessage(request).subscribe({
           next: () => {
             this.sendingMessage = false;
+            this.cdr.markForCheck();
           },
-          error: (error: any) => {
-            console.error('Error sending attachment message:', error);
+          error: () => {
+            console.error('Unable to send attachment message.');
             this.sendingMessage = false;
+            this.cdr.markForCheck();
             alert('Failed to send file. Please try again.');
             // Best-effort cleanup so a failed send does not leave an orphan.
             this.chatService.deleteAttachment(attachment.id).subscribe({
-              error: (cleanupError) => console.error('Unable to clean up attachment:', cleanupError)
+              error: () => console.error('Unable to clean up attachment.')
             });
           }
         });
       },
-      error: (error: any) => {
-        console.error('Error uploading file:', error);
+      error: () => {
+        console.error('Unable to upload file.');
         this.sendingMessage = false;
+        this.cdr.markForCheck();
         alert('Failed to upload file. Please try again.');
       }
     });
@@ -546,41 +802,61 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     if (cached) {
       return cached;
     }
-    if (!this.loadingAttachments.has(attachment.id)) {
-      this.loadingAttachments.add(attachment.id);
-      this.chatService.downloadAttachment(attachment.id).subscribe({
+    if (this.destroyed || this.loadingAttachments.has(attachment.id)) {
+      return null;
+    }
+    this.loadingAttachments.add(attachment.id);
+    this.chatService.downloadAttachment(attachment.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
         next: (blob: Blob) => {
-          this.attachmentUrls.set(attachment.id, URL.createObjectURL(blob));
-        },
-        error: (error: any) => {
-          console.error('Unable to download attachment:', error);
           this.loadingAttachments.delete(attachment.id);
+          if (this.destroyed) {
+            return;
+          }
+          this.attachmentUrls.set(attachment.id, URL.createObjectURL(blob));
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.loadingAttachments.delete(attachment.id);
+          if (!this.destroyed) {
+            console.error('Unable to download attachment.');
+            this.cdr.markForCheck();
+          }
         },
         complete: () => this.loadingAttachments.delete(attachment.id)
       });
-    }
     return null;
   }
 
   /** Downloads the file to the user's device using the authenticated blob. */
   downloadAttachment(message: ChatMessage): void {
     const attachment = message.attachment;
-    if (!attachment) {
+    if (!attachment || this.destroyed) {
       return;
     }
-    this.chatService.downloadAttachment(attachment.id).subscribe({
-      next: (blob: Blob) => {
-        const url = URL.createObjectURL(blob);
-        const anchor = document.createElement('a');
-        anchor.href = url;
-        anchor.download = attachment.fileName;
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-        URL.revokeObjectURL(url);
-      },
-      error: (error: any) => console.error('Unable to download attachment:', error)
-    });
+    this.chatService.downloadAttachment(attachment.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob: Blob) => {
+          if (this.destroyed) {
+            return;
+          }
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = attachment.fileName;
+          document.body.appendChild(anchor);
+          anchor.click();
+          anchor.remove();
+          URL.revokeObjectURL(url);
+        },
+        error: () => {
+          if (!this.destroyed) {
+            console.error('Unable to download attachment.');
+          }
+        }
+      });
   }
 
   showConversationInfo(): void {

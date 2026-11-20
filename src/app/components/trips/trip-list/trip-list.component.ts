@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TripService } from '../../../services/trip.service';
@@ -10,7 +10,8 @@ import { Trip, TripParticipant } from '../../../services/trip.service';
 @Component({
   selector: 'app-trip-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, NgOptimizedImage],
   template: `
     <div class="trip-list-container">
       <!-- Header -->
@@ -82,16 +83,18 @@ import { Trip, TripParticipant } from '../../../services/trip.service';
       <div class="trips-grid" *ngIf="!loading && !error">
         <!-- Trip Cards -->
         <div 
-          *ngFor="let trip of trips" 
+          *ngFor="let trip of trips; trackBy: trackByTripId"
           class="trip-card"
           [class.featured]="trip.status === 'CONFIRMED'"
           (click)="viewTripDetails(trip.id)"
         >
           <!-- Trip Image -->
           <div class="trip-image">
-            <img 
-              [src]="getTripImage(trip)" 
+            <img
+              [ngSrc]="getTripImage(trip)"
               [alt]="trip.title"
+              fill
+              disableOptimizedSrcset
               (error)="handleImageError($event)"
             />
             <div class="trip-status" [class]="getStatusClass(trip.status)">
@@ -125,7 +128,7 @@ import { Trip, TripParticipant } from '../../../services/trip.service';
 
             <!-- Trip Tags -->
             <div class="trip-tags" *ngIf="trip.tags && trip.tags.length > 0">
-              <span class="tag" *ngFor="let tag of trip.tags.slice(0, 3)">{{ tag }}</span>
+              <span class="tag" *ngFor="let tag of trip.tags.slice(0, 3); trackBy: trackByTag">{{ tag }}</span>
               <span class="more-tags" *ngIf="trip.tags.length > 3">+{{ trip.tags.length - 3 }} more</span>
             </div>
 
@@ -209,7 +212,7 @@ import { Trip, TripParticipant } from '../../../services/trip.service';
         
         <div class="page-numbers">
           <button 
-            *ngFor="let page of getPageNumbers()" 
+            *ngFor="let page of getPageNumbers(); trackBy: trackByPage"
             class="page-btn"
             [class.active]="page === currentPage"
             (click)="onPageChange(page)"
@@ -725,6 +728,7 @@ export class TripListComponent implements OnInit, OnDestroy {
 
   // Search form
   searchForm: FormGroup;
+  private readonly cdr = inject(ChangeDetectorRef);
 
   constructor(
     private tripService: TripService,
@@ -752,10 +756,12 @@ export class TripListComponent implements OnInit, OnDestroy {
   private checkAuthentication(): void {
     this.authService.isAuthenticated$.subscribe(isAuth => {
       this.isAuthenticated = isAuth;
+      this.cdr.markForCheck();
     });
 
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
+      this.cdr.markForCheck();
     });
   }
 
@@ -789,11 +795,13 @@ export class TripListComponent implements OnInit, OnDestroy {
         this.totalPages = response.pagination?.totalPages || 0;
         this.totalElements = response.pagination?.totalElements || 0;
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
         console.error('Error loading trips:', error);
         this.error = 'Failed to load trips. Please try again.';
         this.loading = false;
+        this.cdr.markForCheck();
         this.toastService.error('Failed to load trips', '');
       }
     });
@@ -825,6 +833,18 @@ export class TripListComponent implements OnInit, OnDestroy {
     }
     
     return pages;
+  }
+
+  trackByTripId(_index: number, trip: Trip): string {
+    return trip.id;
+  }
+
+  trackByTag(_index: number, tag: string): string {
+    return tag;
+  }
+
+  trackByPage(_index: number, page: number): number {
+    return page;
   }
 
   viewTripDetails(tripId: string): void {
@@ -881,10 +901,12 @@ export class TripListComponent implements OnInit, OnDestroy {
   }
 
   getTripImage(trip: Trip): string {
+    const placeholder = `https://placehold.co/400x200/007bff/ffffff?text=${encodeURIComponent(trip.destination)}`;
     if (trip.photos && trip.photos.length > 0) {
-      return trip.photos[0].url;
+      // NgOptimizedImage requires a non-empty ngSrc.
+      return trip.photos[0].url || placeholder;
     }
-    return `https://placehold.co/400x200/007bff/ffffff?text=${encodeURIComponent(trip.destination)}`;
+    return placeholder;
   }
 
   handleImageError(event: Event): void {

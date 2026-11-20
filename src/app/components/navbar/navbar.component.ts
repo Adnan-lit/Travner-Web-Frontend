@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, HostListener, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
@@ -12,7 +12,7 @@ import { Observable, of, Subject } from 'rxjs';
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.css'],
   standalone: true,
-  imports: [CommonModule, RouterModule]
+  imports: [CommonModule, RouterModule, NgOptimizedImage]
 })
 export class NavbarComponent implements OnInit, OnDestroy {
   isAuthenticated = false;

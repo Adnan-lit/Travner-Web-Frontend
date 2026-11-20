@@ -41,9 +41,9 @@
         <!-- Quick Actions -->
         <div class="quick-actions">
           <!-- AI Chat -->
-          <button 
-            class="action-btn" 
-            (click)="go('/ai-chat')" 
+          <button
+            class="action-btn"
+            (click)="go('/ai-chat')"
             title="AI Travel Assistant"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -53,9 +53,9 @@
           </button>
 
           <!-- Chat -->
-          <button 
-            class="action-btn" 
-            (click)="go('/chat')" 
+          <button
+            class="action-btn"
+            (click)="go('/chat')"
             *ngIf="!isAdmin()"
             title="Chat"
           >
@@ -65,9 +65,9 @@
           </button>
 
           <!-- Cart -->
-          <button 
-            class="action-btn cart-btn" 
-            (click)="go('/marketplace/cart')" 
+          <button
+            class="action-btn cart-btn"
+            (click)="go('/marketplace/cart')"
             *ngIf="!isAdmin() && isMarketplacePage()"
             title="Shopping Cart"
             [class.has-items]="cartItemCount > 0"
@@ -81,9 +81,9 @@
           </button>
 
           <!-- Dashboard -->
-          <button 
-            class="action-btn" 
-            (click)="go('/dashboard')" 
+          <button
+            class="action-btn"
+            (click)="go('/dashboard')"
             *ngIf="!isAdmin()"
             title="Dashboard"
           >
@@ -99,9 +99,12 @@
         <!-- User Profile -->
         <div class="user-profile" [class.active]="showUserMenu">
           <button class="user-btn" (click)="toggleUserMenu()">
-            <img 
-              [src]="currentUser?.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (currentUser?.firstName || '') + '+' + (currentUser?.lastName || '') + '&background=e74c3c&color=fff&size=32'" 
+            <img
+              [ngSrc]="currentUser?.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (currentUser?.firstName || '') + '+' + (currentUser?.lastName || '') + '&background=e74c3c&color=fff&size=32'"
               [alt]="currentUser?.firstName || currentUser?.userName"
+              width="32"
+              height="32"
+              disableOptimizedSrcset
               class="user-avatar"
             >
             <span class="user-name">{{ currentUser?.firstName || currentUser?.userName }}</span>
@@ -115,9 +118,12 @@
             <!-- User Info -->
             <div class="user-menu-header">
               <div class="user-info">
-                <img 
-                  [src]="currentUser?.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (currentUser?.firstName || '') + '+' + (currentUser?.lastName || '') + '&background=e74c3c&color=fff&size=40'" 
+                <img
+                  [ngSrc]="currentUser?.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (currentUser?.firstName || '') + '+' + (currentUser?.lastName || '') + '&background=e74c3c&color=fff&size=40'"
                   [alt]="currentUser?.firstName || currentUser?.userName"
+                  width="40"
+                  height="40"
+                  disableOptimizedSrcset
                   class="user-avatar-large"
                 >
                 <div class="user-details">
@@ -244,9 +250,9 @@
       </div>
 
       <!-- Mobile Menu Toggle -->
-      <button 
-        class="mobile-toggle" 
-        (click)="toggleMobileMenu()" 
+      <button
+        class="mobile-toggle"
+        (click)="toggleMobileMenu()"
         aria-label="Toggle menu"
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -279,9 +285,12 @@
     <div class="mobile-content">
       <!-- User Info -->
       <div class="mobile-user-info" *ngIf="isAuthenticated">
-        <img 
-          [src]="currentUser?.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (currentUser?.firstName || '') + '+' + (currentUser?.lastName || '') + '&background=e74c3c&color=fff&size=48'" 
+        <img
+          [ngSrc]="currentUser?.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (currentUser?.firstName || '') + '+' + (currentUser?.lastName || '') + '&background=e74c3c&color=fff&size=48'"
           [alt]="currentUser?.firstName || currentUser?.userName"
+          width="48"
+          height="48"
+          disableOptimizedSrcset
           class="mobile-avatar"
         >
         <div class="mobile-user-details">

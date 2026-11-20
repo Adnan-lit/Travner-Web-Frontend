@@ -1,130 +1,169 @@
 import { Routes } from '@angular/router';
-import { LandingComponent } from './components/landing/landing.component';
-import { SigninComponent } from './components/signin/signin.component';
-import { SignupComponent } from './components/signup/signup.component';
-import { DashboardComponent } from './components/dashboard/dashboard.component';
-import { AdminComponent } from './components/admin/admin.component';
-import { AdminDashboardComponent } from './components/admin/admin-dashboard/admin-dashboard.component';
-import { AdminAnalyticsComponent } from './components/admin/admin-analytics/admin-analytics.component';
-import { AdminSettingsComponent } from './components/admin/admin-settings/admin-settings.component';
-import { UserManagementComponent } from './components/admin/user-management/user-management.component';
-import { OrderManagementComponent } from './components/admin/order-management/order-management.component';
-import { PostListComponent } from './components/posts/post-list.component';
-import { PostDetailComponent } from './components/posts/post-detail/post-detail.component';
-import { PostEditComponent } from './components/posts/post-edit/post-edit.component';
-import { PostCreateComponent } from './components/posts/post-create/post-create.component';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 import { NoAuthGuard } from './guards/no-auth.guard';
-import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 import { PostOwnerGuard } from './guards/post-owner.guard';
-import { ChatComponent } from './components/chat/chat.component';
-import { AIChatComponent } from './components/ai-chat/ai-chat.component';
-import { ProductListFixedComponent } from './components/marketplace/product-list/product-list-fixed.component';
+import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 
-// Marketplace components
-import { ProductDetailComponent } from './components/marketplace/product-detail/product-detail.component';
-import { CartComponent } from './components/marketplace/cart/cart.component';
-import { CheckoutComponent } from './components/marketplace/checkout/checkout.component';
-import { OrderListComponent } from './components/marketplace/order-list/order-list.component';
-import { OrderDetailComponent } from './components/marketplace/order-detail/order-detail.component';
-import { ProductManagementComponent } from './components/marketplace/admin/product-management/product-management.component';
-// import { AuthDebugComponent } from './components/auth-debug/auth-debug.component';
-
-// Trip and location-based components
-import { TripListComponent } from './components/trips/trip-list/trip-list.component';
-import { TripCreateComponent } from './components/trips/trip-create/trip-create.component';
-import { TripDetailComponent } from './components/trips/trip-detail/trip-detail.component';
-import { ItineraryListComponent } from './components/itineraries/itinerary-list/itinerary-list.component';
-import { ItineraryDetailComponent } from './components/itineraries/itinerary-detail/itinerary-detail.component';
-import { ItineraryCreateComponent } from './components/itineraries/itinerary-create/itinerary-create.component';
-import { TravelBuddyListComponent } from './components/travel-buddies/travel-buddy-list/travel-buddy-list.component';
-import { TravelBuddyCreateComponent } from './components/travel-buddies/travel-buddy-create/travel-buddy-create.component';
-import { TravelBuddyDetailComponent } from './components/travel-buddies/travel-buddy-detail/travel-buddy-detail.component';
-import { LocalGuideListComponent } from './components/local-guides/local-guide-list/local-guide-list.component';
-import { LocalGuideCreateComponent } from './components/local-guides/local-guide-create/local-guide-create.component';
-import { LocalGuideDetailComponent } from './components/local-guides/local-guide-detail/local-guide-detail.component';
-
-// Account and error pages
-import { UserProfileComponent } from './components/user/user-profile/user-profile.component';
-import { SettingsComponent } from './components/user/settings/settings.component';
-import { NotFoundComponent } from './components/error/not-found/not-found.component';
-
+/**
+ * All feature pages are lazy-loaded so the initial bundle only contains the
+ * application shell, guards and shared infrastructure. Routes marked with
+ * `data: { preload: true }` are warmed by SelectivePreloadingStrategy.
+ */
 export const routes: Routes = [
   {
     path: '',
     component: MainLayoutComponent,
     children: [
-      { path: '', component: LandingComponent },
-      { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
+      { path: '', loadComponent: () => import('./components/landing/landing.component').then(m => m.LandingComponent) },
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent),
+        canActivate: [AuthGuard]
+      },
       {
         path: 'admin',
-        component: AdminComponent,
+        loadComponent: () => import('./components/admin/admin.component').then(m => m.AdminComponent),
         canActivate: [AdminGuard],
         children: [
-          { path: '', component: AdminDashboardComponent },
-          { path: 'users', component: UserManagementComponent },
-          { path: 'posts', component: PostListComponent },
-          { path: 'orders', component: OrderManagementComponent },
-          { path: 'products', component: ProductManagementComponent },
-          { path: 'analytics', component: AdminAnalyticsComponent },
-          { path: 'chat', component: ChatComponent },
-          { path: 'chat/:id', component: ChatComponent },
-          { path: 'settings', component: AdminSettingsComponent }
+          { path: '', loadComponent: () => import('./components/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent) },
+          { path: 'users', loadComponent: () => import('./components/admin/user-management/user-management.component').then(m => m.UserManagementComponent) },
+          { path: 'posts', loadComponent: () => import('./components/posts/post-list.component').then(m => m.PostListComponent) },
+          { path: 'orders', loadComponent: () => import('./components/admin/order-management/order-management.component').then(m => m.OrderManagementComponent) },
+          { path: 'products', loadComponent: () => import('./components/marketplace/admin/product-management/product-management.component').then(m => m.ProductManagementComponent) },
+          { path: 'analytics', loadComponent: () => import('./components/admin/admin-analytics/admin-analytics.component').then(m => m.AdminAnalyticsComponent) },
+          { path: 'chat', loadComponent: () => import('./components/chat/chat.component').then(m => m.ChatComponent) },
+          { path: 'chat/:id', loadComponent: () => import('./components/chat/chat.component').then(m => m.ChatComponent) },
+          { path: 'settings', loadComponent: () => import('./components/admin/admin-settings/admin-settings.component').then(m => m.AdminSettingsComponent) }
         ]
       },
-      { path: 'community', component: PostListComponent },
-      { path: 'community/new', component: PostCreateComponent, canActivate: [AuthGuard] },
-      { path: 'community/:id', component: PostDetailComponent },
-      { path: 'community/:id/edit', component: PostEditComponent, canActivate: [AuthGuard, PostOwnerGuard] },
+      {
+        path: 'community',
+        loadComponent: () => import('./components/posts/post-list.component').then(m => m.PostListComponent),
+        data: { preload: true }
+      },
+      {
+        path: 'community/new',
+        loadComponent: () => import('./components/posts/post-create/post-create.component').then(m => m.PostCreateComponent),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'community/:id',
+        loadComponent: () => import('./components/posts/post-detail/post-detail.component').then(m => m.PostDetailComponent)
+      },
+      {
+        path: 'community/:id/edit',
+        loadComponent: () => import('./components/posts/post-edit/post-edit.component').then(m => m.PostEditComponent),
+        canActivate: [AuthGuard, PostOwnerGuard]
+      },
       { path: 'posts', redirectTo: 'community', pathMatch: 'full' },
       { path: 'posts/:id', redirectTo: 'community/:id', pathMatch: 'full' },
-      { path: 'chat', component: ChatComponent, canActivate: [AuthGuard] },
-      { path: 'chat/:id', component: ChatComponent, canActivate: [AuthGuard] },
-      { path: 'ai-chat', component: AIChatComponent },
+      {
+        path: 'chat',
+        loadComponent: () => import('./components/chat/chat.component').then(m => m.ChatComponent),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'chat/:id',
+        loadComponent: () => import('./components/chat/chat.component').then(m => m.ChatComponent),
+        canActivate: [AuthGuard]
+      },
+      { path: 'ai-chat', loadComponent: () => import('./components/ai-chat/ai-chat.component').then(m => m.AIChatComponent) },
 
-      // Trip routes
-      { path: 'trips', component: TripListComponent },
-      { path: 'trips/create', component: TripCreateComponent, canActivate: [AuthGuard] },
-      { path: 'trips/:id', component: TripDetailComponent },
+      { path: 'trips', loadComponent: () => import('./components/trips/trip-list/trip-list.component').then(m => m.TripListComponent) },
+      {
+        path: 'trips/create',
+        loadComponent: () => import('./components/trips/trip-create/trip-create.component').then(m => m.TripCreateComponent),
+        canActivate: [AuthGuard]
+      },
+      { path: 'trips/:id', loadComponent: () => import('./components/trips/trip-detail/trip-detail.component').then(m => m.TripDetailComponent) },
 
-      // Itinerary routes
-      { path: 'itineraries', component: ItineraryListComponent },
-      { path: 'itineraries/create', component: ItineraryCreateComponent, canActivate: [AuthGuard] },
-      { path: 'itineraries/:id', component: ItineraryDetailComponent },
+      { path: 'itineraries', loadComponent: () => import('./components/itineraries/itinerary-list/itinerary-list.component').then(m => m.ItineraryListComponent) },
+      {
+        path: 'itineraries/create',
+        loadComponent: () => import('./components/itineraries/itinerary-create/itinerary-create.component').then(m => m.ItineraryCreateComponent),
+        canActivate: [AuthGuard]
+      },
+      { path: 'itineraries/:id', loadComponent: () => import('./components/itineraries/itinerary-detail/itinerary-detail.component').then(m => m.ItineraryDetailComponent) },
 
-      { path: 'travel-buddies', component: TravelBuddyListComponent },
-      { path: 'travel-buddies/create', component: TravelBuddyCreateComponent, canActivate: [AuthGuard] },
-      { path: 'travel-buddies/:id', component: TravelBuddyDetailComponent },
+      { path: 'travel-buddies', loadComponent: () => import('./components/travel-buddies/travel-buddy-list/travel-buddy-list.component').then(m => m.TravelBuddyListComponent) },
+      {
+        path: 'travel-buddies/create',
+        loadComponent: () => import('./components/travel-buddies/travel-buddy-create/travel-buddy-create.component').then(m => m.TravelBuddyCreateComponent),
+        canActivate: [AuthGuard]
+      },
+      { path: 'travel-buddies/:id', loadComponent: () => import('./components/travel-buddies/travel-buddy-detail/travel-buddy-detail.component').then(m => m.TravelBuddyDetailComponent) },
 
-      { path: 'local-guides', component: LocalGuideListComponent },
-      { path: 'local-guides/create', component: LocalGuideCreateComponent, canActivate: [AuthGuard] },
-      { path: 'local-guides/:id', component: LocalGuideDetailComponent },
+      { path: 'local-guides', loadComponent: () => import('./components/local-guides/local-guide-list/local-guide-list.component').then(m => m.LocalGuideListComponent) },
+      {
+        path: 'local-guides/create',
+        loadComponent: () => import('./components/local-guides/local-guide-create/local-guide-create.component').then(m => m.LocalGuideCreateComponent),
+        canActivate: [AuthGuard]
+      },
+      { path: 'local-guides/:id', loadComponent: () => import('./components/local-guides/local-guide-detail/local-guide-detail.component').then(m => m.LocalGuideDetailComponent) },
 
-      // Marketplace routes
-      { path: 'marketplace', component: ProductListFixedComponent },
+      {
+        path: 'marketplace',
+        loadComponent: () => import('./components/marketplace/product-list/product-list-fixed.component').then(m => m.ProductListFixedComponent),
+        data: { preload: true }
+      },
       { path: 'marketplace/products', redirectTo: 'marketplace', pathMatch: 'full' },
-      { path: 'marketplace/products/:id', component: ProductDetailComponent },
-      { path: 'marketplace/cart', component: CartComponent, canActivate: [AuthGuard] },
-      { path: 'marketplace/checkout', component: CheckoutComponent, canActivate: [AuthGuard] },
-      { path: 'marketplace/orders', component: OrderListComponent, canActivate: [AuthGuard] },
-      { path: 'marketplace/orders/:id', component: OrderDetailComponent, canActivate: [AuthGuard] },
+      { path: 'marketplace/products/:id', loadComponent: () => import('./components/marketplace/product-detail/product-detail.component').then(m => m.ProductDetailComponent) },
+      {
+        path: 'marketplace/cart',
+        loadComponent: () => import('./components/marketplace/cart/cart.component').then(m => m.CartComponent),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'marketplace/checkout',
+        loadComponent: () => import('./components/marketplace/checkout/checkout.component').then(m => m.CheckoutComponent),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'marketplace/orders',
+        loadComponent: () => import('./components/marketplace/order-list/order-list.component').then(m => m.OrderListComponent),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'marketplace/orders/:id',
+        loadComponent: () => import('./components/marketplace/order-detail/order-detail.component').then(m => m.OrderDetailComponent),
+        canActivate: [AuthGuard]
+      },
 
-      // Admin marketplace routes
-      { path: 'admin/marketplace/products', component: ProductManagementComponent, canActivate: [AdminGuard] },
-      { path: 'admin/marketplace/orders', component: OrderManagementComponent, canActivate: [AdminGuard] },
+      {
+        path: 'admin/marketplace/products',
+        loadComponent: () => import('./components/marketplace/admin/product-management/product-management.component').then(m => m.ProductManagementComponent),
+        canActivate: [AdminGuard]
+      },
+      {
+        path: 'admin/marketplace/orders',
+        loadComponent: () => import('./components/admin/order-management/order-management.component').then(m => m.OrderManagementComponent),
+        canActivate: [AdminGuard]
+      },
 
-      // Account routes
-      { path: 'profile', component: UserProfileComponent, canActivate: [AuthGuard] },
-      { path: 'settings', component: SettingsComponent, canActivate: [AuthGuard] },
+      {
+        path: 'profile',
+        loadComponent: () => import('./components/user/user-profile/user-profile.component').then(m => m.UserProfileComponent),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'settings',
+        loadComponent: () => import('./components/user/settings/settings.component').then(m => m.SettingsComponent),
+        canActivate: [AuthGuard]
+      },
       { path: 'user/profile', redirectTo: 'profile', pathMatch: 'full' }
-
-      // Debug Routes (development only)
-      // { path: 'debug/auth', component: AuthDebugComponent },
     ]
   },
-  { path: 'signin', component: SigninComponent, canActivate: [NoAuthGuard] },
-  { path: 'signup', component: SignupComponent, canActivate: [NoAuthGuard] },
-  { path: '404', component: NotFoundComponent },
-  { path: '**', component: NotFoundComponent }
+  {
+    path: 'signin',
+    loadComponent: () => import('./components/signin/signin.component').then(m => m.SigninComponent),
+    canActivate: [NoAuthGuard]
+  },
+  {
+    path: 'signup',
+    loadComponent: () => import('./components/signup/signup.component').then(m => m.SignupComponent),
+    canActivate: [NoAuthGuard]
+  },
+  { path: '404', loadComponent: () => import('./components/error/not-found/not-found.component').then(m => m.NotFoundComponent) },
+  { path: '**', loadComponent: () => import('./components/error/not-found/not-found.component').then(m => m.NotFoundComponent) }
 ];

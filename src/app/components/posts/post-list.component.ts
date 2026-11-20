@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PostService } from '../../services/post.service';
@@ -19,9 +19,11 @@ interface PostWithExtras extends Post {
   recentComments?: any[];
 }
 
+// Change detection stays Default on purpose: menu state, likes/saves and asynchronously
+// loaded media are written onto post objects in place, which OnPush would not repaint.
 @Component({
   selector: 'app-post-list',
-  imports: [CommonModule, RouterModule, FormsModule, MediaViewerComponent, ActivityFeedComponent, TrendingPostsComponent],
+  imports: [CommonModule, RouterModule, FormsModule, NgOptimizedImage, MediaViewerComponent, ActivityFeedComponent, TrendingPostsComponent],
   templateUrl: './post-list.component.html',
   styleUrls: ['./post-list.component.css']
 })
@@ -229,6 +231,28 @@ export class PostListComponent implements OnInit, OnDestroy {
       const diffInDays = Math.floor(diffInHours / 24);
       return `${diffInDays}d ago`;
     }
+  }
+
+  trackByPostId(_index: number, post: PostWithExtras): string {
+    return post.id;
+  }
+
+  trackByTag(_index: number, tag: string): string {
+    return tag;
+  }
+
+  // Media URLs can repeat, so combine position with the URL to keep each key unique.
+  trackByMediaUrl(index: number, mediaUrl: string): string {
+    return `${index}:${mediaUrl}`;
+  }
+
+  trackByComment(index: number, comment: { id?: string }): string | number {
+    return comment?.id ?? index;
+  }
+
+  // NgOptimizedImage rejects blob:/data: URLs; those keep a plain <img src>.
+  canUseNgOptimizedImage(url: string): boolean {
+    return !url.startsWith('blob:') && !url.startsWith('data:');
   }
 
   togglePostMenu(postId: string): void {

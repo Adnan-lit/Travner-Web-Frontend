@@ -4,14 +4,14 @@ import { Product } from '../../../models/marketplace.model';
 import { MarketplaceService } from '../../../services/marketplace.service';
 import { ToastService } from '../../../services/toast.service';
 import { AuthService } from '../../../services/auth.service';
-import { NgIf, NgFor } from '@angular/common';
+import { NgIf, NgFor, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
 
 @Component({
     selector: 'app-product-detail',
     standalone: true,
-    imports: [NgIf, NgFor, FormsModule, CartSummaryComponent],
+    imports: [NgIf, NgFor, FormsModule, CartSummaryComponent, NgOptimizedImage],
     templateUrl: './product-detail.component.html',
     styleUrls: ['./product-detail.component.css']
 })

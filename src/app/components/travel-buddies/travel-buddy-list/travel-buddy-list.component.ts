@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -8,6 +8,7 @@ import { TravelBuddy, TravelBuddySearchParams } from '../../../models/location.m
 @Component({
   selector: 'app-travel-buddy-list',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   templateUrl: './travel-buddy-list.component.html',
   styleUrls: ['./travel-buddy-list.component.css']
@@ -38,6 +39,8 @@ export class TravelBuddyListComponent implements OnInit {
   totalPages = 0;
   totalElements = 0;
 
+  private readonly cdr = inject(ChangeDetectorRef);
+
   constructor(
     private travelBuddyService: TravelBuddyService,
     private router: Router
@@ -67,10 +70,12 @@ export class TravelBuddyListComponent implements OnInit {
         this.totalPages = response.pagination?.totalPages || 0;
         this.totalElements = response.pagination?.totalElements || 0;
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
         this.error = 'Failed to load travel buddies';
         this.loading = false;
+        this.cdr.markForCheck();
         console.error('Error loading travel buddies:', error);
       }
     });
@@ -109,6 +114,18 @@ export class TravelBuddyListComponent implements OnInit {
     }
     
     return pages;
+  }
+
+  trackByTravelBuddyId(_index: number, buddy: TravelBuddy): string {
+    return buddy.id;
+  }
+
+  trackByValue(index: number, value: string): string {
+    return `${index}:${value}`;
+  }
+
+  trackByPage(_index: number, page: number): number {
+    return page;
   }
 
   formatDate(dateString: string): string {

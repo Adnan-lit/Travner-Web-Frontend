@@ -27,7 +27,7 @@
         <label>Destination:</label>
         <select [(ngModel)]="selectedDestination" (change)="onFilterChange()" class="form-control">
           <option value="">All Destinations</option>
-          <option *ngFor="let dest of destinations" [value]="dest">{{ dest }}</option>
+          <option *ngFor="let dest of destinations; trackBy: trackByValue" [value]="dest">{{ dest }}</option>
         </select>
       </div>
 
@@ -78,7 +78,7 @@
 
   <!-- Travel Buddies Grid -->
   <div *ngIf="!loading && !error" class="travel-buddies-grid">
-    <div *ngFor="let buddy of travelBuddies" class="travel-buddy-card" (click)="viewTravelBuddy(buddy.id)">
+    <div *ngFor="let buddy of travelBuddies; trackBy: trackByTravelBuddyId" class="travel-buddy-card" (click)="viewTravelBuddy(buddy.id)">
       <div class="card-header">
         <div class="status-badge" [ngClass]="getStatusClass(buddy.status)">
           {{ getStatusText(buddy.status) }}
@@ -94,7 +94,7 @@
         <div class="interests" *ngIf="buddy.interests && buddy.interests.length > 0">
           <h4>Interests:</h4>
           <div class="interest-tags">
-            <span *ngFor="let interest of buddy.interests" class="interest-tag">{{ interest }}</span>
+            <span *ngFor="let interest of buddy.interests; trackBy: trackByValue" class="interest-tag">{{ interest }}</span>
           </div>
         </div>
 
@@ -152,7 +152,7 @@
     
     <div class="page-numbers">
       <button 
-        *ngFor="let page of getPageNumbers()" 
+        *ngFor="let page of getPageNumbers(); trackBy: trackByPage"
         class="btn"
         [class.btn-primary]="page === currentPage"
         [class.btn-secondary]="page !== currentPage"

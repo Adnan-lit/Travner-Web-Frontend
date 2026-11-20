@@ -57,8 +57,11 @@
       <div class="user-profile-card card" *ngIf="currentUser">
         <div class="profile-header">
           <div class="user-avatar">
-            <img [src]="currentUser.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (currentUser.firstName || '') + '+' + (currentUser.lastName || '') + '&background=e74c3c&color=fff&size=120'" 
-                 [alt]="currentUser.firstName + ' ' + currentUser.lastName">
+            <img [ngSrc]="currentUser.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (currentUser.firstName || '') + '+' + (currentUser.lastName || '') + '&background=e74c3c&color=fff&size=120'"
+                 [alt]="currentUser.firstName + ' ' + currentUser.lastName"
+                 width="80"
+                 height="80"
+                 disableOptimizedSrcset>
           </div>
           <div class="profile-info">
             <h2>{{currentUser.firstName}} {{currentUser.lastName}}</h2>
@@ -157,8 +160,12 @@
           <div class="post-item" *ngFor="let post of recentPosts">
             <div class="post-header">
               <div class="post-author">
-                <img [src]="post.author?.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (post.author?.firstName || '') + '+' + (post.author?.lastName || '') + '&background=random&size=40'" 
-                     [alt]="post.author?.firstName + ' ' + post.author?.lastName" class="author-avatar">
+                <img [ngSrc]="post.author?.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (post.author?.firstName || '') + '+' + (post.author?.lastName || '') + '&background=random&size=40'"
+                     [alt]="post.author?.firstName + ' ' + post.author?.lastName"
+                     width="40"
+                     height="40"
+                     disableOptimizedSrcset
+                     class="author-avatar">
                 <div class="author-info">
                   <span class="author-name">{{post.author?.firstName}} {{post.author?.lastName}}</span>
                   <span class="post-time">{{formatDate(post.createdAt)}}</span>
@@ -215,7 +222,7 @@
         <div class="destinations-grid">
           <div class="destination-item" routerLink="/itineraries">
             <div class="destination-image">
-              <img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=300&h=200&fit=crop" alt="Cox's Bazar">
+              <img ngSrc="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=300&h=200&fit=crop" width="300" height="200" alt="Cox's Bazar">
               <div class="destination-overlay">
                 <span class="destination-label">Beach Paradise</span>
               </div>
@@ -228,10 +235,10 @@
               </div>
             </div>
           </div>
-          
+
           <div class="destination-item" routerLink="/itineraries">
             <div class="destination-image">
-              <img src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=200&fit=crop" alt="Sundarbans">
+              <img ngSrc="https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=200&fit=crop" width="300" height="200" alt="Sundarbans">
               <div class="destination-overlay">
                 <span class="destination-label">UNESCO Site</span>
               </div>
@@ -244,10 +251,10 @@
               </div>
             </div>
           </div>
-          
+
           <div class="destination-item" routerLink="/itineraries">
             <div class="destination-image">
-              <img src="https://images.unsplash.com/photo-1587474260584-136574528ed5?w=300&h=200&fit=crop" alt="Sylhet">
+              <img ngSrc="https://images.unsplash.com/photo-1587474260584-136574528ed5?w=300&h=200&fit=crop" width="300" height="200" alt="Sylhet">
               <div class="destination-overlay">
                 <span class="destination-label">Tea Gardens</span>
               </div>

@@ -27,7 +27,7 @@
         <label>Location:</label>
         <select [(ngModel)]="selectedLocation" (change)="onFilterChange()" class="form-control">
           <option value="">All Locations</option>
-          <option *ngFor="let location of locations" [value]="location">{{ location }}</option>
+          <option *ngFor="let location of locations; trackBy: trackByValue" [value]="location">{{ location }}</option>
         </select>
       </div>
 
@@ -95,7 +95,7 @@
 
   <!-- Local Guides Grid -->
   <div *ngIf="!loading && !error" class="local-guides-grid">
-    <div *ngFor="let guide of localGuides" class="local-guide-card" (click)="viewLocalGuide(guide.id)">
+    <div *ngFor="let guide of localGuides; trackBy: trackByLocalGuideId" class="local-guide-card" (click)="viewLocalGuide(guide.id)">
       <div class="card-header">
         <div class="availability-badge" [ngClass]="getAvailabilityClass(guide.isAvailable)">
           {{ getAvailabilityText(guide.isAvailable) }}
@@ -105,7 +105,7 @@
           <span class="price">{{ formatPrice(guide.hourlyRate, guide.currency) }}</span>
           <div class="rating">
             <div class="stars">
-              <i *ngFor="let star of getRatingStars(guide.rating)" 
+              <i *ngFor="let star of getRatingStars(guide.rating); trackBy: trackByIndex"
                  [class]="'fas fa-star ' + star"></i>
             </div>
             <span class="rating-text">{{ guide.rating.toFixed(1) }} ({{ guide.reviewCount }} reviews)</span>
@@ -119,28 +119,28 @@
         <div class="specialties" *ngIf="guide.specialties && guide.specialties.length > 0">
           <h4>Specialties:</h4>
           <div class="specialty-tags">
-            <span *ngFor="let specialty of guide.specialties" class="specialty-tag">{{ specialty }}</span>
+            <span *ngFor="let specialty of guide.specialties; trackBy: trackByValue" class="specialty-tag">{{ specialty }}</span>
           </div>
         </div>
 
         <div class="languages" *ngIf="guide.languages && guide.languages.length > 0">
           <h4>Languages:</h4>
           <div class="language-tags">
-            <span *ngFor="let language of guide.languages" class="language-tag">{{ language }}</span>
+            <span *ngFor="let language of guide.languages; trackBy: trackByValue" class="language-tag">{{ language }}</span>
           </div>
         </div>
 
         <div class="experience" *ngIf="guide.experience && guide.experience.length > 0">
           <h4>Experience:</h4>
           <ul class="experience-list">
-            <li *ngFor="let exp of guide.experience">{{ exp }}</li>
+            <li *ngFor="let exp of guide.experience; trackBy: trackByValue">{{ exp }}</li>
           </ul>
         </div>
 
         <div class="certifications" *ngIf="guide.certifications && guide.certifications.length > 0">
           <h4>Certifications:</h4>
           <div class="certification-tags">
-            <span *ngFor="let cert of guide.certifications" class="certification-tag">{{ cert }}</span>
+            <span *ngFor="let cert of guide.certifications; trackBy: trackByValue" class="certification-tag">{{ cert }}</span>
           </div>
         </div>
       </div>
@@ -190,7 +190,7 @@
     
     <div class="page-numbers">
       <button 
-        *ngFor="let page of getPageNumbers()" 
+        *ngFor="let page of getPageNumbers(); trackBy: trackByPage"
         class="btn"
         [class.btn-primary]="page === currentPage"
         [class.btn-secondary]="page !== currentPage"

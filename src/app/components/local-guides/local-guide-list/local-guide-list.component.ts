@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -8,6 +8,7 @@ import { LocalGuide, LocalGuideSearchParams } from '../../../models/location.mod
 @Component({
   selector: 'app-local-guide-list',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   templateUrl: './local-guide-list.component.html',
   styleUrls: ['./local-guide-list.component.css']
@@ -38,6 +39,8 @@ export class LocalGuideListComponent implements OnInit {
   currentPage = 0;
   totalPages = 0;
   totalElements = 0;
+
+  private readonly cdr = inject(ChangeDetectorRef);
 
   constructor(
     private localGuideService: LocalGuideService,
@@ -70,10 +73,12 @@ export class LocalGuideListComponent implements OnInit {
         this.totalPages = response.pagination?.totalPages || 0;
         this.totalElements = response.pagination?.totalElements || 0;
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
         this.error = 'Failed to load local guides';
         this.loading = false;
+        this.cdr.markForCheck();
         console.error('Error loading local guides:', error);
       }
     });
@@ -112,6 +117,22 @@ export class LocalGuideListComponent implements OnInit {
     }
     
     return pages;
+  }
+
+  trackByLocalGuideId(_index: number, guide: LocalGuide): string {
+    return guide.id;
+  }
+
+  trackByValue(index: number, value: string): string {
+    return `${index}:${value}`;
+  }
+
+  trackByIndex(index: number): number {
+    return index;
+  }
+
+  trackByPage(_index: number, page: number): number {
+    return page;
   }
 
   formatPrice(price: number, currency: string): string {

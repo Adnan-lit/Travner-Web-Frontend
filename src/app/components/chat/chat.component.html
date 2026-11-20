@@ -31,37 +31,45 @@
       <div *ngIf="loadingConversations" class="loading">
         Loading conversations...
       </div>
-      
+
       <div *ngIf="!loadingConversations && filteredConversations.length === 0" class="no-conversations">
         No conversations found
       </div>
-      
-      <div 
-        *ngFor="let conversation of filteredConversations" 
-        class="conversation-item"
-        [class.active]="selectedConversation?.id === conversation.id"
-        (click)="selectConversation(conversation)">
-        
-        <div class="conversation-avatar">
-          <div class="avatar-placeholder">
-            {{ getConversationTitle(conversation).charAt(0) }}
+
+      <!-- itemSize 81 matches .conversation-item in chat.component.css. -->
+      <cdk-virtual-scroll-viewport
+        *ngIf="!loadingConversations && filteredConversations.length > 0"
+        class="conversations-viewport"
+        itemSize="81"
+        minBufferPx="162"
+        maxBufferPx="405">
+        <div
+          *cdkVirtualFor="let conversation of filteredConversations; trackBy: trackByConversationId"
+          class="conversation-item"
+          [class.active]="selectedConversation?.id === conversation.id"
+          (click)="selectConversation(conversation)">
+
+          <div class="conversation-avatar">
+            <div class="avatar-placeholder">
+              {{ getConversationTitle(conversation).charAt(0) }}
+            </div>
+          </div>
+
+          <div class="conversation-content">
+            <div class="conversation-header">
+              <h4 class="conversation-title">{{ getConversationTitle(conversation) }}</h4>
+              <span class="conversation-time">{{ getConversationTime(conversation) }}</span>
+            </div>
+
+            <div class="conversation-preview">
+              <p class="last-message">{{ getConversationLastMessage(conversation) }}</p>
+              <span *ngIf="conversation.unreadCount > 0" class="unread-badge">
+                {{ conversation.unreadCount }}
+              </span>
+            </div>
           </div>
         </div>
-        
-        <div class="conversation-content">
-          <div class="conversation-header">
-            <h4 class="conversation-title">{{ getConversationTitle(conversation) }}</h4>
-            <span class="conversation-time">{{ getConversationTime(conversation) }}</span>
-          </div>
-          
-          <div class="conversation-preview">
-            <p class="last-message">{{ getConversationLastMessage(conversation) }}</p>
-            <span *ngIf="conversation.unreadCount > 0" class="unread-badge">
-              {{ conversation.unreadCount }}
-            </span>
-          </div>
-        </div>
-      </div>
+      </cdk-virtual-scroll-viewport>
     </div>
   </div>
 
@@ -109,47 +117,58 @@
     </div>
 
     <!-- Messages Area -->
-    <div class="messages-container" *ngIf="selectedConversation" #messagesContainer>
+    <div class="messages-container" *ngIf="selectedConversation">
       <div *ngIf="loadingMessages" class="loading-messages">
         Loading messages...
       </div>
-      
-      <div *ngFor="let message of messages" class="message-item" [class.own-message]="isOwnMessage(message)">
-        <div class="message-content">
-          <div class="message-header" *ngIf="!isOwnMessage(message)">
-            <span class="sender-name">{{ getSenderDisplayName(message) }}</span>
-            <span class="message-time">{{ getMessageTime(message) }}</span>
-          </div>
-          
-          <div class="message-bubble">
-            <p *ngIf="message.content">{{ message.content }}</p>
 
-            <div class="attachment" *ngIf="message.attachment">
-              <img *ngIf="isImageAttachment(message) && getAttachmentUrl(message) as imageUrl"
-                   class="attachment-image"
-                   [src]="imageUrl"
-                   [alt]="message.attachment.fileName"
-                   (click)="downloadAttachment(message)" />
-              <span *ngIf="isImageAttachment(message) && !getAttachmentUrl(message)" class="attachment-loading">
-                Loading image…
+      <!-- Messages are variable height (text, attachments, images), so autosize is used. -->
+      <cdk-virtual-scroll-viewport
+        #messagesContainer
+        class="messages-viewport"
+        autosize
+        minBufferPx="300"
+        maxBufferPx="900">
+        <div
+          *cdkVirtualFor="let message of messages; trackBy: trackByMessageId"
+          class="message-item"
+          [class.own-message]="isOwnMessage(message)">
+          <div class="message-content">
+            <div class="message-header" *ngIf="!isOwnMessage(message)">
+              <span class="sender-name">{{ getSenderDisplayName(message) }}</span>
+              <span class="message-time">{{ getMessageTime(message) }}</span>
+            </div>
+
+            <div class="message-bubble">
+              <p *ngIf="message.content">{{ message.content }}</p>
+
+              <div class="attachment" *ngIf="message.attachment">
+                <img *ngIf="isImageAttachment(message) && getAttachmentUrl(message) as imageUrl"
+                     class="attachment-image"
+                     [src]="imageUrl"
+                     [alt]="message.attachment.fileName"
+                     (click)="downloadAttachment(message)" />
+                <span *ngIf="isImageAttachment(message) && !getAttachmentUrl(message)" class="attachment-loading">
+                  Loading image…
+                </span>
+                <button type="button" class="attachment-file" *ngIf="!isImageAttachment(message)"
+                        (click)="downloadAttachment(message)">
+                  📎 {{ message.attachment.fileName }} ({{ formatFileSize(message.attachment.size) }})
+                </button>
+              </div>
+            </div>
+
+            <div class="message-footer">
+              <span class="message-status" [class]="message.status.toLowerCase()" *ngIf="isOwnMessage(message)">
+                {{ message.status }}
               </span>
-              <button type="button" class="attachment-file" *ngIf="!isImageAttachment(message)"
-                      (click)="downloadAttachment(message)">
-                📎 {{ message.attachment.fileName }} ({{ formatFileSize(message.attachment.size) }})
-              </button>
+              <span class="message-time">
+                {{ getMessageTime(message) }}
+              </span>
             </div>
           </div>
-          
-          <div class="message-footer">
-            <span class="message-status" [class]="message.status.toLowerCase()" *ngIf="isOwnMessage(message)">
-              {{ message.status }}
-            </span>
-            <span class="message-time">
-              {{ getMessageTime(message) }}
-            </span>
-          </div>
         </div>
-      </div>
+      </cdk-virtual-scroll-viewport>
     </div>
 
     <!-- Message Input -->
