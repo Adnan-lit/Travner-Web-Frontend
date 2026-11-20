@@ -13,7 +13,6 @@ export interface User {
     firstName?: string;
     lastName?: string;
     email?: string;
-    password?: string;
     roles?: string[];
     bio?: string | null;
     profileImageUrl?: string | null;
