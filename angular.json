@@ -51,8 +51,7 @@
               "outputHashing": "all",
               "allowedCommonJsDependencies": [
                 "sockjs-client",
-                "@stomp/stompjs",
-                "@stomp/ng2-stompjs"
+                "@stomp/stompjs"
               ]
             },
             "development": {

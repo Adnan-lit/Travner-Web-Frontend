@@ -7,7 +7,6 @@ import { Post } from '../../../models/post.model';
 import { Comment, CommentCreate } from '../../../models/post.model';
 import { Media } from '../../../models/media.model';
 import { AuthService } from '../../../services/auth.service';
-// import { CursorService } from '../../../services/cursor.service'; // Removed as it doesn't exist
 import { CommentComponent } from '../comment/comment.component';
 import { isPostOwner } from '../../../utils/ownership.util';
 import { ToastService } from '../../../services/toast.service';

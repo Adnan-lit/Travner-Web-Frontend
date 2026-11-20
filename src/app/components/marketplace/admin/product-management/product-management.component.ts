@@ -8,7 +8,6 @@ import { ToastService } from '@services/toast.service';
 import { AuthService } from '@services/auth.service';
 import { NgIf, NgFor, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-// import { MarketplaceErrorHandler } from '../../../../../../utils/marketplace-error-handler';
 import { ImageUtil } from '@app/utils/image.util';
 import { MediaUploadComponent } from '../../../media/media-upload/media-upload.component';
 

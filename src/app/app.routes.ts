@@ -104,7 +104,7 @@ export const routes: Routes = [
 
       {
         path: 'marketplace',
-        loadComponent: () => import('./components/marketplace/product-list/product-list-fixed.component').then(m => m.ProductListFixedComponent),
+        loadComponent: () => import('./components/marketplace/product-list/product-list.component').then(m => m.ProductListComponent),
         data: { preload: true }
       },
       { path: 'marketplace/products', redirectTo: 'marketplace', pathMatch: 'full' },

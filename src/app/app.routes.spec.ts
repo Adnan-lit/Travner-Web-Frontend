@@ -50,6 +50,10 @@ describe('app routes (P3-01/P3-02)', () => {
     });
   });
 
+  it('uses the canonical product list component for the marketplace', async () => {
+    expect(await loadedComponentName(child('marketplace'))).toBe('ProductListComponent');
+  });
+
   it('uses real admin analytics and settings pages instead of the dashboard', async () => {
     const admin = child('admin');
     const adminChildren = admin.children ?? [];

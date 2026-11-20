@@ -25,7 +25,6 @@
     "@angular/platform-browser": "^19.1.0",
     "@angular/platform-browser-dynamic": "^19.1.0",
     "@angular/router": "^19.1.0",
-    "@stomp/ng2-stompjs": "^8.0.0",
     "@stomp/stompjs": "^7.2.0",
     "gsap": "^3.13.0",
     "rxjs": "~7.8.0",
