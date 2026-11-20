@@ -89,7 +89,7 @@ export class AuthService {
         const endpoint = `${this.API_BASE_URL}/api/auth/login`;
         return this.http.post<ApiResponse<AuthResponseData>>(
             endpoint,
-            { username: username.toLowerCase(), password },
+            { username: username.trim().toLowerCase(), password },
             { withCredentials: true }
         ).pipe(
             map(response => this.unwrap(response, 'Invalid username or password')),
@@ -184,7 +184,11 @@ export class AuthService {
 
     signup(signupData: SignupRequest): Observable<ApiResponse<User>> {
         const endpoint = `${this.API_BASE_URL}/api/public/register`;
-        const normalizedSignupData = { ...signupData, userName: signupData.userName.toLowerCase() };
+        const normalizedSignupData = {
+            ...signupData,
+            userName: signupData.userName.trim().toLowerCase(),
+            email: signupData.email.trim().toLowerCase()
+        };
         return this.http.post<ApiResponse<User>>(endpoint, normalizedSignupData);
     }
 
@@ -200,7 +204,7 @@ export class AuthService {
 
     checkUsername(username: string): Observable<ApiResponse<{ available: boolean }>> {
         return this.http.get<ApiResponse<{ available: boolean }>>(
-            `${this.API_BASE_URL}/api/public/check-username/${username}`);
+            `${this.API_BASE_URL}/api/public/check-username/${encodeURIComponent(username.trim().toLowerCase())}`);
     }
 
     requestPasswordReset(): Observable<ApiResponse<{ message: string }>> {

@@ -86,4 +86,34 @@ describe('AuthService (bearer + refresh cookie)', () => {
     expect(service.getAccessToken()).toBeNull();
     expect(service.isAuthenticated()).toBe(false);
   });
+
+  it('trims and lowercases the username on login', () => {
+    service.login('  Alice  ', 'pw').subscribe();
+
+    const request = httpMock.expectOne('/api/auth/login');
+    expect(request.request.body).toEqual({ username: 'alice', password: 'pw' });
+    request.flush({ success: true, data: authResponse });
+  });
+
+  it('trims and lowercases username and email on signup', () => {
+    service.signup({
+      userName: '  Alice  ',
+      firstName: 'Alice',
+      lastName: 'Example',
+      email: '  Alice@Example.COM ',
+      password: 'pw'
+    }).subscribe();
+
+    const request = httpMock.expectOne('/api/public/register');
+    expect(request.request.body.userName).toBe('alice');
+    expect(request.request.body.email).toBe('alice@example.com');
+    request.flush({ success: true, data: {} });
+  });
+
+  it('normalizes the username before the availability check', () => {
+    service.checkUsername('  Alice  ').subscribe();
+
+    httpMock.expectOne('/api/public/check-username/alice')
+      .flush({ success: true, data: { available: true } });
+  });
 });
