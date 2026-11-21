@@ -49,10 +49,26 @@ jobs:
       - name: Unit tests (headless Chrome)
         run: npm test -- --watch=false --browsers=ChromeHeadless
 
+      - name: Install Playwright browser
+        run: npm run test:e2e:install
+
+      - name: E2E tests (mocked API)
+        run: npm run test:e2e
+
       - name: Upload build output on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
           path: dist/
+          if-no-files-found: ignore
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
           if-no-files-found: ignore
