@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { EnvironmentConfig } from '../config/environment.config';
+import { getApiBaseUrl } from '../config/runtime.config';
 import {
   LocalGuide,
   LocalGuideCreate,
@@ -14,7 +14,7 @@ import {
   providedIn: 'root'
 })
 export class LocalGuideService {
-  private apiUrl = `${EnvironmentConfig.getApiBaseUrl()}/api/local-guides`;
+  private apiUrl = `${getApiBaseUrl()}/api/local-guides`;
 
   constructor(private http: HttpClient) {}
 

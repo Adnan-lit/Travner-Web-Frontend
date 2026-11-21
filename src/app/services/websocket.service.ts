@@ -2,7 +2,7 @@ import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, Subscription, filter, skip, takeUntil } from 'rxjs';
 import { Client, IMessage, StompConfig } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { EnvironmentConfig } from '../config/environment.config';
+import { getWebSocketUrl } from '../config/runtime.config';
 import { ChatMessage, TypingIndicator } from '../models/chat.model';
 import { ChatService } from './chat.service';
 import { AuthService } from './auth.service';
@@ -17,8 +17,7 @@ export class WebSocketService implements OnDestroy {
   private subscribedConversations = new Set<string>();
   private tokenSubscription?: Subscription;
   
-  private readonly API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
-  private readonly WS_URL = `${this.API_BASE_URL}/ws`;
+  private readonly WS_URL = getWebSocketUrl();
 
   constructor(
     private chatService: ChatService,

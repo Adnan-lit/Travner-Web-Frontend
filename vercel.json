@@ -1,13 +1,27 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build --configuration=production",
   "outputDirectory": "dist/travner-web-frontend/browser",
   "installCommand": "npm ci",
   "framework": "angular",
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://travner-web-backend-production.up.railway.app/api/$1"
+      "src": "/api/(.*)",
+      "dest": "${BACKEND_URL}/api/$1",
+      "env": ["BACKEND_URL"]
     },
+    {
+      "src": "/ws/(.*)",
+      "dest": "${BACKEND_URL}/ws/$1",
+      "env": ["BACKEND_URL"]
+    },
+    {
+      "src": "/actuator/(.*)",
+      "dest": "${BACKEND_URL}/actuator/$1",
+      "env": ["BACKEND_URL"]
+    }
+  ],
+  "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/index.html"

@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpInterceptorFn, HttpRequest } from '@angular/comm
 import { inject } from '@angular/core';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
-import { EnvironmentConfig } from '../../config/environment.config';
+import { getApiBaseUrl } from '../../config/runtime.config';
 
 const AUTH_ENDPOINTS = [
     '/api/auth/login',
@@ -31,7 +31,7 @@ const PUBLIC_GET_FRAGMENTS = [
  */
 export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
     const authService = inject(AuthService);
-    const apiBaseUrl = EnvironmentConfig.getApiBaseUrl();
+    const apiBaseUrl = getApiBaseUrl();
 
     if (!isApiRequest(req, apiBaseUrl) || isAuthEndpoint(req) || isPublicGet(req)) {
         return next(req);

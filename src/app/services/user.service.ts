@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { EnvironmentConfig } from '../config/environment.config';
+import { getApiBaseUrl } from '../config/runtime.config';
 import { User } from '../models/common.model';
 import { ApiResponse, ApiListResponse } from '../models/api-response.model';
 
@@ -10,7 +10,7 @@ import { ApiResponse, ApiListResponse } from '../models/api-response.model';
   providedIn: 'root'
 })
 export class UserService {
-  private readonly API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
+  private readonly API_BASE_URL = getApiBaseUrl();
 
   constructor(private http: HttpClient) { }
 

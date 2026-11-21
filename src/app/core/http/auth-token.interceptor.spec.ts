@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { configureRuntimeConfig, resetRuntimeConfig } from '../../config/runtime.config';
 import { apiEnvelopeInterceptor } from './api-envelope.interceptor';
 import { authTokenInterceptor } from './auth-token.interceptor';
 
@@ -12,6 +13,7 @@ describe('authTokenInterceptor', () => {
   let auth: jasmine.SpyObj<AuthService>;
 
   beforeEach(() => {
+    resetRuntimeConfig();
     auth = jasmine.createSpyObj<AuthService>('AuthService',
       ['getAccessToken', 'refresh', 'logout'],
       { accessToken$: of(null) });
@@ -29,7 +31,10 @@ describe('authTokenInterceptor', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    resetRuntimeConfig();
+    httpMock.verify();
+  });
 
   it('attaches a bearer token to protected API calls', () => {
     http.post('/api/posts', {}).subscribe();
@@ -89,5 +94,14 @@ describe('authTokenInterceptor', () => {
     request.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
 
     expect(auth.refresh).not.toHaveBeenCalled();
+  });
+
+  it('attaches a bearer token to a configured preview API origin', () => {
+    configureRuntimeConfig({ apiBaseUrl: 'https://preview.example' });
+    http.post('https://preview.example/api/posts', {}).subscribe();
+
+    const request = httpMock.expectOne('https://preview.example/api/posts');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer old-token');
+    request.flush({});
   });
 });

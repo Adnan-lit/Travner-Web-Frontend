@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { catchError, finalize, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { EnvironmentConfig } from '../config/environment.config';
+import { getApiBaseUrl } from '../config/runtime.config';
 import { ApiResponse } from '../models/api-response.model';
 import { User, SignupRequest, UpdateProfileRequest } from '../models/common.model';
 
@@ -48,7 +48,7 @@ interface AuthResponseData {
     providedIn: 'root'
 })
 export class AuthService {
-    private readonly API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
+    private readonly API_BASE_URL = getApiBaseUrl();
 
     private accessTokenSubject = new BehaviorSubject<string | null>(null);
     public accessToken$ = this.accessTokenSubject.asObservable();

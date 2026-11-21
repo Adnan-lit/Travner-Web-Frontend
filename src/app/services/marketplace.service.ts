@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
-import { EnvironmentConfig } from '../config/environment.config';
+import { getApiBaseUrl } from '../config/runtime.config';
 import {
     Product,
     CreateProductRequest,
@@ -25,7 +25,7 @@ import { ApiResponse, ApiListResponse } from '../models/api-response.model';
     providedIn: 'root'
 })
 export class MarketplaceService {
-    private readonly API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
+    private readonly API_BASE_URL = getApiBaseUrl();
 
     constructor(private http: HttpClient) { }
 

@@ -230,12 +230,6 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
             this.errorMessage = error.error?.message || 'Network error. Please check your connection and try again.';
           }
 
-          // Log debugging information for developers
-          console.log('🔍 Debugging Information:');
-          console.log(`  - Frontend Origin: ${window.location.origin}`);
-          console.log(`  - Backend URL: ${this.authService['API_BASE_URL']}`);
-          console.log(`  - Error Status: ${error.status}`);
-          console.log(`  - Error Message: ${error.message}`);
         }
       });
     } else {

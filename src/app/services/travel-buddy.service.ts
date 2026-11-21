@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { EnvironmentConfig } from '../config/environment.config';
+import { getApiBaseUrl } from '../config/runtime.config';
 import {
   TravelBuddy,
   TravelBuddyCreate,
@@ -14,7 +14,7 @@ import {
   providedIn: 'root'
 })
 export class TravelBuddyService {
-  private apiUrl = `${EnvironmentConfig.getApiBaseUrl()}/api/travel-buddies`;
+  private apiUrl = `${getApiBaseUrl()}/api/travel-buddies`;
 
   constructor(private http: HttpClient) {}
 

@@ -12,13 +12,13 @@ import {
 } from '../models/chat.model';
 import { User } from '../models/common.model';
 import { ApiResponse } from '../models/common.model';
-import { EnvironmentConfig } from '../config/environment.config';
+import { getApiBaseUrl } from '../config/runtime.config';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatService {
-  private readonly API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
+  private readonly API_BASE_URL = getApiBaseUrl();
   
   // BehaviorSubjects for real-time data
   private conversationsSubject = new BehaviorSubject<ConversationWithParticipants[]>([]);

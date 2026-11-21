@@ -150,7 +150,7 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
 
           // Handle different error scenarios with improved error messages
           if (error.status === 0) {
-            this.errorMessage = 'Network Error: Unable to connect to the backend server. Please check if the server is running on port 8080.';
+            this.errorMessage = 'Network error. Please check your connection and try again.';
           } else if (error.status === 401) {
             this.errorMessage = 'Invalid username or password. Please check your credentials and try again.';
           } else if (error.status === 403) {

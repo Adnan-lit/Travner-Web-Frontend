@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { EnvironmentConfig } from '../config/environment.config';
+import { getApiBaseUrl } from '../config/runtime.config';
 import { ApiResponse, ApiListResponse } from '../models/api-response.model';
 
 export interface Trip {
@@ -136,7 +136,7 @@ export interface UpdateTripRequest {
   providedIn: 'root'
 })
 export class TripService {
-  private readonly API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
+  private readonly API_BASE_URL = getApiBaseUrl();
 
   constructor(private http: HttpClient) { }
 
