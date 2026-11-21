@@ -1,8 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { logger } from '../../../core/logging/logger';
+import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PostService } from '../../../services/post.service';
 import { AuthService } from '../../../services/auth.service';
 import { MediaService, MediaFile } from '../../../services/media.service';
@@ -52,8 +54,8 @@ import { MediaUploadComponent } from '../../media/media-upload/media-upload.comp
           <div class="form-error" *ngIf="postForm.get('content')?.invalid && postForm.get('content')?.touched">
             <span *ngIf="postForm.get('content')?.errors?.['required']">Content is required</span>
             <span *ngIf="postForm.get('content')?.errors?.['minlength']">Content must be at least 10 characters</span>
-    </div>
-  </div>
+          </div>
+        </div>
 
         <!-- Location Field -->
         <div class="form-group">
@@ -94,24 +96,13 @@ import { MediaUploadComponent } from '../../media/media-upload/media-upload.comp
 
         <!-- Form Actions -->
         <div class="form-actions">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            (click)="onCancel()"
-            [disabled]="isSubmitting"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            class="btn btn-primary"
-            [disabled]="postForm.invalid || isSubmitting"
-          >
+          <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="isSubmitting">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="postForm.invalid || isSubmitting">
             <span *ngIf="!isSubmitting">Create Post</span>
             <span *ngIf="isSubmitting" class="loading">
               <svg class="spinner" width="16" height="16" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" opacity="0.25"/>
-                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="4" fill="none"/>
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" opacity="0.25" />
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="4" fill="none" />
               </svg>
               Creating...
             </span>
@@ -130,45 +121,40 @@ import { MediaUploadComponent } from '../../media/media-upload/media-upload.comp
       </div>
     </div>
   `,
-  styleUrls: ['./post-create.component.css']
+  styleUrls: ['./post-create.component.css'],
 })
-export class PostCreateComponent implements OnInit, OnDestroy {
+export class PostCreateComponent implements OnInit {
   postForm: FormGroup;
   isSubmitting = false;
   errorMessage = '';
   uploadedMedia: MediaFile[] = [];
 
-  private destroy$ = new Subject<void>();
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(
     private fb: FormBuilder,
     private postService: PostService,
     private authService: AuthService,
     private router: Router,
-    private mediaService: MediaService
+    private mediaService: MediaService,
   ) {
     this.postForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
       content: ['', [Validators.required, Validators.minLength(10)]],
       location: [''],
-      tags: ['']
+      tags: [''],
     });
   }
 
   ngOnInit(): void {
     // Check if user is authenticated
-    this.authService.isAuthenticated$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe((isAuthenticated: boolean) => {
-      if (!isAuthenticated) {
-        this.router.navigate(['/signin']);
-      }
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    this.authService.isAuthenticated$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((isAuthenticated: boolean) => {
+        if (!isAuthenticated) {
+          this.router.navigate(['/signin']);
+        }
+      });
   }
 
   onSubmit(): void {
@@ -177,18 +163,20 @@ export class PostCreateComponent implements OnInit, OnDestroy {
       this.errorMessage = '';
 
       const formValue = this.postForm.value;
-      
+
       // Process tags
-      const tags = formValue.tags 
-        ? formValue.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0)
+      const tags = formValue.tags
+        ? formValue.tags
+            .split(',')
+            .map((tag: string) => tag.trim())
+            .filter((tag: string) => tag.length > 0)
         : [];
 
       // Use the media IDs from uploadedMedia (MediaUploadComponent handles the upload)
-      const mediaIds = this.uploadedMedia.map(media => media.id);
+      const mediaIds = this.uploadedMedia.map((media) => media.id);
       this.createPostWithMedia(formValue, tags, mediaIds);
     }
   }
-
 
   private createPostWithMedia(formValue: any, tags: string[], mediaIds: string[]): void {
     const postData = {
@@ -197,28 +185,28 @@ export class PostCreateComponent implements OnInit, OnDestroy {
       location: formValue.location || null,
       tags: tags,
       published: true,
-      mediaIds: mediaIds
+      mediaIds: mediaIds,
     };
 
-    this.postService.createPost(postData).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe({
-      next: (response: any) => {
-        if (response.success && response.data) {
-          this.onPostCreated();
-        } else {
-          this.errorMessage = response.message || 'Failed to create post';
+    this.postService
+      .createPost(postData)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response: any) => {
+          if (response.success && response.data) {
+            this.onPostCreated();
+          } else {
+            this.errorMessage = 'Failed to create post. Please try again.';
+            this.isSubmitting = false;
+          }
+        },
+        error: (error: any) => {
+          logger.error('Error creating post:', error);
+          this.errorMessage = 'Failed to create post';
           this.isSubmitting = false;
-        }
-      },
-      error: (error: any) => {
-        console.error('Error creating post:', error);
-        this.errorMessage = error.error?.message || 'Failed to create post';
-        this.isSubmitting = false;
-      }
-    });
+        },
+      });
   }
-
 
   private onPostCreated(): void {
     this.isSubmitting = false;
@@ -227,12 +215,11 @@ export class PostCreateComponent implements OnInit, OnDestroy {
 
   onMediaUploaded(mediaFiles: MediaFile[]): void {
     this.uploadedMedia = mediaFiles;
-    console.log('Media uploaded:', mediaFiles);
+    logger.debug('Media uploaded:', mediaFiles);
   }
 
-
   onMediaUploadComplete(): void {
-    console.log('Media upload complete');
+    logger.debug('Media upload complete');
   }
 
   onMediaUploadError(error: string): void {

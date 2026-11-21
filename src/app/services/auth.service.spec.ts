@@ -1,4 +1,4 @@
-import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
@@ -15,7 +15,7 @@ describe('AuthService (bearer + refresh cookie)', () => {
     accessToken: 'access-1',
     tokenType: 'Bearer',
     expiresIn: 900,
-    user: { id: '507f1f77bcf86cd799439011', username: 'alice', roles: ['USER'] }
+    user: { id: '507f1f77bcf86cd799439011', username: 'alice', roles: ['USER'] },
   };
 
   beforeEach(() => {
@@ -26,8 +26,8 @@ describe('AuthService (bearer + refresh cookie)', () => {
       providers: [
         provideHttpClient(withInterceptors([apiEnvelopeInterceptor])),
         provideHttpClientTesting(),
-        { provide: Router, useValue: router }
-      ]
+        { provide: Router, useValue: router },
+      ],
     });
     service = TestBed.inject(AuthService);
     httpMock = TestBed.inject(HttpTestingController);
@@ -53,6 +53,18 @@ describe('AuthService (bearer + refresh cookie)', () => {
     expect(service.isAuthenticated()).toBe(true);
     expect(service.getCurrentUser()?.userName).toBe('alice');
     expect(storageSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not expose raw backend messages in authentication errors', () => {
+    let message = '';
+    service.login('alice', 'pw').subscribe({
+      error: (error: Error) => (message = error.message),
+    });
+
+    httpMock.expectOne('/api/auth/login').flush({ success: false, message: 'SECRET-BACKEND-DETAIL', data: null });
+
+    expect(message).toBe('Invalid username or password');
+    expect(message).not.toContain('SECRET-BACKEND-DETAIL');
   });
 
   it('shares a single refresh request across parallel callers', () => {
@@ -83,10 +95,9 @@ describe('AuthService (bearer + refresh cookie)', () => {
   });
 
   it('normalizes a failed startup refresh into an anonymous session', () => {
-    service.initializeSession().subscribe(restored => expect(restored).toBe(false));
+    service.initializeSession().subscribe((restored) => expect(restored).toBe(false));
 
-    httpMock.expectOne('/api/auth/refresh')
-      .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+    httpMock.expectOne('/api/auth/refresh').flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
 
     expect(service.getAccessToken()).toBeNull();
     expect(service.isAuthenticated()).toBe(false);
@@ -101,13 +112,15 @@ describe('AuthService (bearer + refresh cookie)', () => {
   });
 
   it('trims and lowercases username and email on signup', () => {
-    service.signup({
-      userName: '  Alice  ',
-      firstName: 'Alice',
-      lastName: 'Example',
-      email: '  Alice@Example.COM ',
-      password: 'pw'
-    }).subscribe();
+    service
+      .signup({
+        userName: '  Alice  ',
+        firstName: 'Alice',
+        lastName: 'Example',
+        email: '  Alice@Example.COM ',
+        password: 'pw',
+      })
+      .subscribe();
 
     const request = httpMock.expectOne('/api/public/register');
     expect(request.request.body.userName).toBe('alice');
@@ -118,7 +131,6 @@ describe('AuthService (bearer + refresh cookie)', () => {
   it('normalizes the username before the availability check', () => {
     service.checkUsername('  Alice  ').subscribe();
 
-    httpMock.expectOne('/api/public/check-username/alice')
-      .flush({ success: true, data: { available: true } });
+    httpMock.expectOne('/api/public/check-username/alice').flush({ success: true, data: { available: true } });
   });
 });

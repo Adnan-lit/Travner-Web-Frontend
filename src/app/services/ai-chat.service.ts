@@ -1,5 +1,6 @@
+import { logger } from '../core/logging/logger';
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { timeout, retry } from 'rxjs/operators';
@@ -41,23 +42,23 @@ export interface OpenRouterResponse {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AIChatService {
   private readonly API_BASE_URL = 'https://openrouter.ai/api/v1';
-  
+
   // Free models available on OpenRouter
   private readonly FREE_MODELS = [
     'mistralai/mistral-7b-instruct:free',
     'microsoft/phi-3-mini-128k-instruct:free',
     'meta-llama/llama-3.2-3b-instruct:free',
-    'google/gemma-2-2b-it:free'
+    'google/gemma-2-2b-it:free',
   ];
-  
+
   private currentModel = this.FREE_MODELS[0]; // Default to mistral-7b
   private currentSession: AIChatSession | null = null;
   private sessionsSubject = new BehaviorSubject<AIChatSession[]>([]);
-  
+
   public sessions$ = this.sessionsSubject.asObservable();
 
   constructor(private http: HttpClient) {
@@ -72,7 +73,7 @@ export class AIChatService {
       id: this.generateId(),
       role: 'user',
       content: message,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     // Add user message to session
@@ -80,10 +81,10 @@ export class AIChatService {
 
     // Try backend AI service first, fallback to direct OpenRouter
     return this.sendMessageToBackend(message).pipe(
-      catchError(error => {
-        console.warn('Backend AI service unavailable, using direct OpenRouter:', error);
+      catchError((error) => {
+        logger.warn('Backend AI service unavailable, using direct OpenRouter:', error);
         return this.sendMessageToOpenRouter(message);
-      })
+      }),
     );
   }
 
@@ -93,27 +94,27 @@ export class AIChatService {
   private sendMessageToBackend(message: string): Observable<AIChatMessage> {
     const requestBody = {
       message: message,
-      model: this.currentModel
+      model: this.currentModel,
     };
 
     return this.http.post<any>('/api/ai/chat', requestBody).pipe(
       timeout(60000),
       retry({ count: 2, delay: 2000 }),
-      map(response => {
+      map((response) => {
         const assistantMessage: AIChatMessage = {
           id: this.generateId(),
           role: 'assistant',
           content: response.data || 'Sorry, I could not process your request.',
-          timestamp: new Date()
+          timestamp: new Date(),
         };
 
         this.addMessageToSession(assistantMessage);
         return assistantMessage;
       }),
-      catchError(error => {
-        console.error('Backend AI Error:', error);
+      catchError((error) => {
+        logger.error('Backend AI Error:', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -126,8 +127,9 @@ export class AIChatService {
     const errorMessage: AIChatMessage = {
       id: this.generateId(),
       role: 'assistant',
-      content: 'AI service is currently unavailable. Please ensure the backend server is running and the OPENROUTER_API_KEY environment variable is set.',
-      timestamp: new Date()
+      content:
+        'AI service is currently unavailable. Please ensure the backend server is running and the OPENROUTER_API_KEY environment variable is set.',
+      timestamp: new Date(),
     };
     this.addMessageToSession(errorMessage);
     return of(errorMessage);
@@ -145,14 +147,12 @@ export class AIChatService {
   }): Observable<string> {
     // Try backend first
     return this.http.post<any>('/api/ai/recommendations', preferences).pipe(
-      map(response => response.data),
-      catchError(error => {
-        console.warn('Backend AI service unavailable, using direct prompt:', error);
+      map((response) => response.data),
+      catchError((error) => {
+        logger.warn('Backend AI service unavailable, using direct prompt:', error);
         const prompt = this.buildTravelRecommendationPrompt(preferences);
-        return this.sendMessage(prompt).pipe(
-          map(response => response.content)
-        );
-      })
+        return this.sendMessage(prompt).pipe(map((response) => response.content));
+      }),
     );
   }
 
@@ -161,9 +161,7 @@ export class AIChatService {
    */
   getItinerarySuggestions(destination: string, duration: number, interests: string[]): Observable<string> {
     const prompt = this.buildItineraryPrompt(destination, duration, interests);
-    return this.sendMessage(prompt).pipe(
-      map(response => response.content)
-    );
+    return this.sendMessage(prompt).pipe(map((response) => response.content));
   }
 
   /**
@@ -176,9 +174,7 @@ export class AIChatService {
     destinations: string[];
   }): Observable<string> {
     const prompt = this.buildTravelBuddyPrompt(userProfile);
-    return this.sendMessage(prompt).pipe(
-      map(response => response.content)
-    );
+    return this.sendMessage(prompt).pipe(map((response) => response.content));
   }
 
   /**
@@ -189,7 +185,7 @@ export class AIChatService {
       id: this.generateId(),
       messages: [],
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     this.currentSession = session;
@@ -212,7 +208,7 @@ export class AIChatService {
    */
   switchModel(model: string): void {
     this.currentModel = model;
-    console.log(`Switched to model: ${model}`);
+    logger.debug(`Switched to model: ${model}`);
   }
 
   /**
@@ -240,7 +236,7 @@ export class AIChatService {
 
   private getSessionById(sessionId: string): AIChatSession | null {
     const sessions = this.sessionsSubject.value;
-    return sessions.find(s => s.id === sessionId) || null;
+    return sessions.find((s) => s.id === sessionId) || null;
   }
 
   private loadSessions(): void {
@@ -253,7 +249,7 @@ export class AIChatService {
           this.currentSession = sessions[sessions.length - 1];
         }
       } catch (error) {
-        console.error('Error loading AI sessions:', error);
+        logger.error('Error loading AI sessions:', error);
       }
     }
   }
@@ -318,4 +314,3 @@ export class AIChatService {
     Focus on creating meaningful connections within the Bangladeshi travel community.`;
   }
 }
-

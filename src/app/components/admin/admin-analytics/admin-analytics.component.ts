@@ -1,8 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { logger } from '../../../core/logging/logger';
+import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { Subject, takeUntil, interval } from 'rxjs';
+import { Subject, interval, takeUntil } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AdminService } from '../../../services/admin.service';
 import { AuthService } from '../../../services/auth.service';
 import { MarketplaceService } from '../../../services/marketplace.service';
@@ -68,7 +70,7 @@ interface ChartData {
           </button>
           <div class="auto-refresh">
             <label>
-              <input type="checkbox" [(ngModel)]="autoRefresh" (change)="toggleAutoRefresh()">
+              <input type="checkbox" [(ngModel)]="autoRefresh" (change)="toggleAutoRefresh()" />
               Auto-refresh (30s)
             </label>
           </div>
@@ -255,7 +257,9 @@ interface ChartData {
           </button>
           <button class="action-btn" (click)="backupSystem()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <path
+                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+              ></path>
               <polyline points="3.27,6.96 12,12.01 20.73,6.96"></polyline>
               <line x1="12" y1="22.08" x2="12" y2="12"></line>
             </svg>
@@ -273,464 +277,472 @@ interface ChartData {
       </div>
     </div>
   `,
-  styles: [`
-    .analytics-container {
-      padding: 0;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+  styles: [
+    `
+      .analytics-container {
+        padding: 0;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
 
-    .analytics-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid #e9ecef;
-    }
-
-    .analytics-header h1 {
-      margin: 0;
-      color: #333;
-      font-size: 2rem;
-      font-weight: 700;
-    }
-
-    .refresh-controls {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .refresh-btn {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background-color 0.2s;
-    }
-
-    .refresh-btn:hover:not(:disabled) {
-      background: #0056b3;
-    }
-
-    .refresh-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .auto-refresh {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.9rem;
-      color: #666;
-    }
-
-    .auto-refresh input[type="checkbox"] {
-      margin: 0;
-    }
-
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .metric-card {
-      background: white;
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .metric-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    }
-
-    .metric-card.users {
-      border-left: 4px solid #007bff;
-    }
-
-    .metric-card.posts {
-      border-left: 4px solid #28a745;
-    }
-
-    .metric-card.orders {
-      border-left: 4px solid #ffc107;
-    }
-
-    .metric-card.revenue {
-      border-left: 4px solid #dc3545;
-    }
-
-    .metric-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: #f8f9fa;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #666;
-      flex-shrink: 0;
-    }
-
-    .metric-card.users .metric-icon {
-      background: #e3f2fd;
-      color: #007bff;
-    }
-
-    .metric-card.posts .metric-icon {
-      background: #e8f5e8;
-      color: #28a745;
-    }
-
-    .metric-card.orders .metric-icon {
-      background: #fff3cd;
-      color: #ffc107;
-    }
-
-    .metric-card.revenue .metric-icon {
-      background: #f8d7da;
-      color: #dc3545;
-    }
-
-    .metric-content {
-      flex: 1;
-    }
-
-    .metric-content h3 {
-      margin: 0 0 0.5rem 0;
-      color: #666;
-      font-size: 0.9rem;
-      font-weight: 500;
-    }
-
-    .metric-value {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #333;
-      margin-bottom: 0.5rem;
-    }
-
-    .metric-change {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-size: 0.85rem;
-      color: #666;
-    }
-
-    .metric-change.positive {
-      color: #28a745;
-    }
-
-    .metric-change.warning {
-      color: #ffc107;
-    }
-
-    .charts-section {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 2rem;
-      margin-bottom: 2rem;
-    }
-
-    .chart-container {
-      background: white;
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .chart-container h3 {
-      margin: 0 0 1rem 0;
-      color: #333;
-      font-size: 1.2rem;
-      font-weight: 600;
-    }
-
-    .chart-placeholder {
-      height: 200px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .chart-mock {
-      width: 100%;
-      height: 100%;
-    }
-
-    .chart-bars {
-      display: flex;
-      align-items: end;
-      justify-content: space-around;
-      height: 150px;
-      margin-bottom: 1rem;
-    }
-
-    .bar {
-      width: 30px;
-      background: linear-gradient(to top, #007bff, #0056b3);
-      border-radius: 4px 4px 0 0;
-      animation: growUp 1s ease-out;
-    }
-
-    @keyframes growUp {
-      from { height: 0; }
-      to { height: var(--target-height); }
-    }
-
-    .chart-labels {
-      display: flex;
-      justify-content: space-around;
-      font-size: 0.8rem;
-      color: #666;
-    }
-
-    .tags-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .tag-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.5rem;
-      background: #f8f9fa;
-      border-radius: 6px;
-    }
-
-    .tag-name {
-      font-weight: 500;
-      color: #333;
-    }
-
-    .tag-count {
-      background: #007bff;
-      color: white;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .system-health {
-      background: white;
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      margin-bottom: 2rem;
-    }
-
-    .system-health h3 {
-      margin: 0 0 1rem 0;
-      color: #333;
-      font-size: 1.2rem;
-      font-weight: 600;
-    }
-
-    .health-metrics {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-    }
-
-    .health-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.75rem;
-      background: #f8f9fa;
-      border-radius: 6px;
-    }
-
-    .health-label {
-      font-weight: 500;
-      color: #666;
-    }
-
-    .health-value {
-      font-weight: 600;
-      color: #333;
-    }
-
-    .health-status {
-      padding: 0.25rem 0.75rem;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .health-status.excellent {
-      background: #d4edda;
-      color: #155724;
-    }
-
-    .health-status.good {
-      background: #d1ecf1;
-      color: #0c5460;
-    }
-
-    .health-status.fair {
-      background: #fff3cd;
-      color: #856404;
-    }
-
-    .health-status.poor {
-      background: #f8d7da;
-      color: #721c24;
-    }
-
-    .quick-actions {
-      background: white;
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .quick-actions h3 {
-      margin: 0 0 1rem 0;
-      color: #333;
-      font-size: 1.2rem;
-      font-weight: 600;
-    }
-
-    .actions-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-    }
-
-    .action-btn {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 1rem;
-      background: #f8f9fa;
-      border: 1px solid #e9ecef;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      color: #333;
-      transition: all 0.2s;
-    }
-
-    .action-btn:hover {
-      background: #e9ecef;
-      border-color: #007bff;
-      color: #007bff;
-    }
-
-    .loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    .loading-content {
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      text-align: center;
-    }
-
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #007bff;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 1rem;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
       .analytics-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .analytics-header h1 {
+        margin: 0;
+        color: #333;
+        font-size: 2rem;
+        font-weight: 700;
       }
 
       .refresh-controls {
-        width: 100%;
-        justify-content: space-between;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .refresh-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background-color 0.2s;
+      }
+
+      .refresh-btn:hover:not(:disabled) {
+        background: #0056b3;
+      }
+
+      .refresh-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .auto-refresh {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: #666;
+      }
+
+      .auto-refresh input[type='checkbox'] {
+        margin: 0;
       }
 
       .metrics-grid {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .metric-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+
+      .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .metric-card.users {
+        border-left: 4px solid #007bff;
+      }
+
+      .metric-card.posts {
+        border-left: 4px solid #28a745;
+      }
+
+      .metric-card.orders {
+        border-left: 4px solid #ffc107;
+      }
+
+      .metric-card.revenue {
+        border-left: 4px solid #dc3545;
+      }
+
+      .metric-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        flex-shrink: 0;
+      }
+
+      .metric-card.users .metric-icon {
+        background: #e3f2fd;
+        color: #007bff;
+      }
+
+      .metric-card.posts .metric-icon {
+        background: #e8f5e8;
+        color: #28a745;
+      }
+
+      .metric-card.orders .metric-icon {
+        background: #fff3cd;
+        color: #ffc107;
+      }
+
+      .metric-card.revenue .metric-icon {
+        background: #f8d7da;
+        color: #dc3545;
+      }
+
+      .metric-content {
+        flex: 1;
+      }
+
+      .metric-content h3 {
+        margin: 0 0 0.5rem 0;
+        color: #666;
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+
+      .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 0.5rem;
+      }
+
+      .metric-change {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.85rem;
+        color: #666;
+      }
+
+      .metric-change.positive {
+        color: #28a745;
+      }
+
+      .metric-change.warning {
+        color: #ffc107;
       }
 
       .charts-section {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .chart-container {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .chart-container h3 {
+        margin: 0 0 1rem 0;
+        color: #333;
+        font-size: 1.2rem;
+        font-weight: 600;
+      }
+
+      .chart-placeholder {
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .chart-mock {
+        width: 100%;
+        height: 100%;
+      }
+
+      .chart-bars {
+        display: flex;
+        align-items: end;
+        justify-content: space-around;
+        height: 150px;
+        margin-bottom: 1rem;
+      }
+
+      .bar {
+        width: 30px;
+        background: linear-gradient(to top, #007bff, #0056b3);
+        border-radius: 4px 4px 0 0;
+        animation: growUp 1s ease-out;
+      }
+
+      @keyframes growUp {
+        from {
+          height: 0;
+        }
+        to {
+          height: var(--target-height);
+        }
+      }
+
+      .chart-labels {
+        display: flex;
+        justify-content: space-around;
+        font-size: 0.8rem;
+        color: #666;
+      }
+
+      .tags-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .tag-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+      }
+
+      .tag-name {
+        font-weight: 500;
+        color: #333;
+      }
+
+      .tag-count {
+        background: #007bff;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+
+      .system-health {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+      }
+
+      .system-health h3 {
+        margin: 0 0 1rem 0;
+        color: #333;
+        font-size: 1.2rem;
+        font-weight: 600;
       }
 
       .health-metrics {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+      }
+
+      .health-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+      }
+
+      .health-label {
+        font-weight: 500;
+        color: #666;
+      }
+
+      .health-value {
+        font-weight: 600;
+        color: #333;
+      }
+
+      .health-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .health-status.excellent {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      .health-status.good {
+        background: #d1ecf1;
+        color: #0c5460;
+      }
+
+      .health-status.fair {
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      .health-status.poor {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
+      .quick-actions {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .quick-actions h3 {
+        margin: 0 0 1rem 0;
+        color: #333;
+        font-size: 1.2rem;
+        font-weight: 600;
       }
 
       .actions-grid {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
       }
-    }
-  `]
+
+      .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        color: #333;
+        transition: all 0.2s;
+      }
+
+      .action-btn:hover {
+        background: #e9ecef;
+        border-color: #007bff;
+        color: #007bff;
+      }
+
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+
+      .loading-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        text-align: center;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #007bff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .analytics-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 1rem;
+        }
+
+        .refresh-controls {
+          width: 100%;
+          justify-content: space-between;
+        }
+
+        .metrics-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .charts-section {
+          grid-template-columns: 1fr;
+        }
+
+        .health-metrics {
+          grid-template-columns: 1fr;
+        }
+
+        .actions-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    `,
+  ],
 })
-export class AdminAnalyticsComponent implements OnInit, OnDestroy {
+export class AdminAnalyticsComponent implements OnInit {
   analyticsData: AnalyticsData | null = null;
   isLoading = false;
   autoRefresh = false;
-  
-  private destroy$ = new Subject<void>();
+
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly refreshStop$ = new Subject<void>();
   private refreshInterval$ = interval(30000);
 
   constructor(
     private adminService: AdminService,
     private authService: AuthService,
-    private marketplaceService: MarketplaceService
+    private marketplaceService: MarketplaceService,
   ) {}
 
   ngOnInit(): void {
     this.loadAnalyticsData();
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
   private loadAnalyticsData(): void {
     this.isLoading = true;
-    
+
     // Simulate loading analytics data
     setTimeout(() => {
       this.analyticsData = {
@@ -738,7 +750,7 @@ export class AdminAnalyticsComponent implements OnInit, OnDestroy {
           total: 1250,
           active: 890,
           newThisMonth: 45,
-          growth: 12.5
+          growth: 12.5,
         },
         posts: {
           total: 3420,
@@ -748,26 +760,26 @@ export class AdminAnalyticsComponent implements OnInit, OnDestroy {
             { tag: 'bangladesh', count: 189 },
             { tag: 'adventure', count: 156 },
             { tag: 'food', count: 134 },
-            { tag: 'culture', count: 98 }
-          ]
+            { tag: 'culture', count: 98 },
+          ],
         },
         marketplace: {
           totalProducts: 89,
           totalOrders: 234,
           revenue: 45600,
-          pendingOrders: 12
+          pendingOrders: 12,
         },
         chat: {
           totalConversations: 567,
           activeConversations: 89,
-          messagesToday: 2340
+          messagesToday: 2340,
         },
         system: {
           uptime: '99.9%',
           lastBackup: '2 hours ago',
           storageUsed: '2.3 GB / 10 GB',
-          performance: 'excellent'
-        }
+          performance: 'excellent',
+        },
       };
       this.isLoading = false;
     }, 1000);
@@ -779,40 +791,38 @@ export class AdminAnalyticsComponent implements OnInit, OnDestroy {
 
   toggleAutoRefresh(): void {
     if (this.autoRefresh) {
-      this.refreshInterval$
-        .pipe(takeUntil(this.destroy$))
-        .subscribe(() => {
-          this.refreshData();
-        });
+      this.refreshInterval$.pipe(takeUntil(this.refreshStop$), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+        this.refreshData();
+      });
     } else {
-      this.destroy$.next();
+      this.refreshStop$.next();
     }
   }
 
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-BD', {
       style: 'currency',
-      currency: 'BDT'
+      currency: 'BDT',
     }).format(amount);
   }
 
   exportData(): void {
     // Implement data export functionality
-    console.log('Exporting analytics data...');
+    logger.debug('Exporting analytics data...');
   }
 
   runSystemCheck(): void {
     // Implement system check functionality
-    console.log('Running system check...');
+    logger.debug('Running system check...');
   }
 
   cleanupData(): void {
     // Implement data cleanup functionality
-    console.log('Cleaning up old data...');
+    logger.debug('Cleaning up old data...');
   }
 
   backupSystem(): void {
     // Implement system backup functionality
-    console.log('Creating system backup...');
+    logger.debug('Creating system backup...');
   }
 }

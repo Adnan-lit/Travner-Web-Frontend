@@ -17,7 +17,7 @@ export const RUNTIME_CONFIG_URL = '/assets/config.json';
 
 const DEFAULT_CONFIG: Readonly<RuntimeConfig> = Object.freeze({
   apiBaseUrl: '',
-  wsUrl: '/ws'
+  wsUrl: '/ws',
 });
 
 let currentConfig: RuntimeConfig = { ...DEFAULT_CONFIG };
@@ -51,7 +51,7 @@ export async function loadRuntimeConfig(fetchFn: typeof fetch = fetch): Promise<
   try {
     const response = await fetchFn(RUNTIME_CONFIG_URL, { cache: 'no-store' });
     if (response.ok) {
-      currentConfig = normalize(await response.json() as Partial<RuntimeConfig>);
+      currentConfig = normalize((await response.json()) as Partial<RuntimeConfig>);
       return { ...currentConfig };
     }
   } catch {

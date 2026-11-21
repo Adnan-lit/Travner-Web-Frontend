@@ -30,7 +30,7 @@ describe('TripDetailComponent', () => {
     photos: [],
     tags: ['ski', 'snow'],
     createdAt: '2026-11-01T00:00:00Z',
-    updatedAt: '2026-11-01T00:00:00Z'
+    updatedAt: '2026-11-01T00:00:00Z',
   } as Trip;
   const successResponse: ApiResponse<Trip> = { success: true, data: trip };
 
@@ -44,8 +44,8 @@ describe('TripDetailComponent', () => {
       providers: [
         provideRouter([]),
         { provide: TripService, useValue: serviceSpy },
-        { provide: ActivatedRoute, useValue: routeStub }
-      ]
+        { provide: ActivatedRoute, useValue: routeStub },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TripDetailComponent);
@@ -90,7 +90,7 @@ describe('TripDetailComponent', () => {
 
   it('treats a 404 response as not found', () => {
     serviceSpy.getTripById.and.returnValue(
-      throwError(() => ({ status: 404, error: { detail: 'SECRET alice@example.com' } }))
+      throwError(() => ({ status: 404, error: { detail: 'SECRET alice@example.com' } })),
     );
 
     fixture.detectChanges();
@@ -103,7 +103,7 @@ describe('TripDetailComponent', () => {
 
   it('shows a safe generic error for other failures', () => {
     serviceSpy.getTripById.and.returnValue(
-      throwError(() => ({ status: 500, error: { detail: 'SECRET alice@example.com' } }))
+      throwError(() => ({ status: 500, error: { detail: 'SECRET alice@example.com' } })),
     );
 
     fixture.detectChanges();

@@ -1,12 +1,13 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { logger } from '../../../core/logging/logger';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { AdminService } from '../../../services/admin.service';
 import { AuthService } from '../../../services/auth.service';
 import { User, AdminUser } from '../../../models/common.model';
-import { ApiResponse, ApiListResponse } from '../../../models/api-response.model';
 
 interface UserFilters {
   search: string;
@@ -30,9 +31,9 @@ interface UserStats {
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, NgOptimizedImage],
   templateUrl: './user-management.component.html',
-  styleUrls: ['./user-management.component.css']
+  styleUrls: ['./user-management.component.css'],
 })
-export class UserManagementComponent implements OnInit, OnDestroy {
+export class UserManagementComponent implements OnInit {
   currentUser: User | null = null;
   users: AdminUser[] = [];
   userStats: UserStats = {
@@ -41,92 +42,78 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     adminUsers: 0,
     bannedUsers: 0,
     newUsersToday: 0,
-    newUsersThisWeek: 0
+    newUsersThisWeek: 0,
   };
-  
+
   filters: UserFilters = {
     search: '',
     role: '',
     status: '',
     sortBy: 'createdAt',
-    sortOrder: 'desc'
+    sortOrder: 'desc',
   };
-  
+
   pagination = {
     page: 0,
     size: 20,
     totalElements: 0,
-    totalPages: 0
+    totalPages: 0,
   };
-  
+
   isLoading = false;
   selectedUsers: Set<string> = new Set();
   showBulkActions = false;
-  
+
   // Modal states
   showUserModal = false;
   showDeleteModal = false;
   selectedUser: AdminUser | null = null;
-  
-  private destroy$ = new Subject<void>();
+
+  private readonly destroyRef = inject(DestroyRef);
   private searchSubject$ = new Subject<string>();
 
   constructor(
     private adminService: AdminService,
-    private authService: AuthService
+    private authService: AuthService,
   ) {
     // Debounce search input
     this.searchSubject$
-      .pipe(
-        debounceTime(300),
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      )
-      .subscribe(searchTerm => {
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((searchTerm) => {
         this.filters.search = searchTerm;
         this.loadUsers();
       });
   }
 
   ngOnInit(): void {
-    this.authService.currentUser$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(user => {
-        this.currentUser = user;
-        if (user && this.authService.isAdmin()) {
-          this.loadUsers();
-          this.loadUserStats();
-        }
-      });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    this.authService.currentUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((user) => {
+      this.currentUser = user;
+      if (user && this.authService.isAdmin()) {
+        this.loadUsers();
+        this.loadUserStats();
+      }
+    });
   }
 
   loadUsers(): void {
     this.isLoading = true;
-    
-    this.adminService.getUsers(
-      this.pagination.page,
-      this.pagination.size,
-      this.filters.search,
-      this.filters.role
-    ).pipe(takeUntil(this.destroy$))
-    .subscribe({
-      next: (response: any) => {
-        // Backend returns data as { content: [...], totalElements: N, totalPages: M, ... }
-        this.users = response.data?.content || [];
-        this.pagination.totalElements = response.data?.totalElements || 0;
-        this.pagination.totalPages = response.data?.totalPages || 0;
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading users:', error);
-        this.isLoading = false;
-      }
-    });
+
+    this.adminService
+      .getUsers(this.pagination.page, this.pagination.size, this.filters.search, this.filters.role)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response: any) => {
+          // Backend returns data as { content: [...], totalElements: N, totalPages: M, ... }
+          this.users = response.data?.content || [];
+          this.pagination.totalElements = response.data?.totalElements || 0;
+          this.pagination.totalPages = response.data?.totalPages || 0;
+          this.isLoading = false;
+        },
+        error: (error) => {
+          logger.error('Error loading users:', error);
+          this.isLoading = false;
+        },
+      });
   }
 
   loadUserStats(): void {
@@ -137,7 +124,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       adminUsers: Math.floor(this.pagination.totalElements * 0.02),
       bannedUsers: Math.floor(this.pagination.totalElements * 0.01),
       newUsersToday: Math.floor(Math.random() * 10),
-      newUsersThisWeek: Math.floor(Math.random() * 50)
+      newUsersThisWeek: Math.floor(Math.random() * 50),
     };
   }
 
@@ -179,7 +166,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       this.selectedUsers.clear();
     } else {
       this.selectedUsers.clear();
-      this.users.forEach(user => this.selectedUsers.add(user.id));
+      this.users.forEach((user) => this.selectedUsers.add(user.id));
     }
     this.showBulkActions = this.selectedUsers.size > 0;
   }
@@ -191,7 +178,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
   editUser(user: AdminUser): void {
     // Navigate to user edit page or open edit modal
-    console.log('Edit user:', user);
+    logger.debug('Edit user:', user);
   }
 
   deleteUser(user: AdminUser): void {
@@ -201,43 +188,44 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
   confirmDeleteUser(): void {
     if (!this.selectedUser) return;
-    
-    this.adminService.deleteUser(this.selectedUser.id)
-      .pipe(takeUntil(this.destroy$))
+
+    this.adminService
+      .deleteUser(this.selectedUser.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
-          console.log('User deleted:', response);
+          logger.debug('User deleted:', response);
           this.loadUsers();
           this.loadUserStats();
           this.showDeleteModal = false;
           this.selectedUser = null;
         },
         error: (error) => {
-          console.error('Error deleting user:', error);
-        }
+          logger.error('Error deleting user:', error);
+        },
       });
   }
 
   bulkAction(action: string): void {
     const userIds = Array.from(this.selectedUsers);
-    
+
     switch (action) {
       case 'delete':
         // Implement bulk delete
-        console.log('Bulk delete users:', userIds);
+        logger.debug('Bulk delete users:', userIds);
         break;
       case 'ban':
         // Implement bulk ban
-        console.log('Bulk ban users:', userIds);
+        logger.debug('Bulk ban users:', userIds);
         break;
       case 'activate':
         // Implement bulk activate
-        console.log('Bulk activate users:', userIds);
+        logger.debug('Bulk activate users:', userIds);
         break;
       default:
-        console.log('Unknown bulk action:', action);
+        logger.debug('Unknown bulk action:', action);
     }
-    
+
     // Clear selection after action
     this.selectedUsers.clear();
     this.showBulkActions = false;
@@ -245,7 +233,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
   exportUsers(): void {
     // Implement user export functionality
-    console.log('Export users');
+    logger.debug('Export users');
   }
 
   getRoleBadgeClass(role: string): string {
@@ -282,7 +270,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 
@@ -306,24 +294,24 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     const pages: number[] = [];
     const totalPages = this.pagination.totalPages;
     const currentPage = this.pagination.page;
-    
+
     // Always show first page
     if (totalPages > 0) {
       pages.push(0);
     }
-    
+
     // Show pages around current page
     for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages - 1, currentPage + 2); i++) {
       if (!pages.includes(i)) {
         pages.push(i);
       }
     }
-    
+
     // Always show last page
     if (totalPages > 1 && !pages.includes(totalPages - 1)) {
       pages.push(totalPages - 1);
     }
-    
+
     return pages;
   }
 }

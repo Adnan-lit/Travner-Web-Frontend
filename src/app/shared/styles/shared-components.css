@@ -190,7 +190,9 @@
   backdrop-filter: blur(25px);
   border-radius: var(--border-radius);
   border: var(--border-width) solid rgba(255, 255, 255, 0.15);
-  box-shadow: var(--shadow-card), 0 0 60px rgba(255, 255, 255, 0.08) inset;
+  box-shadow:
+    var(--shadow-card),
+    0 0 60px rgba(255, 255, 255, 0.08) inset;
   padding: var(--card-padding);
   position: relative;
   z-index: 1;
@@ -278,7 +280,7 @@
   line-height: 1.5;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   appearance: none;
   width: 20px;
   height: 20px;
@@ -290,12 +292,12 @@
   margin-top: 2px;
 }
 
-.checkbox-label input[type="checkbox"]:checked {
+.checkbox-label input[type='checkbox']:checked {
   background: var(--gradient-ocean);
   border-color: var(--accent-400);
 }
 
-.checkbox-label input[type="checkbox"]:checked::after {
+.checkbox-label input[type='checkbox']:checked::after {
   content: '';
   position: absolute;
   left: 4px;
@@ -313,7 +315,9 @@
   backdrop-filter: blur(25px);
   border-radius: var(--border-radius);
   border: var(--border-width) solid rgba(255, 255, 255, 0.15);
-  box-shadow: var(--shadow-card), 0 0 60px rgba(255, 255, 255, 0.08) inset;
+  box-shadow:
+    var(--shadow-card),
+    0 0 60px rgba(255, 255, 255, 0.08) inset;
   padding: var(--card-padding);
   position: relative;
   z-index: 1;

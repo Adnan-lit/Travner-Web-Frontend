@@ -7,7 +7,7 @@ import {
   FormGroup,
   ReactiveFormsModule,
   ValidationErrors,
-  Validators
+  Validators,
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CreateTripRequest, Trip, TripService } from '../../../services/trip.service';
@@ -50,7 +50,7 @@ function dateRangeValidator(group: AbstractControl): ValidationErrors | null {
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './trip-create.component.html',
-  styleUrls: ['./trip-create.component.css']
+  styleUrls: ['./trip-create.component.css'],
 })
 export class TripCreateComponent {
   readonly tripForm: FormGroup<TripCreateForm>;
@@ -63,22 +63,34 @@ export class TripCreateComponent {
   constructor(
     private readonly fb: FormBuilder,
     private readonly tripService: TripService,
-    private readonly router: Router
+    private readonly router: Router,
   ) {
-    this.tripForm = this.fb.group<TripCreateForm>({
-      title: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
-      description: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(2000)] }),
-      destination: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
-      startDate: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-      endDate: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-      budget: new FormControl<string | null>(null, [Validators.min(0)]),
-      currency: new FormControl('USD', { nonNullable: true, validators: [Validators.required, Validators.maxLength(10)] }),
-      visibility: new FormControl<CreateTripRequest['visibility']>('PRIVATE', {
-        nonNullable: true,
-        validators: [Validators.required]
-      }),
-      tags: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(500)] })
-    }, { validators: [dateRangeValidator] });
+    this.tripForm = this.fb.group<TripCreateForm>(
+      {
+        title: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
+        description: new FormControl('', {
+          nonNullable: true,
+          validators: [Validators.required, Validators.maxLength(2000)],
+        }),
+        destination: new FormControl('', {
+          nonNullable: true,
+          validators: [Validators.required, Validators.maxLength(200)],
+        }),
+        startDate: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+        endDate: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+        budget: new FormControl<string | null>(null, [Validators.min(0)]),
+        currency: new FormControl('USD', {
+          nonNullable: true,
+          validators: [Validators.required, Validators.maxLength(10)],
+        }),
+        visibility: new FormControl<CreateTripRequest['visibility']>('PRIVATE', {
+          nonNullable: true,
+          validators: [Validators.required],
+        }),
+        tags: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(500)] }),
+      },
+      { validators: [dateRangeValidator] },
+    );
   }
 
   isInvalid(field: keyof TripCreateForm): boolean {
@@ -104,7 +116,7 @@ export class TripCreateComponent {
     this.createdTrip = null;
 
     this.tripService.createTrip(payload).subscribe({
-      next: response => {
+      next: (response) => {
         this.submitting = false;
         const trip = response?.data;
 
@@ -119,7 +131,7 @@ export class TripCreateComponent {
       error: () => {
         this.submitting = false;
         this.errorMessage = 'We could not create your trip. Please check your details and try again.';
-      }
+      },
     });
   }
 
@@ -135,7 +147,7 @@ export class TripCreateComponent {
       startDate: raw.startDate,
       endDate: raw.endDate,
       currency: raw.currency.trim().toUpperCase(),
-      visibility: raw.visibility
+      visibility: raw.visibility,
     };
 
     if (budgetValue !== '' && Number.isFinite(Number(budgetValue))) {
@@ -152,7 +164,7 @@ export class TripCreateComponent {
   private parseTags(raw: string): string[] {
     return raw
       .split(',')
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0);
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0);
   }
 }

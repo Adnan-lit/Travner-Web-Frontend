@@ -13,40 +13,40 @@ const CREATE_ERROR = 'Could not create the local guide. Please try again.';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './local-guide-create.component.html',
-  styleUrls: ['./local-guide-create.component.css']
+  styleUrls: ['./local-guide-create.component.css'],
 })
 export class LocalGuideCreateComponent {
   readonly guideForm = new FormGroup({
     location: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(200)]
+      validators: [Validators.required, Validators.maxLength(200)],
     }),
     bio: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(2000)]
+      validators: [Validators.required, Validators.maxLength(2000)],
     }),
     hourlyRate: new FormControl(0, {
       nonNullable: true,
-      validators: [Validators.required, Validators.min(0)]
+      validators: [Validators.required, Validators.min(0)],
     }),
     currency: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(3)]
+      validators: [Validators.required, Validators.maxLength(3)],
     }),
     languages: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     specialties: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     availability: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.maxLength(200)]
+      validators: [Validators.maxLength(200)],
     }),
     contactMethod: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.maxLength(100)]
+      validators: [Validators.maxLength(100)],
     }),
     contactInfo: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.maxLength(200)]
-    })
+      validators: [Validators.maxLength(200)],
+    }),
   });
 
   submitting = false;
@@ -54,7 +54,7 @@ export class LocalGuideCreateComponent {
 
   constructor(
     private readonly localGuideService: LocalGuideService,
-    private readonly router: Router
+    private readonly router: Router,
   ) {}
 
   onSubmit(): void {
@@ -76,21 +76,26 @@ export class LocalGuideCreateComponent {
     }
 
     this.submitting = true;
-    this.localGuideService.createLocalGuide(payload).pipe(
-      finalize(() => { this.submitting = false; })
-    ).subscribe({
-      next: (response) => {
-        const id = response.data?.id;
-        if (!id) {
+    this.localGuideService
+      .createLocalGuide(payload)
+      .pipe(
+        finalize(() => {
+          this.submitting = false;
+        }),
+      )
+      .subscribe({
+        next: (response) => {
+          const id = response.data?.id;
+          if (!id) {
+            this.errorMessage = CREATE_ERROR;
+            return;
+          }
+          void this.router.navigate(['/local-guides', id]);
+        },
+        error: () => {
           this.errorMessage = CREATE_ERROR;
-          return;
-        }
-        void this.router.navigate(['/local-guides', id]);
-      },
-      error: () => {
-        this.errorMessage = CREATE_ERROR;
-      }
-    });
+        },
+      });
   }
 
   private buildPayload(): LocalGuideCreate | null {
@@ -101,8 +106,15 @@ export class LocalGuideCreateComponent {
     const languages = this.parseList(value.languages);
     const specialties = this.parseList(value.specialties);
 
-    if (!location || !bio || !currency || !languages.length || !specialties.length ||
-        !Number.isFinite(value.hourlyRate) || value.hourlyRate < 0) {
+    if (
+      !location ||
+      !bio ||
+      !currency ||
+      !languages.length ||
+      !specialties.length ||
+      !Number.isFinite(value.hourlyRate) ||
+      value.hourlyRate < 0
+    ) {
       return null;
     }
 
@@ -112,7 +124,7 @@ export class LocalGuideCreateComponent {
       hourlyRate: value.hourlyRate,
       currency,
       languages,
-      specialties
+      specialties,
     };
 
     const availability = value.availability.trim();
@@ -133,8 +145,9 @@ export class LocalGuideCreateComponent {
   }
 
   private parseList(value: string): string[] {
-    return value.split(',')
-      .map(item => item.trim())
-      .filter(item => item.length > 0);
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
   }
 }

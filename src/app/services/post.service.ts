@@ -1,3 +1,4 @@
+import { logger } from '../core/logging/logger';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
@@ -9,20 +10,25 @@ import { Comment, CommentListResponse } from '../models/post.model';
 import { MediaService, MediaFile } from './media.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PostService {
   private readonly API_BASE_URL = getApiBaseUrl();
 
   constructor(
     private http: HttpClient,
-    private mediaService: MediaService
-  ) { }
+    private mediaService: MediaService,
+  ) {}
 
   /**
    * Get all published posts with pagination and sorting
    */
-  getPosts(page: number = 0, size: number = 10, sortBy: string = 'createdAt', direction: 'asc' | 'desc' = 'desc'): Observable<ApiListResponse<Post>> {
+  getPosts(
+    page: number = 0,
+    size: number = 10,
+    sortBy: string = 'createdAt',
+    direction: 'asc' | 'desc' = 'desc',
+  ): Observable<ApiListResponse<Post>> {
     const endpoint = `${this.API_BASE_URL}/api/posts`;
     const params = new HttpParams()
       .set('page', page.toString())
@@ -31,8 +37,8 @@ export class PostService {
       .set('direction', direction);
 
     return this.http.get<ApiListResponse<Post>>(endpoint, { params }).pipe(
-      catchError(error => {
-        console.error('Error fetching posts:', error);
+      catchError((error) => {
+        logger.error('Error fetching posts:', error);
         // Return empty response on error to prevent app crashes
         return of({
           success: false,
@@ -44,10 +50,10 @@ export class PostService {
             totalElements: 0,
             totalPages: 0,
             first: true,
-            last: true
-          }
+            last: true,
+          },
         });
-      })
+      }),
     );
   }
 
@@ -57,10 +63,10 @@ export class PostService {
   getPostById(id: string): Observable<ApiResponse<Post>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${id}`;
     return this.http.get<ApiResponse<Post>>(endpoint).pipe(
-      catchError(error => {
-        console.error(`Error fetching post ${id}:`, error);
+      catchError((error) => {
+        logger.error(`Error fetching post ${id}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -70,10 +76,10 @@ export class PostService {
   createPost(postData: CreatePostRequest): Observable<ApiResponse<Post>> {
     const endpoint = `${this.API_BASE_URL}/api/posts`;
     return this.http.post<ApiResponse<Post>>(endpoint, postData).pipe(
-      catchError(error => {
-        console.error('Error creating post:', error);
+      catchError((error) => {
+        logger.error('Error creating post:', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -83,10 +89,10 @@ export class PostService {
   updatePost(id: string, postData: UpdatePostRequest): Observable<ApiResponse<Post>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${id}`;
     return this.http.put<ApiResponse<Post>>(endpoint, postData).pipe(
-      catchError(error => {
-        console.error(`Error updating post ${id}:`, error);
+      catchError((error) => {
+        logger.error(`Error updating post ${id}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -96,10 +102,10 @@ export class PostService {
   deletePost(id: string): Observable<ApiResponse<void>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${id}`;
     return this.http.delete<ApiResponse<void>>(endpoint).pipe(
-      catchError(error => {
-        console.error(`Error deleting post ${id}:`, error);
+      catchError((error) => {
+        logger.error(`Error deleting post ${id}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -109,10 +115,10 @@ export class PostService {
   voteOnPost(id: string, voteData: VoteRequest): Observable<ApiResponse<Post>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${id}/vote`;
     return this.http.post<ApiResponse<Post>>(endpoint, voteData).pipe(
-      catchError(error => {
-        console.error(`Error voting on post ${id}:`, error);
+      catchError((error) => {
+        logger.error(`Error voting on post ${id}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -122,10 +128,10 @@ export class PostService {
   upvotePost(id: string): Observable<ApiResponse<Post>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${id}/upvote`;
     return this.http.post<ApiResponse<Post>>(endpoint, {}).pipe(
-      catchError(error => {
-        console.error(`Error upvoting post ${id}:`, error);
+      catchError((error) => {
+        logger.error(`Error upvoting post ${id}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -135,10 +141,10 @@ export class PostService {
   downvotePost(id: string): Observable<ApiResponse<Post>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${id}/downvote`;
     return this.http.post<ApiResponse<Post>>(endpoint, {}).pipe(
-      catchError(error => {
-        console.error(`Error downvoting post ${id}:`, error);
+      catchError((error) => {
+        logger.error(`Error downvoting post ${id}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -147,16 +153,13 @@ export class PostService {
    */
   searchPosts(query: string, page: number = 0, size: number = 10): Observable<ApiListResponse<Post>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/search`;
-    const params = new HttpParams()
-      .set('query', query)
-      .set('page', page.toString())
-      .set('size', size.toString());
+    const params = new HttpParams().set('query', query).set('page', page.toString()).set('size', size.toString());
 
     return this.http.get<ApiListResponse<Post>>(endpoint, { params }).pipe(
-      catchError(error => {
-        console.error(`Error searching posts with query '${query}':`, error);
+      catchError((error) => {
+        logger.error('post-service.search.error', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -165,15 +168,13 @@ export class PostService {
    */
   getPostsByLocation(location: string, page: number = 0, size: number = 10): Observable<ApiListResponse<Post>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/location/${location}`;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+    const params = new HttpParams().set('page', page.toString()).set('size', size.toString());
 
     return this.http.get<ApiListResponse<Post>>(endpoint, { params }).pipe(
-      catchError(error => {
-        console.error(`Error fetching posts by location '${location}':`, error);
+      catchError((error) => {
+        logger.error('post-service.byLocation.error', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -188,10 +189,10 @@ export class PostService {
       .set('size', size.toString());
 
     return this.http.get<ApiListResponse<Post>>(endpoint, { params }).pipe(
-      catchError(error => {
-        console.error(`Error fetching posts by tags '${tags.join(',')}':`, error);
+      catchError((error) => {
+        logger.error('post-service.byTags.error', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -200,15 +201,13 @@ export class PostService {
    */
   getUserPosts(username: string, page: number = 0, size: number = 10): Observable<ApiListResponse<Post>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/user/${username}`;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+    const params = new HttpParams().set('page', page.toString()).set('size', size.toString());
 
     return this.http.get<ApiListResponse<Post>>(endpoint, { params }).pipe(
-      catchError(error => {
-        console.error(`Error fetching posts for user '${username}':`, error);
+      catchError((error) => {
+        logger.error('post-service.byUser.error', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -218,10 +217,10 @@ export class PostService {
   upvoteComment(postId: string, commentId: string): Observable<ApiResponse<any>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${postId}/comments/${commentId}/upvote`;
     return this.http.post<ApiResponse<any>>(endpoint, {}).pipe(
-      catchError(error => {
-        console.error(`Error upvoting comment ${commentId} on post ${postId}:`, error);
+      catchError((error) => {
+        logger.error(`Error upvoting comment ${commentId} on post ${postId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -231,10 +230,10 @@ export class PostService {
   downvoteComment(postId: string, commentId: string): Observable<ApiResponse<any>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${postId}/comments/${commentId}/downvote`;
     return this.http.post<ApiResponse<any>>(endpoint, {}).pipe(
-      catchError(error => {
-        console.error(`Error downvoting comment ${commentId} on post ${postId}:`, error);
+      catchError((error) => {
+        logger.error(`Error downvoting comment ${commentId} on post ${postId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -245,15 +244,15 @@ export class PostService {
     const endpoint = `${this.API_BASE_URL}/api/posts/${postId}/media`;
     const formData = new FormData();
 
-    files.forEach(file => {
+    files.forEach((file) => {
       formData.append('files', file);
     });
 
     return this.http.post<ApiResponse<any>>(endpoint, formData).pipe(
-      catchError(error => {
-        console.error(`Error uploading media for post ${postId}:`, error);
+      catchError((error) => {
+        logger.error(`Error uploading media for post ${postId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -263,13 +262,12 @@ export class PostService {
   deleteMedia(postId: string, mediaId: string): Observable<ApiResponse<void>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${postId}/media/${mediaId}`;
     return this.http.delete<ApiResponse<void>>(endpoint).pipe(
-      catchError(error => {
-        console.error(`Error deleting media ${mediaId} from post ${postId}:`, error);
+      catchError((error) => {
+        logger.error(`Error deleting media ${mediaId} from post ${postId}:`, error);
         throw error;
-      })
+      }),
     );
   }
-
 
   /**
    * Create a comment on a post
@@ -277,10 +275,10 @@ export class PostService {
   createComment(postId: string, commentData: any): Observable<ApiResponse<Comment>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${postId}/comments`;
     return this.http.post<ApiResponse<Comment>>(endpoint, commentData).pipe(
-      catchError(error => {
-        console.error(`Error creating comment on post ${postId}:`, error);
+      catchError((error) => {
+        logger.error(`Error creating comment on post ${postId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -290,10 +288,10 @@ export class PostService {
   deleteComment(postId: string, commentId: string): Observable<ApiResponse<void>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${postId}/comments/${commentId}`;
     return this.http.delete<ApiResponse<void>>(endpoint).pipe(
-      catchError(error => {
-        console.error(`Error deleting comment ${commentId} on post ${postId}:`, error);
+      catchError((error) => {
+        logger.error(`Error deleting comment ${commentId} on post ${postId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -302,15 +300,13 @@ export class PostService {
    */
   getComments(postId: string, page: number = 0, size: number = 10): Observable<CommentListResponse> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${postId}/comments`;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+    const params = new HttpParams().set('page', page.toString()).set('size', size.toString());
 
     return this.http.get<CommentListResponse>(endpoint, { params }).pipe(
-      catchError(error => {
-        console.error(`Error fetching comments for post ${postId}:`, error);
+      catchError((error) => {
+        logger.error(`Error fetching comments for post ${postId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -325,15 +321,13 @@ export class PostService {
    * Upload media files for a post using the media service
    */
   uploadPostMedia(postId: string, files: File[]): Observable<MediaFile[]> {
-    const uploadObservables = files.map(file => 
-      this.mediaService.uploadMedia(file, 'post', postId)
-    );
-    
-    return new Observable(observer => {
+    const uploadObservables = files.map((file) => this.mediaService.uploadMedia(file, 'post', postId));
+
+    return new Observable((observer) => {
       const uploadedMedia: MediaFile[] = [];
       let completed = 0;
-      
-      uploadObservables.forEach(obs => {
+
+      uploadObservables.forEach((obs) => {
         obs.subscribe({
           next: (media) => {
             uploadedMedia.push(media.data);
@@ -345,7 +339,7 @@ export class PostService {
           },
           error: (error) => {
             observer.error(error);
-          }
+          },
         });
       });
     });

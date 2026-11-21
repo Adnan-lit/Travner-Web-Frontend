@@ -1,3 +1,4 @@
+import { logger } from '../../../core/logging/logger';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -18,22 +19,18 @@ import { CommentService } from '../../../services/comment.service';
             <span class="comment-date">{{ formatDate(comment?.createdAt || '') }}</span>
           </div>
         </div>
-        
+
         <div class="comment-actions" *ngIf="canModifyComment()">
           <button class="edit-btn" (click)="startEditing()">Edit</button>
           <button class="delete-btn" (click)="deleteComment()">Delete</button>
         </div>
       </div>
-      
+
       <div class="comment-content">
         <!-- Edit Mode -->
         <form *ngIf="isEditing" [formGroup]="commentForm" (ngSubmit)="updateComment()" class="edit-form">
-          <textarea 
-            formControlName="content" 
-            rows="3"
-            class="form-control"
-          ></textarea>
-          
+          <textarea formControlName="content" rows="3" class="form-control"></textarea>
+
           <div class="form-actions">
             <button type="button" class="cancel-btn" (click)="cancelEdit()">Cancel</button>
             <button type="submit" class="save-btn" [disabled]="commentForm.invalid || updating">
@@ -41,49 +38,38 @@ import { CommentService } from '../../../services/comment.service';
             </button>
           </div>
         </form>
-        
+
         <!-- View Mode -->
         <p *ngIf="!isEditing">{{ comment?.content }}</p>
       </div>
-      
+
       <div class="comment-footer">
         <div class="vote-actions">
-          <button 
-            class="vote-btn upvote" 
-            (click)="upvoteComment()"
-          >
+          <button class="vote-btn upvote" (click)="upvoteComment()">
             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
             </svg>
             <span>{{ comment?.likes || 0 }}</span>
           </button>
-          
-          <button 
-            class="vote-btn downvote" 
-            (click)="downvoteComment()"
-          >
+
+          <button class="vote-btn downvote" (click)="downvoteComment()">
             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
             <span>{{ comment?.likes || 0 }}</span>
           </button>
         </div>
-        
+
         <button class="reply-btn" (click)="toggleReplyForm()" *ngIf="!isReply">
           {{ showReplyForm ? 'Cancel' : 'Reply' }}
         </button>
       </div>
-      
+
       <!-- Reply Form -->
       <div class="reply-form-container" *ngIf="showReplyForm && !isReply">
         <form [formGroup]="replyForm" (ngSubmit)="submitReply()" class="reply-form">
-          <textarea 
-            formControlName="content" 
-            placeholder="Write a reply..."
-            rows="2"
-            class="form-control"
-          ></textarea>
-          
+          <textarea formControlName="content" placeholder="Write a reply..." rows="2" class="form-control"></textarea>
+
           <div class="form-actions">
             <button type="submit" class="submit-btn" [disabled]="replyForm.invalid || submittingReply">
               {{ submittingReply ? 'Posting...' : 'Post Reply' }}
@@ -91,11 +77,11 @@ import { CommentService } from '../../../services/comment.service';
           </div>
         </form>
       </div>
-      
+
       <!-- Nested Replies -->
       <div class="replies" *ngIf="hasReplies">
-        <app-comment 
-          *ngFor="let reply of replies" 
+        <app-comment
+          *ngFor="let reply of replies"
           [comment]="reply"
           [postId]="postId"
           [isReply]="true"
@@ -105,185 +91,192 @@ import { CommentService } from '../../../services/comment.service';
       </div>
     </div>
   `,
-  styles: [`
-    .comment {
-      background-color: white;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    
-    .comment.reply {
-      margin-left: 40px;
-      margin-top: 10px;
-      border-left: 3px solid #e1e1e1;
-    }
-    
-    .comment-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-    
-    .comment-author {
-      display: flex;
-      align-items: center;
-    }
-    
-    .author-avatar {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background-color: var(--primary-600);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      font-size: 12px;
-      margin-right: 10px;
-    }
-    
-    .author-info {
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .author-name {
-      font-weight: 600;
-      font-size: 14px;
-    }
-    
-    .comment-date {
-      font-size: 12px;
-      color: #777;
-    }
-    
-    .comment-actions {
-      display: flex;
-    }
-    
-    .edit-btn, .delete-btn {
-      background: none;
-      border: none;
-      padding: 0;
-      font-size: 12px;
-      color: #666;
-      cursor: pointer;
-      margin-left: 10px;
-    }
-    
-    .edit-btn:hover, .delete-btn:hover {
-      text-decoration: underline;
-    }
-    
-    .comment-content {
-      margin-bottom: 10px;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    
-    .edit-form {
-      margin-top: 10px;
-    }
-    
-    .form-control {
-      width: 100%;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 8px;
-      font-size: 14px;
-      font-family: inherit;
-      resize: vertical;
-    }
-    
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 10px;
-    }
-    
-    .cancel-btn, .save-btn, .submit-btn {
-      padding: 6px 12px;
-      border-radius: 4px;
-      border: none;
-      font-size: 12px;
-      cursor: pointer;
-    }
-    
-    .cancel-btn {
-      background-color: #f1f1f1;
-      color: #333;
-      margin-right: 10px;
-    }
-    
-    .save-btn, .submit-btn {
-      background-color: var(--primary-600);
-      color: white;
-    }
-    
-    .comment-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .vote-actions {
-      display: flex;
-    }
-    
-    .vote-btn {
-      display: flex;
-      align-items: center;
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 4px 8px;
-      margin-right: 10px;
-      border-radius: 4px;
-    }
-    
-    .vote-btn svg {
-      margin-right: 4px;
-    }
-    
-    .vote-btn.active {
-      background-color: #f1f1f1;
-    }
-    
-    .vote-btn.upvote.active {
-      color: var(--accent-600);
-    }
-    
-    .vote-btn.downvote.active {
-      color: var(--error-600);
-    }
-    
-    .reply-btn {
-      background: none;
-      border: none;
-      padding: 4px 8px;
-      font-size: 12px;
-      color: var(--primary-600);
-      cursor: pointer;
-    }
-    
-    .reply-btn:hover {
-      text-decoration: underline;
-    }
-    
-    .reply-form-container {
-      margin-top: 15px;
-      padding-top: 10px;
-      border-top: 1px solid #eee;
-    }
-    
-    .replies {
-      margin-top: 15px;
-      padding-top: 10px;
-    }
-  `]
+  styles: [
+    `
+      .comment {
+        background-color: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .comment.reply {
+        margin-left: 40px;
+        margin-top: 10px;
+        border-left: 3px solid #e1e1e1;
+      }
+
+      .comment-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+
+      .comment-author {
+        display: flex;
+        align-items: center;
+      }
+
+      .author-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: var(--primary-600);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 12px;
+        margin-right: 10px;
+      }
+
+      .author-info {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .author-name {
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .comment-date {
+        font-size: 12px;
+        color: #777;
+      }
+
+      .comment-actions {
+        display: flex;
+      }
+
+      .edit-btn,
+      .delete-btn {
+        background: none;
+        border: none;
+        padding: 0;
+        font-size: 12px;
+        color: #666;
+        cursor: pointer;
+        margin-left: 10px;
+      }
+
+      .edit-btn:hover,
+      .delete-btn:hover {
+        text-decoration: underline;
+      }
+
+      .comment-content {
+        margin-bottom: 10px;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .edit-form {
+        margin-top: 10px;
+      }
+
+      .form-control {
+        width: 100%;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        resize: vertical;
+      }
+
+      .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 10px;
+      }
+
+      .cancel-btn,
+      .save-btn,
+      .submit-btn {
+        padding: 6px 12px;
+        border-radius: 4px;
+        border: none;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .cancel-btn {
+        background-color: #f1f1f1;
+        color: #333;
+        margin-right: 10px;
+      }
+
+      .save-btn,
+      .submit-btn {
+        background-color: var(--primary-600);
+        color: white;
+      }
+
+      .comment-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .vote-actions {
+        display: flex;
+      }
+
+      .vote-btn {
+        display: flex;
+        align-items: center;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 8px;
+        margin-right: 10px;
+        border-radius: 4px;
+      }
+
+      .vote-btn svg {
+        margin-right: 4px;
+      }
+
+      .vote-btn.active {
+        background-color: #f1f1f1;
+      }
+
+      .vote-btn.upvote.active {
+        color: var(--accent-600);
+      }
+
+      .vote-btn.downvote.active {
+        color: var(--error-600);
+      }
+
+      .reply-btn {
+        background: none;
+        border: none;
+        padding: 4px 8px;
+        font-size: 12px;
+        color: var(--primary-600);
+        cursor: pointer;
+      }
+
+      .reply-btn:hover {
+        text-decoration: underline;
+      }
+
+      .reply-form-container {
+        margin-top: 15px;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+      }
+
+      .replies {
+        margin-top: 15px;
+        padding-top: 10px;
+      }
+    `,
+  ],
 })
 export class CommentComponent {
   @Input() comment: Comment | null = null;
@@ -312,14 +305,14 @@ export class CommentComponent {
   constructor(
     private formBuilder: FormBuilder,
     private commentService: CommentService,
-    private authService: AuthService
+    private authService: AuthService,
   ) {
     this.commentForm = this.formBuilder.group({
-      content: ['', [Validators.required, Validators.minLength(3)]]
+      content: ['', [Validators.required, Validators.minLength(3)]],
     });
 
     this.replyForm = this.formBuilder.group({
-      content: ['', [Validators.required, Validators.minLength(3)]]
+      content: ['', [Validators.required, Validators.minLength(3)]],
     });
   }
 
@@ -327,7 +320,7 @@ export class CommentComponent {
   getInitials(name: string): string {
     return name
       .split(' ')
-      .map(part => part.charAt(0))
+      .map((part) => part.charAt(0))
       .join('')
       .toUpperCase()
       .substring(0, 2);
@@ -380,7 +373,7 @@ export class CommentComponent {
     if (!this.comment) return;
 
     this.commentForm.patchValue({
-      content: this.comment.content
+      content: this.comment.content,
     });
 
     this.isEditing = true;
@@ -395,90 +388,86 @@ export class CommentComponent {
 
     this.updating = true;
     const commentUpdate = {
-      content: this.commentForm.value.content
+      content: this.commentForm.value.content,
     };
 
-    this.commentService.updateComment(this.postId, this.comment.id, commentUpdate.content)
-      .subscribe({
-        next: (response: any) => {
-          // Handle the ApiResponse structure
-          if (response && response.success && response.data) {
-            this.isEditing = false;
-            this.updating = false;
-
-            // Update the local comment with new data
-            Object.assign(this.comment as Comment, response.data);
-
-            // Emit event to notify parent
-            this.commentUpdated.emit(response.data);
-          } else {
-            this.updating = false;
-            console.error('Failed to update comment');
-          }
-        },
-        error: (error) => {
-          console.error('Error updating comment:', error);
+    this.commentService.updateComment(this.postId, this.comment.id, commentUpdate.content).subscribe({
+      next: (response: any) => {
+        // Handle the ApiResponse structure
+        if (response && response.success && response.data) {
+          this.isEditing = false;
           this.updating = false;
+
+          // Update the local comment with new data
+          Object.assign(this.comment as Comment, response.data);
+
+          // Emit event to notify parent
+          this.commentUpdated.emit(response.data);
+        } else {
+          this.updating = false;
+          logger.error('Failed to update comment');
         }
-      });
+      },
+      error: (error) => {
+        logger.error('Error updating comment:', error);
+        this.updating = false;
+      },
+    });
   }
 
   deleteComment(): void {
     if (!this.comment || !confirm('Are you sure you want to delete this comment?')) return;
 
-    this.commentService.deleteComment(this.postId, this.comment.id)
-      .subscribe({
-        next: () => {
-          // Emit event to notify parent
-          this.commentDeleted.emit(this.comment?.id);
-        },
-        error: (error) => {
-          console.error('Error deleting comment:', error);
-        }
-      });
+    this.commentService.deleteComment(this.postId, this.comment.id).subscribe({
+      next: () => {
+        // Emit event to notify parent
+        this.commentDeleted.emit(this.comment?.id);
+      },
+      error: (error) => {
+        logger.error('Error deleting comment:', error);
+      },
+    });
   }
 
   // Voting
   upvoteComment(): void {
     if (!this.comment) return;
 
-    this.commentService.voteComment(this.postId, this.comment.id, true)
-      .subscribe({
-        next: (response: any) => {
-          // Handle the ApiResponse structure
-          if (response && response.success && response.data) {
-            // Update the local comment with new data
-            Object.assign(this.comment as Comment, response.data);
+    this.commentService.voteComment(this.postId, this.comment.id, true).subscribe({
+      next: (response: any) => {
+        // Handle the ApiResponse structure
+        if (response && response.success && response.data) {
+          // Update the local comment with new data
+          Object.assign(this.comment as Comment, response.data);
 
-            // Emit event to notify parent
-            this.commentUpdated.emit(response.data);
-          }
-        },
-        error: (error) => {
-          console.error('Error upvoting comment:', error);
+          // Emit event to notify parent
+          this.commentUpdated.emit(response.data);
         }
-      });
+      },
+      error: (error) => {
+        logger.error('Error upvoting comment:', error);
+      },
+    });
   }
 
   downvoteComment(): void {
     if (!this.comment) return;
 
-    this.commentService.voteComment(this.postId, this.comment.id, false)
-      .subscribe({
-        next: (response: any) => {
-          // Handle the ApiResponse structure
-          if (response && response.success && response.data) {
-            // Update the local comment with new data
-            Object.assign(this.comment as Comment, response.data);
+    this.commentService.voteComment(this.postId, this.comment.id, false).subscribe({
+      next: (response: any) => {
+        // Handle the ApiResponse structure
+        if (response && response.success && response.data) {
+          // Update the local comment with new data
+          Object.assign(this.comment as Comment, response.data);
 
-            // Emit event to notify parent
-            this.commentUpdated.emit(response.data);
-          }
-        },
-        error: (error) => {
-          console.error('Error downvoting comment:', error);
+          // Emit event to notify parent
+          this.commentUpdated.emit(response.data);
         }
-      });
+      },
+      error: (error) => {
+        logger.error('Error downvoting comment:', error);
+      },
+    });
   }
 
   // Reply handling
@@ -496,40 +485,39 @@ export class CommentComponent {
     this.submittingReply = true;
     const replyData: CommentCreate = {
       content: this.replyForm.value.content,
-      postId: this.postId
+      postId: this.postId,
     };
 
-    this.commentService.createComment(this.postId, replyData)
-      .subscribe({
-        next: (response: any) => {
-          // Handle the ApiResponse structure
-          if (response && response.success && response.data) {
-            const newReply = response.data;
-            this.submittingReply = false;
-            this.showReplyForm = false;
-            this.replyForm.reset();
-
-            // Initialize replies array if it doesn't exist
-            // Initialize replies array if it doesn't exist
-            if (!(this.comment as any)!.replies) {
-              (this.comment as any)!.replies = [];
-            }
-
-            // Add the new reply to the local comment
-            (this.comment as any)!.replies!.push(newReply);
-
-            // Emit event to notify parent
-            this.replyAdded.emit(newReply);
-          } else {
-            this.submittingReply = false;
-            console.error('Failed to add reply');
-          }
-        },
-        error: (error) => {
-          console.error('Error posting reply:', error);
+    this.commentService.createComment(this.postId, replyData).subscribe({
+      next: (response: any) => {
+        // Handle the ApiResponse structure
+        if (response && response.success && response.data) {
+          const newReply = response.data;
           this.submittingReply = false;
+          this.showReplyForm = false;
+          this.replyForm.reset();
+
+          // Initialize replies array if it doesn't exist
+          // Initialize replies array if it doesn't exist
+          if (!(this.comment as any)!.replies) {
+            (this.comment as any)!.replies = [];
+          }
+
+          // Add the new reply to the local comment
+          (this.comment as any)!.replies!.push(newReply);
+
+          // Emit event to notify parent
+          this.replyAdded.emit(newReply);
+        } else {
+          this.submittingReply = false;
+          logger.error('Failed to add reply');
         }
-      });
+      },
+      error: (error) => {
+        logger.error('Error posting reply:', error);
+        this.submittingReply = false;
+      },
+    });
   }
 
   // Event handlers from child comments

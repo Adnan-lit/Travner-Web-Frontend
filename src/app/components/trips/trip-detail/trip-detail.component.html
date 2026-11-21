@@ -6,9 +6,7 @@
 
   <div class="state" *ngIf="state === 'loading'" role="status">Loading trip…</div>
 
-  <div class="state state-error" *ngIf="state === 'missing-id'" role="alert">
-    No trip was specified.
-  </div>
+  <div class="state state-error" *ngIf="state === 'missing-id'" role="alert">No trip was specified.</div>
 
   <div class="state state-error" *ngIf="state === 'not-found'" role="alert">
     {{ errorMessage }}

@@ -1,3 +1,4 @@
+import { logger } from '../core/logging/logger';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -32,12 +33,12 @@ export interface MediaListResponse {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class MediaService {
   private readonly API_BASE_URL = getApiBaseUrl();
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   /**
    * Upload a media file
@@ -46,24 +47,24 @@ export class MediaService {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', type);
-    
+
     if (entityId) {
       formData.append('entityId', entityId);
     }
 
     const endpoint = `${this.API_BASE_URL}/api/media/upload`;
     return this.http.post<MediaUploadResponse>(endpoint, formData).pipe(
-      map(response => {
+      map((response) => {
         // Add id property for backward compatibility
         if (response.data && !response.id) {
           response.id = response.data.id;
         }
         return response;
       }),
-      catchError(error => {
-        console.error('Error uploading media:', error);
+      catchError((error) => {
+        logger.error('Error uploading media:', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -71,17 +72,19 @@ export class MediaService {
    * Upload multiple media files
    */
   uploadMultipleMedia(files: File[], type: string = 'product', entityId?: string): Observable<MediaUploadResponse[]> {
-    const uploadObservables = files.map(file => this.uploadMedia(file, type, entityId));
-    
+    const uploadObservables = files.map((file) => this.uploadMedia(file, type, entityId));
+
     // Use forkJoin to upload all files in parallel
-    return new Observable(observer => {
-      const uploads = uploadObservables.map(obs => obs.toPromise());
-      Promise.all(uploads).then(results => {
-        observer.next(results as MediaUploadResponse[]);
-        observer.complete();
-      }).catch(error => {
-        observer.error(error);
-      });
+    return new Observable((observer) => {
+      const uploads = uploadObservables.map((obs) => obs.toPromise());
+      Promise.all(uploads)
+        .then((results) => {
+          observer.next(results as MediaUploadResponse[]);
+          observer.complete();
+        })
+        .catch((error) => {
+          observer.error(error);
+        });
     });
   }
 
@@ -91,10 +94,10 @@ export class MediaService {
   getMedia(mediaId: string): Observable<MediaFile> {
     const endpoint = `${this.API_BASE_URL}/api/media/${mediaId}`;
     return this.http.get<MediaFile>(endpoint).pipe(
-      catchError(error => {
-        console.error('Error getting media:', error);
+      catchError((error) => {
+        logger.error('Error getting media:', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -104,13 +107,13 @@ export class MediaService {
   getMediaForEntity(entityId: string, type: string): Observable<MediaFile[]> {
     const endpoint = `${this.API_BASE_URL}/api/media/entity/${entityId}`;
     const params = new HttpParams().set('type', type);
-    
+
     return this.http.get<MediaListResponse>(endpoint, { params }).pipe(
-      map(response => response.data || []),
-      catchError(error => {
-        console.error('Error getting media for entity:', error);
+      map((response) => response.data || []),
+      catchError((error) => {
+        logger.error('Error getting media for entity:', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -120,10 +123,10 @@ export class MediaService {
   deleteMedia(mediaId: string): Observable<any> {
     const endpoint = `${this.API_BASE_URL}/api/media/${mediaId}`;
     return this.http.delete(endpoint).pipe(
-      catchError(error => {
-        console.error('Error deleting media:', error);
+      catchError((error) => {
+        logger.error('Error deleting media:', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -152,8 +155,15 @@ export class MediaService {
     }
 
     const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp',
-      'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-ms-wmv'
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/bmp',
+      'video/mp4',
+      'video/quicktime',
+      'video/x-msvideo',
+      'video/x-ms-wmv',
     ];
     if (!allowedTypes.includes(file.type)) {
       return { valid: false, error: 'Only supported images and videos are allowed' };
@@ -195,11 +205,11 @@ export class MediaService {
    */
   formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 Bytes';
-    
+
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 

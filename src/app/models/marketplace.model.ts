@@ -4,184 +4,184 @@ import { ApiResponse, ApiPaginationInfo } from './api-response.model';
 
 // Product models
 export interface Product {
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    category: string;
-    stockQuantity: number;
-    location: string;
-    tags: string[];
-    images: string[];
-    sellerId: string;
-    sellerUsername: string;
-    isAvailable: boolean;
-    status: string;
-    createdAt: string;
-    updatedAt: string;
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  stockQuantity: number;
+  location: string;
+  tags: string[];
+  images: string[];
+  sellerId: string;
+  sellerUsername: string;
+  isAvailable: boolean;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateProductRequest {
-    name: string;
-    description: string;
-    price: number;
-    category: string;
-    stockQuantity: number;
-    location: string;
-    tags: string[];
-    images: string[];
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  stockQuantity: number;
+  location: string;
+  tags: string[];
+  images: string[];
 }
 
 export interface UpdateProductRequest {
-    name?: string;
-    description?: string;
-    price?: number;
-    stockQuantity?: number;
-    isAvailable?: boolean;
+  name?: string;
+  description?: string;
+  price?: number;
+  stockQuantity?: number;
+  isAvailable?: boolean;
 }
 
 // Cart models
 export interface CartItem {
-    productId: string;
-    productName: string;
-    titleSnapshot: string;
-    unitPrice: number;
-    quantity: number;
-    subtotal: number;
-    sellerId: string;
-    sellerName: string;
-    productImage: string;
-    lineId: string;
-    addedAt: string;
+  productId: string;
+  productName: string;
+  titleSnapshot: string;
+  unitPrice: number;
+  quantity: number;
+  subtotal: number;
+  sellerId: string;
+  sellerName: string;
+  productImage: string;
+  lineId: string;
+  addedAt: string;
 }
 
 export interface Cart {
-    id: string;
-    userId: string;
-    items: CartItem[];
-    totalAmount: number;
-    totalItems: number;
-    createdAt: string;
-    updatedAt: string;
+  id: string;
+  userId: string;
+  items: CartItem[];
+  totalAmount: number;
+  totalItems: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AddToCartRequest {
-    productId: string;
-    quantity: number;
+  productId: string;
+  quantity: number;
 }
 
 export interface UpdateCartItemRequest {
-    quantity: number;
+  quantity: number;
 }
 
 // Order models (based on checkout response)
 export interface OrderItem {
-    id: string;
-    orderId: string;
-    productId: string;
-    titleSnapshot: string;
-    descriptionSnapshot: string;
-    imageUrlSnapshot: string;
-    unitPrice: number;
-    price?: number; // Alternative property name
-    quantity: number;
-    sellerId: string;
-    productName?: string; // For admin display
-    createdAt: string;
-    updatedAt: string;
+  id: string;
+  orderId: string;
+  productId: string;
+  titleSnapshot: string;
+  descriptionSnapshot: string;
+  imageUrlSnapshot: string;
+  unitPrice: number;
+  price?: number; // Alternative property name
+  quantity: number;
+  sellerId: string;
+  productName?: string; // For admin display
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CustomerInfo {
-    fullName: string;
-    addressLine1: string;
-    addressLine2?: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-    email: string;
-    phone: string;
+  fullName: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  email: string;
+  phone: string;
 }
 
 export interface Order {
-    id: string;
-    version?: number; // optimistic lock for status transitions
-    userId: string;
-    items: OrderItem[];
-    amountTotal: number;
-    totalAmount?: number; // Alternative property name
-    itemCount: number;
-    status: 'PENDING' | 'CONFIRMED' | 'PAID' | 'FULFILLED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED';
-    customerInfo: CustomerInfo;
-    customerName?: string; // For admin display
-    customerEmail?: string; // For admin display
-    shippingAddress?: string; // For admin display
-    paymentInfo?: {
-        paymentStatus: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
-        paymentMethod?: string;
-        paidAt?: string;
-    };
-    createdAt: string;
-    updatedAt: string;
+  id: string;
+  version?: number; // optimistic lock for status transitions
+  userId: string;
+  items: OrderItem[];
+  amountTotal: number;
+  totalAmount?: number; // Alternative property name
+  itemCount: number;
+  status: 'PENDING' | 'CONFIRMED' | 'PAID' | 'FULFILLED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED';
+  customerInfo: CustomerInfo;
+  customerName?: string; // For admin display
+  customerEmail?: string; // For admin display
+  shippingAddress?: string; // For admin display
+  paymentInfo?: {
+    paymentStatus: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
+    paymentMethod?: string;
+    paidAt?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Search and pagination
 export interface ProductSearchParams {
-    page?: number;
-    size?: number;
-    sortBy?: string;
-    direction?: 'asc' | 'desc';
-    query?: string;
-    category?: string;
-    location?: string;
-    tags?: string;
-    status?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  direction?: 'asc' | 'desc';
+  query?: string;
+  category?: string;
+  location?: string;
+  tags?: string;
+  status?: string;
 }
 
 // API Response types
 export type ProductListResponse = ApiResponse<Product[]> & {
-    pagination?: ApiPaginationInfo;
+  pagination?: ApiPaginationInfo;
 };
 
 export type ProductResponse = ApiResponse<Product>;
 export type CartResponse = ApiResponse<Cart>;
 export type OrderResponse = ApiResponse<Order>;
 export type OrderListResponse = ApiResponse<Order[]> & {
-    pagination?: ApiPaginationInfo;
+  pagination?: ApiPaginationInfo;
 };
 
 // Admin marketplace interfaces
 export interface AdminProductResponse extends Product {
-    status: string;
-    sellerInfo?: {
-        id: string;
-        userName: string;
-        email: string;
-    };
+  status: string;
+  sellerInfo?: {
+    id: string;
+    userName: string;
+    email: string;
+  };
 }
 
 export interface AdminOrderResponse {
-    id: string;
-    userId: string;
-    items: OrderItem[];
-    amountTotal: number;
-    itemCount: number;
-    status: string;
-    paymentStatus?: string;
-    fulfillmentStatus?: string;
-    customerInfo: CustomerInfo;
-    createdAt: string;
-    updatedAt: string;
+  id: string;
+  userId: string;
+  items: OrderItem[];
+  amountTotal: number;
+  itemCount: number;
+  status: string;
+  paymentStatus?: string;
+  fulfillmentStatus?: string;
+  customerInfo: CustomerInfo;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface OrderFilter {
-    status?: string;
-    paymentStatus?: string;
-    fulfillmentStatus?: string;
-    startDate?: string;
-    endDate?: string;
-    page?: number;
-    size?: number;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
+  status?: string;
+  paymentStatus?: string;
+  fulfillmentStatus?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }

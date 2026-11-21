@@ -18,19 +18,19 @@
 
     <!-- Search -->
     <div class="chat-search">
-      <input 
-        type="text" 
+      <input
+        type="text"
         placeholder="Search conversations..."
         [(ngModel)]="conversationSearchQuery"
         (input)="onConversationSearch($event)"
-        class="search-input">
+        class="search-input"
+        aria-label="Search conversations..."
+      />
     </div>
 
     <!-- Conversations List -->
     <div class="conversations-list">
-      <div *ngIf="loadingConversations" class="loading">
-        Loading conversations...
-      </div>
+      <div *ngIf="loadingConversations" class="loading">Loading conversations...</div>
 
       <div *ngIf="!loadingConversations && filteredConversations.length === 0" class="no-conversations">
         No conversations found
@@ -42,13 +42,14 @@
         class="conversations-viewport"
         itemSize="81"
         minBufferPx="162"
-        maxBufferPx="405">
+        maxBufferPx="405"
+      >
         <div
           *cdkVirtualFor="let conversation of filteredConversations; trackBy: trackByConversationId"
           class="conversation-item"
           [class.active]="selectedConversation?.id === conversation.id"
-          (click)="selectConversation(conversation)">
-
+          (click)="selectConversation(conversation)"
+        >
           <div class="conversation-avatar">
             <div class="avatar-placeholder">
               {{ getConversationTitle(conversation).charAt(0) }}
@@ -88,7 +89,7 @@
           <span class="user-status">Online</span>
         </div>
       </div>
-      
+
       <div class="chat-actions">
         <button class="action-btn" (click)="showConversationInfo()" title="Conversation Info">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -118,9 +119,7 @@
 
     <!-- Messages Area -->
     <div class="messages-container" *ngIf="selectedConversation">
-      <div *ngIf="loadingMessages" class="loading-messages">
-        Loading messages...
-      </div>
+      <div *ngIf="loadingMessages" class="loading-messages">Loading messages...</div>
 
       <!-- Messages are variable height (text, attachments, images), so autosize is used. -->
       <cdk-virtual-scroll-viewport
@@ -128,11 +127,13 @@
         class="messages-viewport"
         autosize
         minBufferPx="300"
-        maxBufferPx="900">
+        maxBufferPx="900"
+      >
         <div
           *cdkVirtualFor="let message of messages; trackBy: trackByMessageId"
           class="message-item"
-          [class.own-message]="isOwnMessage(message)">
+          [class.own-message]="isOwnMessage(message)"
+        >
           <div class="message-content">
             <div class="message-header" *ngIf="!isOwnMessage(message)">
               <span class="sender-name">{{ getSenderDisplayName(message) }}</span>
@@ -143,16 +144,22 @@
               <p *ngIf="message.content">{{ message.content }}</p>
 
               <div class="attachment" *ngIf="message.attachment">
-                <img *ngIf="isImageAttachment(message) && getAttachmentUrl(message) as imageUrl"
-                     class="attachment-image"
-                     [src]="imageUrl"
-                     [alt]="message.attachment.fileName"
-                     (click)="downloadAttachment(message)" />
+                <img
+                  *ngIf="isImageAttachment(message) && getAttachmentUrl(message) as imageUrl"
+                  class="attachment-image"
+                  [src]="imageUrl"
+                  [alt]="message.attachment.fileName"
+                  (click)="downloadAttachment(message)"
+                />
                 <span *ngIf="isImageAttachment(message) && !getAttachmentUrl(message)" class="attachment-loading">
                   Loading image…
                 </span>
-                <button type="button" class="attachment-file" *ngIf="!isImageAttachment(message)"
-                        (click)="downloadAttachment(message)">
+                <button
+                  type="button"
+                  class="attachment-file"
+                  *ngIf="!isImageAttachment(message)"
+                  (click)="downloadAttachment(message)"
+                >
                   📎 {{ message.attachment.fileName }} ({{ formatFileSize(message.attachment.size) }})
                 </button>
               </div>
@@ -176,26 +183,39 @@
       <div class="message-input-wrapper">
         <button class="attach-btn" (click)="attachFile()" title="Attach File">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.64 16.2a2 2 0 0 1-2.83-2.83l8.49-8.49"></path>
+            <path
+              d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.64 16.2a2 2 0 0 1-2.83-2.83l8.49-8.49"
+            ></path>
           </svg>
         </button>
-        
-        <input 
-          type="text" 
+
+        <input
+          type="text"
           [(ngModel)]="newMessage"
           (input)="onMessageInput()"
           (keydown)="onKeyDown($event)"
           placeholder="Type a message..."
           class="message-input"
           [disabled]="sendingMessage"
-          #messageInput>
-        
-        <button 
-          class="send-btn" 
-          (click)="sendMessage()" 
+          #messageInput
+          aria-label="Type a message..."
+        />
+
+        <button
+          class="send-btn"
+          (click)="sendMessage()"
           [disabled]="!newMessage.trim() || sendingMessage"
-          title="Send Message">
-          <svg *ngIf="!sendingMessage" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          title="Send Message"
+        >
+          <svg
+            *ngIf="!sendingMessage"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
             <line x1="22" y1="2" x2="11" y2="13"></line>
             <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
           </svg>
@@ -206,10 +226,7 @@
   </div>
 
   <!-- User Search Overlay -->
-  <app-user-search 
-    *ngIf="showUserSearch"
-    (userSelected)="onUserSelected($event)"
-    (closeSearch)="onCloseUserSearch()">
+  <app-user-search *ngIf="showUserSearch" (userSelected)="onUserSelected($event)" (closeSearch)="onCloseUserSearch()">
   </app-user-search>
 
   <!-- Floating Action Button for Mobile -->

@@ -1,6 +1,8 @@
-import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subject, Subscription, filter, skip, takeUntil } from 'rxjs';
-import { Client, IMessage, StompConfig } from '@stomp/stompjs';
+import { logger } from '../core/logging/logger';
+import { Injectable, OnDestroy, DestroyRef, inject } from '@angular/core';
+import { BehaviorSubject, Observable, Subscription, filter, skip } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { getWebSocketUrl } from '../config/runtime.config';
 import { ChatMessage, TypingIndicator } from '../models/chat.model';
@@ -8,20 +10,20 @@ import { ChatService } from './chat.service';
 import { AuthService } from './auth.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class WebSocketService implements OnDestroy {
   private stompClient: Client | null = null;
   private connectionStatus = new BehaviorSubject<boolean>(false);
-  private destroy$ = new Subject<void>();
+  private readonly destroyRef = inject(DestroyRef);
   private subscribedConversations = new Set<string>();
   private tokenSubscription?: Subscription;
-  
+
   private readonly WS_URL = getWebSocketUrl();
 
   constructor(
     private chatService: ChatService,
-    private authService: AuthService
+    private authService: AuthService,
   ) {}
 
   /**
@@ -50,12 +52,12 @@ export class WebSocketService implements OnDestroy {
       // Log errors without the frame/error object: CONNECT frames can carry
       // authorization headers, so logging them would leak credentials.
       this.stompClient.onStompError = () => {
-        console.error('WebSocket STOMP error');
+        logger.error('WebSocket STOMP error');
         this.connectionStatus.next(false);
       };
 
       this.stompClient.onWebSocketError = () => {
-        console.error('WebSocket connection error');
+        logger.error('WebSocket connection error');
         this.connectionStatus.next(false);
       };
 
@@ -65,7 +67,7 @@ export class WebSocketService implements OnDestroy {
 
       this.stompClient.activate();
     } catch {
-      console.error('WebSocket connection could not be established');
+      logger.error('WebSocket connection could not be established');
       this.connectionStatus.next(false);
     }
   }
@@ -103,11 +105,7 @@ export class WebSocketService implements OnDestroy {
     // Subscribe to typing indicators
     this.stompClient.subscribe(`/topic/conversation/${conversationId}/typing`, (message: IMessage) => {
       const typingIndicator: TypingIndicator = JSON.parse(message.body);
-      this.chatService.updateTypingIndicator(
-        conversationId,
-        typingIndicator.userId,
-        typingIndicator.isTyping
-      );
+      this.chatService.updateTypingIndicator(conversationId, typingIndicator.userId, typingIndicator.isTyping);
     });
 
     this.subscribedConversations.add(conversationId);
@@ -136,7 +134,7 @@ export class WebSocketService implements OnDestroy {
 
     this.stompClient.publish({
       destination: '/app/chat.sendMessage',
-      body: JSON.stringify(request)
+      body: JSON.stringify(request),
     });
   }
 
@@ -151,12 +149,12 @@ export class WebSocketService implements OnDestroy {
     const typingIndicator = {
       conversationId,
       isTyping,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     this.stompClient.publish({
       destination: '/app/chat.typing',
-      body: JSON.stringify(typingIndicator)
+      body: JSON.stringify(typingIndicator),
     });
   }
 
@@ -199,7 +197,7 @@ export class WebSocketService implements OnDestroy {
       .pipe(
         skip(1),
         filter((token): token is string => !!token),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => {
         if (this.stompClient) {
@@ -210,8 +208,6 @@ export class WebSocketService implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
     this.tokenSubscription?.unsubscribe();
     this.disconnect();
   }

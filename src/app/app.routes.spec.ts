@@ -2,11 +2,11 @@ import { Route } from '@angular/router';
 import { routes } from './app.routes';
 
 describe('app routes (P3-01/P3-02)', () => {
-  const layout = routes.find(route => route.path === '') as Route;
+  const layout = routes.find((route) => route.path === '') as Route;
   const children = layout.children ?? [];
 
   function child(path: string): Route {
-    const route = children.find(candidate => candidate.path === path);
+    const route = children.find((candidate) => candidate.path === path);
     expect(route).withContext(`missing child route: ${path}`).toBeDefined();
     return route as Route;
   }
@@ -22,7 +22,7 @@ describe('app routes (P3-01/P3-02)', () => {
   }
 
   function guardNames(route: Route): string[] {
-    return (route.canActivate ?? []).map(guard => (guard as unknown as { name?: string }).name ?? '');
+    return (route.canActivate ?? []).map((guard) => (guard as unknown as { name?: string }).name ?? '');
   }
 
   it('routes create and detail paths to the real components', async () => {
@@ -42,10 +42,10 @@ describe('app routes (P3-01/P3-02)', () => {
       'local-guides/create',
       'itineraries/create',
       'profile',
-      'settings'
+      'settings',
     ];
 
-    guardedPaths.forEach(path => {
+    guardedPaths.forEach((path) => {
       expect(guardNames(child(path))).toContain('AuthGuard');
     });
   });
@@ -57,8 +57,8 @@ describe('app routes (P3-01/P3-02)', () => {
   it('uses real admin analytics and settings pages instead of the dashboard', async () => {
     const admin = child('admin');
     const adminChildren = admin.children ?? [];
-    const analytics = adminChildren.find(route => route.path === 'analytics') as Route;
-    const settings = adminChildren.find(route => route.path === 'settings') as Route;
+    const analytics = adminChildren.find((route) => route.path === 'analytics') as Route;
+    const settings = adminChildren.find((route) => route.path === 'settings') as Route;
 
     expect(await loadedComponentName(analytics)).toBe('AdminAnalyticsComponent');
     expect(await loadedComponentName(settings)).toBe('AdminSettingsComponent');
@@ -66,8 +66,8 @@ describe('app routes (P3-01/P3-02)', () => {
   });
 
   it('renders the 404 page for unknown URLs', async () => {
-    const explicitNotFound = routes.find(route => route.path === '404') as Route;
-    const wildcard = routes.find(route => route.path === '**') as Route;
+    const explicitNotFound = routes.find((route) => route.path === '404') as Route;
+    const wildcard = routes.find((route) => route.path === '**') as Route;
 
     expect(await loadedComponentName(explicitNotFound)).toBe('NotFoundComponent');
     expect(await loadedComponentName(wildcard)).toBe('NotFoundComponent');
@@ -81,13 +81,13 @@ describe('app routes (P3-01/P3-02)', () => {
   });
 
   it('lazy-loads all feature pages and keeps only the layout eager', () => {
-    expect(children.filter(route => route.component)).toEqual([]);
-    expect((child('admin').children ?? []).filter(route => route.component)).toEqual([]);
-    expect(routes.filter(route => route.loadComponent).length).toBe(4);
+    expect(children.filter((route) => route.component)).toEqual([]);
+    expect((child('admin').children ?? []).filter((route) => route.component)).toEqual([]);
+    expect(routes.filter((route) => route.loadComponent).length).toBe(4);
   });
 
   it('preloads only public landing routes', () => {
-    ['community', 'marketplace'].forEach(path => {
+    ['community', 'marketplace'].forEach((path) => {
       expect(child(path).data?.['preload']).toBeTrue();
     });
     expect(child('dashboard').data?.['preload']).toBeUndefined();

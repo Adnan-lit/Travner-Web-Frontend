@@ -2,30 +2,32 @@
   <!-- Header -->
   <div class="header">
     <h1>Local Guides</h1>
-    <button class="btn btn-primary" (click)="createLocalGuide()">
-      <i class="fas fa-plus"></i> Become a Guide
-    </button>
+    <button class="btn btn-primary" (click)="createLocalGuide()"><i class="fas fa-plus"></i> Become a Guide</button>
   </div>
 
   <!-- Search and Filters -->
   <div class="filters-section">
     <div class="search-bar">
-      <input 
-        type="text" 
-        placeholder="Search guides..." 
+      <input
+        type="text"
+        placeholder="Search guides..."
         [(ngModel)]="searchParams.query"
         (keyup.enter)="onSearch()"
         class="form-control"
-      >
-      <button class="btn btn-secondary" (click)="onSearch()">
-        <i class="fas fa-search"></i> Search
-      </button>
+        aria-label="Search guides..."
+      />
+      <button class="btn btn-secondary" (click)="onSearch()"><i class="fas fa-search"></i> Search</button>
     </div>
 
     <div class="filters">
       <div class="filter-group">
         <label>Location:</label>
-        <select [(ngModel)]="selectedLocation" (change)="onFilterChange()" class="form-control">
+        <select
+          [(ngModel)]="selectedLocation"
+          (change)="onFilterChange()"
+          class="form-control"
+          aria-label="Selected location"
+        >
           <option value="">All Locations</option>
           <option *ngFor="let location of locations; trackBy: trackByValue" [value]="location">{{ location }}</option>
         </select>
@@ -34,48 +36,52 @@
       <div class="filter-group">
         <label>Price Range:</label>
         <div class="price-range">
-          <input 
-            type="number" 
-            [(ngModel)]="priceRange.min" 
+          <input
+            type="number"
+            [(ngModel)]="priceRange.min"
             (change)="onFilterChange()"
             placeholder="Min"
             class="form-control"
-          >
+            aria-label="Minimum price"
+          />
           <span>-</span>
-          <input 
-            type="number" 
-            [(ngModel)]="priceRange.max" 
+          <input
+            type="number"
+            [(ngModel)]="priceRange.max"
             (change)="onFilterChange()"
             placeholder="Max"
             class="form-control"
-          >
+            aria-label="Maximum price"
+          />
         </div>
       </div>
 
       <div class="filter-group">
         <label>Rating:</label>
         <div class="rating-range">
-          <input 
-            type="number" 
-            [(ngModel)]="ratingRange.min" 
+          <input
+            type="number"
+            [(ngModel)]="ratingRange.min"
             (change)="onFilterChange()"
             placeholder="Min"
             min="0"
             max="5"
             step="0.1"
             class="form-control"
-          >
+            aria-label="Minimum rating"
+          />
           <span>-</span>
-          <input 
-            type="number" 
-            [(ngModel)]="ratingRange.max" 
+          <input
+            type="number"
+            [(ngModel)]="ratingRange.max"
             (change)="onFilterChange()"
             placeholder="Max"
             min="0"
             max="5"
             step="0.1"
             class="form-control"
-          >
+            aria-label="Maximum rating"
+          />
         </div>
       </div>
     </div>
@@ -95,7 +101,11 @@
 
   <!-- Local Guides Grid -->
   <div *ngIf="!loading && !error" class="local-guides-grid">
-    <div *ngFor="let guide of localGuides; trackBy: trackByLocalGuideId" class="local-guide-card" (click)="viewLocalGuide(guide.id)">
+    <div
+      *ngFor="let guide of localGuides; trackBy: trackByLocalGuideId"
+      class="local-guide-card"
+      (click)="viewLocalGuide(guide.id)"
+    >
       <div class="card-header">
         <div class="availability-badge" [ngClass]="getAvailabilityClass(guide.isAvailable)">
           {{ getAvailabilityText(guide.isAvailable) }}
@@ -105,8 +115,10 @@
           <span class="price">{{ formatPrice(guide.hourlyRate, guide.currency) }}</span>
           <div class="rating">
             <div class="stars">
-              <i *ngFor="let star of getRatingStars(guide.rating); trackBy: trackByIndex"
-                 [class]="'fas fa-star ' + star"></i>
+              <i
+                *ngFor="let star of getRatingStars(guide.rating); trackBy: trackByIndex"
+                [class]="'fas fa-star ' + star"
+              ></i>
             </div>
             <span class="rating-text">{{ guide.rating.toFixed(1) }} ({{ guide.reviewCount }} reviews)</span>
           </div>
@@ -115,18 +127,22 @@
 
       <div class="card-body">
         <p class="bio">{{ guide.bio }}</p>
-        
+
         <div class="specialties" *ngIf="guide.specialties && guide.specialties.length > 0">
           <h4>Specialties:</h4>
           <div class="specialty-tags">
-            <span *ngFor="let specialty of guide.specialties; trackBy: trackByValue" class="specialty-tag">{{ specialty }}</span>
+            <span *ngFor="let specialty of guide.specialties; trackBy: trackByValue" class="specialty-tag">{{
+              specialty
+            }}</span>
           </div>
         </div>
 
         <div class="languages" *ngIf="guide.languages && guide.languages.length > 0">
           <h4>Languages:</h4>
           <div class="language-tags">
-            <span *ngFor="let language of guide.languages; trackBy: trackByValue" class="language-tag">{{ language }}</span>
+            <span *ngFor="let language of guide.languages; trackBy: trackByValue" class="language-tag">{{
+              language
+            }}</span>
           </div>
         </div>
 
@@ -140,7 +156,9 @@
         <div class="certifications" *ngIf="guide.certifications && guide.certifications.length > 0">
           <h4>Certifications:</h4>
           <div class="certification-tags">
-            <span *ngFor="let cert of guide.certifications; trackBy: trackByValue" class="certification-tag">{{ cert }}</span>
+            <span *ngFor="let cert of guide.certifications; trackBy: trackByValue" class="certification-tag">{{
+              cert
+            }}</span>
           </div>
         </div>
       </div>
@@ -160,7 +178,7 @@
             <span>{{ guide.totalBookings }}</span>
           </div>
         </div>
-        
+
         <div class="action-buttons">
           <button class="btn btn-sm btn-primary" (click)="viewLocalGuide(guide.id); $event.stopPropagation()">
             View Profile
@@ -180,16 +198,12 @@
 
   <!-- Pagination -->
   <div *ngIf="!loading && !error && totalPages > 1" class="pagination">
-    <button 
-      class="btn btn-secondary" 
-      [disabled]="currentPage === 0"
-      (click)="onPageChange(currentPage - 1)"
-    >
+    <button class="btn btn-secondary" [disabled]="currentPage === 0" (click)="onPageChange(currentPage - 1)">
       Previous
     </button>
-    
+
     <div class="page-numbers">
-      <button 
+      <button
         *ngFor="let page of getPageNumbers(); trackBy: trackByPage"
         class="btn"
         [class.btn-primary]="page === currentPage"
@@ -199,9 +213,9 @@
         {{ page + 1 }}
       </button>
     </div>
-    
-    <button 
-      class="btn btn-secondary" 
+
+    <button
+      class="btn btn-secondary"
       [disabled]="currentPage >= totalPages - 1"
       (click)="onPageChange(currentPage + 1)"
     >

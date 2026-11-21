@@ -3,7 +3,11 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   padding: 24px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
 }
 
 /* Page Header */
@@ -93,7 +97,7 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .form-control {
@@ -141,8 +145,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-icon {
@@ -290,7 +298,7 @@
   color: #374151;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   display: none;
 }
 
@@ -303,12 +311,12 @@
   transition: all 0.2s ease;
 }
 
-.checkbox-label input[type="checkbox"]:checked + .checkmark {
+.checkbox-label input[type='checkbox']:checked + .checkmark {
   background: #e74c3c;
   border-color: #e74c3c;
 }
 
-.checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+.checkbox-label input[type='checkbox']:checked + .checkmark::after {
   content: '';
   position: absolute;
   left: 6px;
@@ -362,7 +370,7 @@
 }
 
 .upload-icon {
-  color: #9ca3af;
+  color: #6b7280;
   margin-bottom: 16px;
 }
 
@@ -383,7 +391,7 @@
   justify-content: center;
   gap: 20px;
   font-size: 0.85rem;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .upload-progress {
@@ -731,7 +739,7 @@
 
 .btn-secondary:hover {
   background: #e5e7eb;
-  border-color: #9ca3af;
+  border-color: #6b7280;
 }
 
 .btn-danger {
@@ -799,7 +807,7 @@
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .products-grid {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
@@ -809,33 +817,33 @@
   .product-management-container {
     padding: 16px;
   }
-  
+
   .page-header {
     flex-direction: column;
     gap: 16px;
     align-items: stretch;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .products-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .product-actions {
     flex-direction: column;
   }
-  
+
   .form-actions {
     flex-direction: column;
   }
-  
+
   .upload-actions {
     flex-direction: column;
   }
-  
+
   .image-grid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }
@@ -846,11 +854,11 @@
     margin: 10px;
     max-height: 95vh;
   }
-  
+
   .product-form-content {
     padding: 0 16px 16px;
   }
-  
+
   .form-header {
     padding: 16px 16px 0;
   }

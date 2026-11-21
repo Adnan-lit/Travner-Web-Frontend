@@ -1,3 +1,4 @@
+import { logger } from '../../../core/logging/logger';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,22 +12,22 @@ import { LocalGuide, LocalGuideSearchParams } from '../../../models/location.mod
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   templateUrl: './local-guide-list.component.html',
-  styleUrls: ['./local-guide-list.component.css']
+  styleUrls: ['./local-guide-list.component.css'],
 })
 export class LocalGuideListComponent implements OnInit {
   localGuides: LocalGuide[] = [];
   loading = false;
   error: string | null = null;
-  
+
   // Search and filter parameters
   searchParams: LocalGuideSearchParams = {
     page: 0,
     size: 10,
     sortBy: 'rating',
     direction: 'desc',
-    isAvailable: true
+    isAvailable: true,
   };
-  
+
   // Filter options
   locations: string[] = [];
   selectedLocation = '';
@@ -34,7 +35,7 @@ export class LocalGuideListComponent implements OnInit {
   selectedSpecialties: string[] = [];
   priceRange = { min: 0, max: 1000 };
   ratingRange = { min: 0, max: 5 };
-  
+
   // Pagination
   currentPage = 0;
   totalPages = 0;
@@ -44,7 +45,7 @@ export class LocalGuideListComponent implements OnInit {
 
   constructor(
     private localGuideService: LocalGuideService,
-    private router: Router
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -54,7 +55,7 @@ export class LocalGuideListComponent implements OnInit {
   loadLocalGuides(): void {
     this.loading = true;
     this.error = null;
-    
+
     const params = {
       ...this.searchParams,
       page: this.currentPage,
@@ -64,7 +65,7 @@ export class LocalGuideListComponent implements OnInit {
       minPrice: this.priceRange.min,
       maxPrice: this.priceRange.max,
       minRating: this.ratingRange.min,
-      maxRating: this.ratingRange.max
+      maxRating: this.ratingRange.max,
     };
 
     this.localGuideService.getLocalGuides(params).subscribe({
@@ -79,8 +80,8 @@ export class LocalGuideListComponent implements OnInit {
         this.error = 'Failed to load local guides';
         this.loading = false;
         this.cdr.markForCheck();
-        console.error('Error loading local guides:', error);
-      }
+        logger.error('Error loading local guides:', error);
+      },
     });
   }
 
@@ -111,11 +112,11 @@ export class LocalGuideListComponent implements OnInit {
     const pages: number[] = [];
     const start = Math.max(0, this.currentPage - 2);
     const end = Math.min(this.totalPages - 1, this.currentPage + 2);
-    
+
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
-    
+
     return pages;
   }
 
@@ -143,19 +144,19 @@ export class LocalGuideListComponent implements OnInit {
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 !== 0;
-    
+
     for (let i = 0; i < fullStars; i++) {
       stars.push('full');
     }
-    
+
     if (hasHalfStar) {
       stars.push('half');
     }
-    
+
     while (stars.length < 5) {
       stars.push('empty');
     }
-    
+
     return stars;
   }
 

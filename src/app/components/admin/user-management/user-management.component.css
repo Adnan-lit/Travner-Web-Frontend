@@ -229,7 +229,7 @@
   text-align: center;
 }
 
-.checkbox-column input[type="checkbox"] {
+.checkbox-column input[type='checkbox'] {
   width: 18px;
   height: 18px;
   accent-color: var(--primary-500);
@@ -387,8 +387,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-content p {
@@ -631,7 +635,7 @@
     grid-template-columns: 1fr;
     gap: var(--space-4);
   }
-  
+
   .user-info {
     min-width: 200px;
   }
@@ -641,57 +645,57 @@
   .user-management {
     padding: var(--space-4);
   }
-  
+
   .page-header {
     flex-direction: column;
     gap: var(--space-4);
     align-items: stretch;
   }
-  
+
   .header-actions {
     justify-content: flex-start;
   }
-  
+
   .stats-grid {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: var(--space-4);
   }
-  
+
   .user-info {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-2);
   }
-  
+
   .users-table {
     font-size: var(--text-sm);
   }
-  
+
   .users-table th,
   .users-table td {
     padding: var(--space-3);
   }
-  
+
   .action-buttons {
     flex-direction: column;
     gap: var(--space-1);
   }
-  
+
   .pagination-section {
     flex-direction: column;
     gap: var(--space-4);
     align-items: stretch;
   }
-  
+
   .pagination-controls {
     justify-content: space-between;
   }
-  
+
   .user-profile {
     flex-direction: column;
     text-align: center;
   }
-  
+
   .modal-content {
     margin: var(--space-4);
   }
@@ -701,24 +705,24 @@
   .page-title {
     font-size: var(--text-3xl);
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .users-table {
     font-size: var(--text-xs);
   }
-  
+
   .users-table th,
   .users-table td {
     padding: var(--space-2);
   }
-  
+
   .user-name {
     font-size: var(--text-sm);
   }
-  
+
   .user-username,
   .user-email {
     font-size: var(--text-xs);

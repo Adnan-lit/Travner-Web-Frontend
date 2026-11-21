@@ -1,4 +1,6 @@
 import { of } from 'rxjs';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { OrderManagementComponent } from './order-management.component';
 import { MarketplaceService } from '../../../services/marketplace.service';
 import { AuthService } from '../../../services/auth.service';
@@ -10,14 +12,24 @@ describe('OrderManagementComponent (P2-05 order lifecycle)', () => {
   let adminCancelOrder: jasmine.Spy;
   let component: OrderManagementComponent;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     confirmCashOrder = jasmine.createSpy('confirmCashOrder').and.returnValue(of({ success: true }));
     fulfillOrder = jasmine.createSpy('fulfillOrder').and.returnValue(of({ success: true }));
     adminCancelOrder = jasmine.createSpy('adminCancelOrder').and.returnValue(of({ success: true }));
 
     const marketplace = { confirmCashOrder, fulfillOrder, adminCancelOrder } as unknown as MarketplaceService;
-    const auth = {} as AuthService;
-    component = new OrderManagementComponent(marketplace, auth);
+    const auth = { currentUser$: of(null) } as unknown as AuthService;
+
+    await TestBed.configureTestingModule({
+      imports: [OrderManagementComponent],
+      providers: [
+        provideRouter([]),
+        { provide: MarketplaceService, useValue: marketplace },
+        { provide: AuthService, useValue: auth },
+      ],
+    }).compileComponents();
+
+    component = TestBed.createComponent(OrderManagementComponent).componentInstance;
     spyOn(component, 'loadOrders');
     spyOn(component, 'loadOrderStats');
   });
@@ -59,10 +71,7 @@ describe('OrderManagementComponent (P2-05 order lifecycle)', () => {
   });
 
   it('reads the backend paymentStatus field when filtering', () => {
-    component.orders = [
-      orderWith('PAID'),
-      orderWith('PENDING')
-    ];
+    component.orders = [orderWith('PAID'), orderWith('PENDING')];
     component.orders[0].paymentInfo = { paymentStatus: 'COMPLETED' };
     component.orders[1].paymentInfo = { paymentStatus: 'PENDING' };
     component.filters.paymentStatus = 'COMPLETED';

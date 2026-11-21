@@ -177,20 +177,20 @@
   .admin-nav {
     width: 240px;
   }
-  
+
   .admin-content {
     margin-left: 240px;
   }
-  
+
   .nav-brand {
     padding: var(--space-4);
     font-size: var(--text-lg);
   }
-  
+
   .nav-links {
     padding: var(--space-3);
   }
-  
+
   .nav-links a {
     padding: var(--space-2) var(--space-3);
     font-size: var(--text-sm);
@@ -201,7 +201,7 @@
   .admin-container {
     flex-direction: column;
   }
-  
+
   .admin-nav {
     position: static;
     width: 100%;
@@ -211,35 +211,35 @@
     border-bottom: 1px solid var(--neutral-200);
     box-shadow: var(--shadow-sm);
   }
-  
+
   .nav-brand {
     flex: 1;
     border-bottom: none;
     border-right: 1px solid var(--neutral-200);
   }
-  
+
   .nav-links {
     flex-direction: row;
     padding: var(--space-2);
     overflow-x: auto;
     gap: var(--space-1);
   }
-  
+
   .nav-links a {
     white-space: nowrap;
     min-width: auto;
   }
-  
+
   .nav-user {
     border-top: none;
     border-left: 1px solid var(--neutral-200);
     padding: var(--space-2);
   }
-  
+
   .user-info {
     display: none;
   }
-  
+
   .admin-content {
     margin-left: 0;
   }
@@ -249,19 +249,19 @@
   .nav-links a {
     padding: var(--space-2);
   }
-  
+
   .nav-links a span {
     display: none;
   }
-  
+
   .nav-links a i {
     margin-right: 0;
   }
-  
+
   .nav-brand span {
     display: none;
   }
-  
+
   .nav-brand {
     justify-content: center;
   }
@@ -283,10 +283,24 @@
   animation: slideIn 0.3s ease-out;
 }
 
-.nav-links a:nth-child(1) { animation-delay: 0.1s; }
-.nav-links a:nth-child(2) { animation-delay: 0.2s; }
-.nav-links a:nth-child(3) { animation-delay: 0.3s; }
-.nav-links a:nth-child(4) { animation-delay: 0.4s; }
-.nav-links a:nth-child(5) { animation-delay: 0.5s; }
-.nav-links a:nth-child(6) { animation-delay: 0.6s; }
-.nav-links a:nth-child(7) { animation-delay: 0.7s; }
+.nav-links a:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.nav-links a:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.nav-links a:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.nav-links a:nth-child(4) {
+  animation-delay: 0.4s;
+}
+.nav-links a:nth-child(5) {
+  animation-delay: 0.5s;
+}
+.nav-links a:nth-child(6) {
+  animation-delay: 0.6s;
+}
+.nav-links a:nth-child(7) {
+  animation-delay: 0.7s;
+}

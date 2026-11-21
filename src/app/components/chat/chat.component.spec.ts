@@ -23,12 +23,21 @@ describe('ChatComponent', () => {
 
   beforeEach(async () => {
     const chatServiceSpy = jasmine.createSpyObj('ChatService', [
-      'getConversations', 'getMessages', 'sendMessage', 'markMessagesAsRead',
-      'uploadFile', 'downloadAttachment', 'deleteAttachment'
+      'getConversations',
+      'getMessages',
+      'sendMessage',
+      'markMessagesAsRead',
+      'uploadFile',
+      'downloadAttachment',
+      'deleteAttachment',
     ]);
     const webSocketServiceSpy = jasmine.createSpyObj('WebSocketService', [
-      'connect', 'disconnect', 'subscribeToConversation', 'unsubscribeFromConversation',
-      'getConnectionStatus', 'sendTypingIndicator'
+      'connect',
+      'disconnect',
+      'subscribeToConversation',
+      'unsubscribeFromConversation',
+      'getConnectionStatus',
+      'sendTypingIndicator',
     ]);
     const authServiceSpy = jasmine.createSpyObj('AuthService', ['isAuthenticated', 'getCurrentUser']);
     const userServiceSpy = jasmine.createSpyObj('UserService', ['searchUsers']);
@@ -38,7 +47,7 @@ describe('ChatComponent', () => {
     // tests call detectChanges(), so the streams must exist on the spy.
     Object.assign(chatServiceSpy, {
       conversations$: new BehaviorSubject<ConversationWithParticipants[]>([]).asObservable(),
-      messages$: new BehaviorSubject<Map<string, ChatMessage[]>>(new Map()).asObservable()
+      messages$: new BehaviorSubject<Map<string, ChatMessage[]>>(new Map()).asObservable(),
     });
 
     chatServiceSpy.getConversations.and.returnValue(of([]));
@@ -55,8 +64,8 @@ describe('ChatComponent', () => {
         { provide: WebSocketService, useValue: webSocketServiceSpy },
         { provide: AuthService, useValue: authServiceSpy },
         { provide: UserService, useValue: userServiceSpy },
-        { provide: Router, useValue: routerSpy }
-      ]
+        { provide: Router, useValue: routerSpy },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ChatComponent);
@@ -80,7 +89,7 @@ describe('ChatComponent', () => {
       username: 'currentuser',
       firstName: 'Current',
       lastName: 'User',
-      isOnline: true
+      isOnline: true,
     };
 
     const otherUser: any = {
@@ -89,7 +98,7 @@ describe('ChatComponent', () => {
       username: 'otheruser',
       firstName: 'Other',
       lastName: 'User',
-      isOnline: true
+      isOnline: true,
     };
 
     const message: ChatMessage = {
@@ -103,7 +112,7 @@ describe('ChatComponent', () => {
       updatedAt: new Date().toISOString(),
       isEdited: false,
       readBy: ['user2'],
-      status: 'DELIVERED'
+      status: 'DELIVERED',
     };
 
     component.currentUser = currentUser;
@@ -116,7 +125,7 @@ describe('ChatComponent', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       unreadCount: 0,
-      isActive: true
+      isActive: true,
     };
 
     // Test
@@ -133,7 +142,7 @@ describe('ChatComponent', () => {
       userName: 'currentuser',
       firstName: 'Current',
       lastName: 'User',
-      isOnline: true
+      isOnline: true,
     };
 
     const message: ChatMessage = {
@@ -147,7 +156,7 @@ describe('ChatComponent', () => {
       updatedAt: new Date().toISOString(),
       isEdited: false,
       readBy: ['user1'],
-      status: 'DELIVERED'
+      status: 'DELIVERED',
     };
 
     component.currentUser = currentUser;
@@ -166,7 +175,7 @@ describe('ChatComponent', () => {
       userName: 'currentuser',
       firstName: 'Current',
       lastName: 'User',
-      isOnline: true
+      isOnline: true,
     };
 
     const ownMessage: ChatMessage = {
@@ -180,7 +189,7 @@ describe('ChatComponent', () => {
       updatedAt: new Date().toISOString(),
       isEdited: false,
       readBy: ['user1'],
-      status: 'DELIVERED'
+      status: 'DELIVERED',
     };
 
     const otherMessage: ChatMessage = {
@@ -194,7 +203,7 @@ describe('ChatComponent', () => {
       updatedAt: new Date().toISOString(),
       isEdited: false,
       readBy: ['user2'],
-      status: 'DELIVERED'
+      status: 'DELIVERED',
     };
 
     component.currentUser = currentUser;
@@ -210,18 +219,20 @@ describe('ChatComponent', () => {
 
   // P2-02: display names come from resolved summaries, never raw ObjectIds.
   it('prefers resolved displayName over username for participants', () => {
-    expect(component.getParticipantDisplayName({
-      id: '507f1f77bcf86cd799439011',
-      username: 'alice',
-      displayName: 'Alice A.'
-    })).toBe('Alice A.');
+    expect(
+      component.getParticipantDisplayName({
+        id: '507f1f77bcf86cd799439011',
+        username: 'alice',
+        displayName: 'Alice A.',
+      }),
+    ).toBe('Alice A.');
   });
 
   it('never renders a raw ObjectId or "Unknown User" when display data is missing', () => {
     const label = component.getParticipantDisplayName({
       id: '507f1f77bcf86cd799439011',
       username: '507f1f77bcf86cd799439011',
-      displayName: ''
+      displayName: '',
     });
     expect(label).toBe('Former user');
     expect(label).not.toContain('507f1f77bcf86cd799439011');
@@ -241,7 +252,7 @@ describe('ChatComponent', () => {
       updatedAt: new Date().toISOString(),
       isEdited: false,
       readBy: ['user2'],
-      status: 'DELIVERED'
+      status: 'DELIVERED',
     };
     component.currentUser = currentUser;
     component.selectedConversation = null;
@@ -259,7 +270,7 @@ describe('ChatComponent', () => {
       contentType: 'text/plain',
       size: 5,
       downloadUrl: '/api/chat/attachments/att1/download',
-      ...overrides
+      ...overrides,
     };
   }
 
@@ -273,7 +284,7 @@ describe('ChatComponent', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       unreadCount: 0,
-      isActive: true
+      isActive: true,
     } as any;
   }
 
@@ -297,7 +308,7 @@ describe('ChatComponent', () => {
       updatedAt: new Date().toISOString(),
       isEdited: false,
       readBy: [],
-      status: 'DELIVERED'
+      status: 'DELIVERED',
     };
   }
 
@@ -311,7 +322,7 @@ describe('ChatComponent', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       unreadCount: 0,
-      isActive: true
+      isActive: true,
     };
   }
 
@@ -335,8 +346,15 @@ describe('ChatComponent', () => {
 
   it('recalculates the target offset after variable-height rows are measured', () => {
     const viewport = jasmine.createSpyObj('viewport', [
-      'scrollToOffset', 'setTotalContentSize', 'setRenderedRange', 'setRenderedContentOffset',
-      'getDataLength', 'getViewportSize', 'measureScrollOffset', 'getRenderedRange', 'measureRangeSize'
+      'scrollToOffset',
+      'setTotalContentSize',
+      'setRenderedRange',
+      'setRenderedContentOffset',
+      'getDataLength',
+      'getViewportSize',
+      'measureScrollOffset',
+      'getRenderedRange',
+      'measureRangeSize',
     ]) as unknown as CdkVirtualScrollViewport;
     (viewport.getDataLength as jasmine.Spy).and.returnValue(3);
     (viewport.getViewportSize as jasmine.Spy).and.returnValue(100);
@@ -421,11 +439,13 @@ describe('ChatComponent', () => {
     const formData = mockChatService.uploadFile.calls.mostRecent().args[0] as FormData;
     expect(formData.get('conversationId')).toBe('conv1');
     expect((formData.get('file') as File).name).toBe('notes.txt');
-    expect(mockChatService.sendMessage).toHaveBeenCalledWith(jasmine.objectContaining({
-      conversationId: 'conv1',
-      messageType: 'FILE',
-      attachmentId: 'att1'
-    }));
+    expect(mockChatService.sendMessage).toHaveBeenCalledWith(
+      jasmine.objectContaining({
+        conversationId: 'conv1',
+        messageType: 'FILE',
+        attachmentId: 'att1',
+      }),
+    );
     expect(component.sendingMessage).toBeFalse();
   });
 
@@ -436,10 +456,12 @@ describe('ChatComponent', () => {
 
     (component as any).uploadFile(new File(['img'], 'photo.png', { type: 'image/png' }));
 
-    expect(mockChatService.sendMessage).toHaveBeenCalledWith(jasmine.objectContaining({
-      messageType: 'IMAGE',
-      attachmentId: 'att1'
-    }));
+    expect(mockChatService.sendMessage).toHaveBeenCalledWith(
+      jasmine.objectContaining({
+        messageType: 'IMAGE',
+        attachmentId: 'att1',
+      }),
+    );
   });
 
   it('rejects oversized and unsupported files before upload', () => {
@@ -512,5 +534,3 @@ describe('ChatComponent', () => {
     expect(revokeSpy).toHaveBeenCalledWith('blob:download');
   });
 });
-
-

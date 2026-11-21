@@ -407,7 +407,7 @@
 .empty-icon {
   width: 2rem;
   height: 2rem;
-  color: #d1d5db;
+  color: #6b7280;
   margin: 0 auto 1rem;
 }
 
@@ -435,8 +435,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
@@ -456,11 +460,11 @@
     text-align: center;
     gap: 1.5rem;
   }
-  
+
   .create-title {
     font-size: 2rem;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
   }
@@ -470,32 +474,32 @@
   .modern-create-container {
     padding: 0.75rem;
   }
-  
+
   .create-header {
     padding: 1.25rem 1rem;
     border-radius: 12px;
     margin-bottom: 1rem;
   }
-  
+
   .create-title {
     font-size: 1.5rem;
   }
-  
+
   .form-card {
     padding: 1.25rem;
     border-radius: 12px;
   }
-  
+
   .item-card {
     padding: 1.25rem;
   }
-  
+
   .item-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
-  
+
   .item-details {
     gap: 0.5rem;
   }
@@ -505,24 +509,24 @@
   .create-header {
     padding: 1rem 0.75rem;
   }
-  
+
   .create-title {
     font-size: 1.25rem;
   }
-  
+
   .header-badges {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .form-card {
     padding: 1rem;
   }
-  
+
   .item-card {
     padding: 1rem;
   }
-  
+
   .item-number {
     width: 2rem;
     height: 2rem;
@@ -532,7 +536,9 @@
 
 .form-input:focus {
   transform: translateY(-1px);
-  box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.1), 0 4px 6px -2px rgba(16, 185, 129, 0.05);
+  box-shadow:
+    0 10px 25px -5px rgba(16, 185, 129, 0.1),
+    0 4px 6px -2px rgba(16, 185, 129, 0.05);
 }
 
 /* Bangladesh flag colors accent */
@@ -550,7 +556,9 @@
 
 .itinerary-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 /* Tag styling with Bangladesh colors */
@@ -595,8 +603,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Form validation styles */
@@ -615,15 +627,15 @@
   .container {
     padding: 1rem;
   }
-  
+
   .grid-cols-1 {
     gap: 1rem;
   }
-  
+
   .text-4xl {
     font-size: 2rem;
   }
-  
+
   .text-2xl {
     font-size: 1.5rem;
   }
@@ -653,7 +665,7 @@
   .no-print {
     display: none !important;
   }
-  
+
   .print-break {
     page-break-before: always;
   }
@@ -665,17 +677,17 @@
     background-color: #1f2937;
     color: #f9fafb;
   }
-  
+
   .dark-mode .bg-white {
     background-color: #374151;
   }
-  
+
   .dark-mode .text-gray-800 {
     color: #f9fafb;
   }
-  
+
   .dark-mode .text-gray-600 {
-    color: #d1d5db;
+    color: #6b7280;
   }
 }
 
@@ -701,7 +713,7 @@
   display: inline-block;
 }
 
-.custom-checkbox input[type="checkbox"] {
+.custom-checkbox input[type='checkbox'] {
   opacity: 0;
   position: absolute;
   width: 0;
@@ -730,7 +742,7 @@
 }
 
 .custom-checkbox .checkmark:after {
-  content: "";
+  content: '';
   position: absolute;
   display: none;
   left: 6px;
@@ -766,7 +778,7 @@
 }
 
 .form-textarea::placeholder {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .form-input.readonly {
@@ -988,47 +1000,47 @@
   .modern-create-container {
     padding: 0.25rem;
   }
-  
+
   .create-header {
     padding: 0.75rem 1rem;
     margin-bottom: 0.75rem;
   }
-  
+
   .header-content {
     gap: 0.5rem;
   }
-  
+
   .create-title {
     font-size: 1.125rem;
   }
-  
+
   .form-card {
     padding: 0.75rem;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
     gap: 0.75rem;
   }
-  
+
   .card-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
     margin-bottom: 0.75rem;
   }
-  
+
   .submit-content {
     flex-direction: column;
     text-align: center;
     gap: 0.75rem;
   }
-  
+
   .submit-actions {
     flex-direction: column;
     width: 100%;
   }
-  
+
   .submit-actions .modern-btn {
     width: 100%;
     justify-content: center;

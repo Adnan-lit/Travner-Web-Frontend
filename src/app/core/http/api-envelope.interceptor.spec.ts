@@ -9,10 +9,7 @@ describe('apiEnvelopeInterceptor error contract', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(withInterceptors([apiEnvelopeInterceptor])),
-        provideHttpClientTesting()
-      ]
+      providers: [provideHttpClient(withInterceptors([apiEnvelopeInterceptor])), provideHttpClientTesting()],
     });
     http = TestBed.inject(HttpClient);
     httpMock = TestBed.inject(HttpTestingController);
@@ -22,12 +19,12 @@ describe('apiEnvelopeInterceptor error contract', () => {
 
   it('passes backend error envelopes through with code and traceId intact', () => {
     let captured: any;
-    http.get('/api/posts').subscribe({ error: err => captured = err });
+    http.get('/api/posts').subscribe({ error: (err) => (captured = err) });
 
     const request = httpMock.expectOne('/api/posts');
     request.flush(
       { success: false, code: 'FORBIDDEN', message: 'Access denied', traceId: 'req-42' },
-      { status: 403, statusText: 'Forbidden' }
+      { status: 403, statusText: 'Forbidden' },
     );
 
     expect(captured.status).toBe(403);
@@ -38,13 +35,13 @@ describe('apiEnvelopeInterceptor error contract', () => {
 
   it('carries the correlation header into non-envelope errors', () => {
     let captured: any;
-    http.get('/api/broken').subscribe({ error: err => captured = err });
+    http.get('/api/broken').subscribe({ error: (err) => (captured = err) });
 
     const request = httpMock.expectOne('/api/broken');
     request.flush('boom', {
       status: 500,
       statusText: 'Server Error',
-      headers: { 'X-Correlation-Id': 'generated-trace-id' }
+      headers: { 'X-Correlation-Id': 'generated-trace-id' },
     });
 
     expect(captured.error.success).toBeFalse();
@@ -54,7 +51,7 @@ describe('apiEnvelopeInterceptor error contract', () => {
 
   it('wraps successful bare responses in the standard envelope', () => {
     let captured: any;
-    http.get<{ data: string[] }>('/api/values').subscribe(value => captured = value);
+    http.get<{ data: string[] }>('/api/values').subscribe((value) => (captured = value));
 
     const request = httpMock.expectOne('/api/values');
     request.flush(['a', 'b']);

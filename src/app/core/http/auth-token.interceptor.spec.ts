@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
 import { configureRuntimeConfig, resetRuntimeConfig } from '../../config/runtime.config';
 import { apiEnvelopeInterceptor } from './api-envelope.interceptor';
 import { authTokenInterceptor } from './auth-token.interceptor';
@@ -11,12 +12,14 @@ describe('authTokenInterceptor', () => {
   let http: HttpClient;
   let httpMock: HttpTestingController;
   let auth: jasmine.SpyObj<AuthService>;
+  let toast: jasmine.SpyObj<ToastService>;
 
   beforeEach(() => {
     resetRuntimeConfig();
-    auth = jasmine.createSpyObj<AuthService>('AuthService',
-      ['getAccessToken', 'refresh', 'logout'],
-      { accessToken$: of(null) });
+    toast = jasmine.createSpyObj<ToastService>('ToastService', ['showAuthError']);
+    auth = jasmine.createSpyObj<AuthService>('AuthService', ['getAccessToken', 'refresh', 'logout'], {
+      accessToken$: of(null),
+    });
     auth.getAccessToken.and.returnValue('old-token');
     auth.refresh.and.returnValue(of({} as any));
 
@@ -24,8 +27,9 @@ describe('authTokenInterceptor', () => {
       providers: [
         provideHttpClient(withInterceptors([apiEnvelopeInterceptor, authTokenInterceptor])),
         provideHttpClientTesting(),
-        { provide: AuthService, useValue: auth }
-      ]
+        { provide: AuthService, useValue: auth },
+        { provide: ToastService, useValue: toast },
+      ],
     });
     http = TestBed.inject(HttpClient);
     httpMock = TestBed.inject(HttpTestingController);
@@ -84,6 +88,7 @@ describe('authTokenInterceptor', () => {
 
     expect(auth.refresh).toHaveBeenCalledTimes(1);
     expect(auth.logout).toHaveBeenCalledTimes(1);
+    expect(toast.showAuthError).toHaveBeenCalledTimes(1);
     httpMock.expectNone('/api/posts');
   });
 

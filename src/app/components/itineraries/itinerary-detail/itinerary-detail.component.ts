@@ -1,3 +1,4 @@
+import { logger } from '../../../core/logging/logger';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -9,7 +10,7 @@ import { Itinerary } from '../../../models/location.model';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './itinerary-detail.component.html',
-  styleUrls: ['./itinerary-detail.component.css']
+  styleUrls: ['./itinerary-detail.component.css'],
 })
 export class ItineraryDetailComponent implements OnInit {
   itinerary: Itinerary | null = null;
@@ -19,8 +20,8 @@ export class ItineraryDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private itineraryService: ItineraryService
-  ) { }
+    private itineraryService: ItineraryService,
+  ) {}
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -39,8 +40,8 @@ export class ItineraryDetailComponent implements OnInit {
       error: (err) => {
         this.error = 'Failed to load itinerary.';
         this.loading = false;
-        console.error('Error loading itinerary:', err);
-      }
+        logger.error('Error loading itinerary:', err);
+      },
     });
   }
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 
 export interface ToastMessage {
   id: string;
@@ -15,7 +15,7 @@ export interface ToastMessage {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ToastService {
   private toastsSubject = new BehaviorSubject<ToastMessage[]>([]);
@@ -23,7 +23,7 @@ export class ToastService {
 
   private toastIdCounter = 0;
 
-  constructor() { }
+  constructor() {}
 
   /**
    * Show success toast
@@ -33,7 +33,7 @@ export class ToastService {
       type: 'success',
       title,
       message,
-      duration
+      duration,
     });
   }
 
@@ -45,7 +45,7 @@ export class ToastService {
       type: 'error',
       title,
       message,
-      duration
+      duration,
     });
   }
 
@@ -57,7 +57,7 @@ export class ToastService {
       type: 'warning',
       title,
       message,
-      duration
+      duration,
     });
   }
 
@@ -69,7 +69,7 @@ export class ToastService {
       type: 'info',
       title,
       message,
-      duration
+      duration,
     });
   }
 
@@ -81,7 +81,7 @@ export class ToastService {
     const toastMessage: ToastMessage = {
       ...toast,
       id,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     const currentToasts = this.toastsSubject.value;
@@ -102,7 +102,7 @@ export class ToastService {
    */
   removeToast(id: string): void {
     const currentToasts = this.toastsSubject.value;
-    const filteredToasts = currentToasts.filter(toast => toast.id !== id);
+    const filteredToasts = currentToasts.filter((toast) => toast.id !== id);
     this.toastsSubject.next(filteredToasts);
   }
 
@@ -121,25 +121,39 @@ export class ToastService {
   }
 
   /**
-   * Show API error toast
+   * Show an API error toast with an allowlisted, generic message. Raw server
+   * or exception messages are never rendered: they can contain PII or internal
+   * implementation details.
    */
-  showApiError(error: any, defaultMessage: string = 'An error occurred'): string {
-    let title = 'Error';
-    let message = defaultMessage;
+  showApiError(
+    error?: { status?: number } | null,
+    defaultMessage: string = 'Something went wrong. Please try again.',
+  ): string {
+    return this.error('Error', this.messageForStatus(error?.status, defaultMessage));
+  }
 
-    if (error?.error?.message) {
-      message = error.error.message;
-    } else if (error?.message) {
-      message = error.message;
-    } else if (typeof error === 'string') {
-      message = error;
+  /** Generic toast for unhandled client-side errors. */
+  showGlobalError(): string {
+    return this.error('Unexpected error', 'Something went wrong. Please try again.');
+  }
+
+  private messageForStatus(status: number | undefined, fallback: string): string {
+    switch (status) {
+      case 400:
+        return 'The request was invalid. Please check your input and try again.';
+      case 401:
+        return 'Your session has expired. Please sign in again.';
+      case 403:
+        return 'You do not have permission to do that.';
+      case 404:
+        return 'The requested item could not be found.';
+      case 409:
+        return 'That action conflicts with the current state. Please refresh and try again.';
+      case 429:
+        return 'Too many requests. Please wait a moment and try again.';
+      default:
+        return fallback;
     }
-
-    if (error?.status) {
-      title = `Error ${error.status}`;
-    }
-
-    return this.error(title, message);
   }
 
   /**
@@ -148,7 +162,7 @@ export class ToastService {
   showNetworkError(): string {
     return this.error(
       'Network Error',
-      'Unable to connect to the server. Please check your internet connection and try again.'
+      'Unable to connect to the server. Please check your internet connection and try again.',
     );
   }
 
@@ -156,10 +170,7 @@ export class ToastService {
    * Show authentication error toast
    */
   showAuthError(): string {
-    return this.error(
-      'Authentication Error',
-      'Your session has expired. Please sign in again.'
-    );
+    return this.error('Authentication Error', 'Your session has expired. Please sign in again.');
   }
 
   /**
@@ -191,7 +202,7 @@ export class ToastService {
       type: 'info',
       title,
       message,
-      duration: 0 // Persistent
+      duration: 0, // Persistent
     });
   }
 
@@ -204,7 +215,7 @@ export class ToastService {
     message: string,
     actionLabel: string,
     actionCallback: () => void,
-    duration: number = 10000
+    duration: number = 10000,
   ): string {
     return this.showToast({
       type,
@@ -213,27 +224,15 @@ export class ToastService {
       duration,
       action: {
         label: actionLabel,
-        callback: actionCallback
-      }
+        callback: actionCallback,
+      },
     });
   }
 
   /**
    * Show confirmation toast
    */
-  showConfirmation(
-    title: string,
-    message: string,
-    confirmCallback: () => void,
-    cancelCallback?: () => void
-  ): string {
-    return this.showWithAction(
-      'warning',
-      title,
-      message,
-      'Confirm',
-      confirmCallback,
-      15000
-    );
+  showConfirmation(title: string, message: string, confirmCallback: () => void, cancelCallback?: () => void): string {
+    return this.showWithAction('warning', title, message, 'Confirm', confirmCallback, 15000);
   }
 }

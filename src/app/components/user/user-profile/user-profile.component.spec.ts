@@ -15,21 +15,19 @@ describe('UserProfileComponent', () => {
     firstName: 'Alice',
     lastName: 'Example',
     email: 'alice@example.com',
-    roles: ['USER']
+    roles: ['USER'],
   };
 
   beforeEach(async () => {
-    authService = jasmine.createSpyObj<AuthService>('AuthService', [
-      'getCurrentUser', 'updateProfile'
-    ], {
-      currentUser$: of(user)
+    authService = jasmine.createSpyObj<AuthService>('AuthService', ['getCurrentUser', 'updateProfile'], {
+      currentUser$: of(user),
     });
     authService.getCurrentUser.and.returnValue(user);
     authService.updateProfile.and.returnValue(of({ success: true, data: user }));
 
     await TestBed.configureTestingModule({
       imports: [UserProfileComponent],
-      providers: [{ provide: AuthService, useValue: authService }]
+      providers: [{ provide: AuthService, useValue: authService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(UserProfileComponent);
@@ -46,7 +44,7 @@ describe('UserProfileComponent', () => {
     component.profileForm.patchValue({
       firstName: '  Alicia ',
       lastName: ' Example ',
-      bio: '  Loves trains  '
+      bio: '  Loves trains  ',
     });
 
     component.saveProfile();
@@ -56,7 +54,7 @@ describe('UserProfileComponent', () => {
       lastName: 'Example',
       email: 'alice@example.com',
       bio: 'Loves trains',
-      location: undefined
+      location: undefined,
     });
     expect(component.successMessage).toBe('Profile updated.');
   });

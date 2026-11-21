@@ -16,12 +16,12 @@ describe('MarketplaceService (D4 payment removal)', () => {
     postalCode: '1000',
     country: 'BD',
     email: 'alice@example.com',
-    phone: '+8801000000000'
+    phone: '+8801000000000',
   };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()]
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     });
     service = TestBed.inject(MarketplaceService);
     httpMock = TestBed.inject(HttpTestingController);

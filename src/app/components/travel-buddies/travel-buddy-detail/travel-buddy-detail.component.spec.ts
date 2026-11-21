@@ -23,7 +23,7 @@ describe('TravelBuddyDetailComponent', () => {
     createdAt: '2026-11-20T00:00:00Z',
     updatedAt: '2026-11-20T00:00:00Z',
     description: 'Looking for a hiking companion.',
-    author: { id: 'user-1', userName: 'alice', firstName: 'Alice', lastName: 'Traveler' }
+    author: { id: 'user-1', userName: 'alice', firstName: 'Alice', lastName: 'Traveler' },
   } as TravelBuddy;
   const successResponse: TravelBuddyResponse = { success: true, data: buddy };
 
@@ -37,8 +37,8 @@ describe('TravelBuddyDetailComponent', () => {
       providers: [
         provideRouter([]),
         { provide: TravelBuddyService, useValue: serviceSpy },
-        { provide: ActivatedRoute, useValue: routeStub }
-      ]
+        { provide: ActivatedRoute, useValue: routeStub },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TravelBuddyDetailComponent);
@@ -95,7 +95,7 @@ describe('TravelBuddyDetailComponent', () => {
 
   it('shows a safe generic error for other failures', () => {
     serviceSpy.getTravelBuddy.and.returnValue(
-      throwError(() => ({ status: 500, error: { detail: 'SECRET alice@example.com' } }))
+      throwError(() => ({ status: 500, error: { detail: 'SECRET alice@example.com' } })),
     );
 
     fixture.detectChanges();

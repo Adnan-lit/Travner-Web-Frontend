@@ -1,3 +1,4 @@
+import { logger } from '../core/logging/logger';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
@@ -7,35 +8,32 @@ import { User } from '../models/common.model';
 import { ApiResponse, ApiListResponse } from '../models/api-response.model';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class UserService {
   private readonly API_BASE_URL = getApiBaseUrl();
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   /**
    * Search users by name, username, or email
    */
   searchUsers(query: string, page: number = 0, size: number = 20): Observable<User[]> {
     const endpoint = `${this.API_BASE_URL}/api/users/search`;
-    const params = new HttpParams()
-      .set('q', query)
-      .set('page', page.toString())
-      .set('size', size.toString());
+    const params = new HttpParams().set('q', query).set('page', page.toString()).set('size', size.toString());
 
     return this.http.get<ApiResponse<any>>(endpoint, { params }).pipe(
-      map(response => {
+      map((response) => {
         // Handle Page format from backend
         if (response.data && response.data.content) {
           return response.data.content;
         }
         return response.data || [];
       }),
-      catchError(error => {
-        console.error('Error searching users:', error);
+      catchError((error) => {
+        logger.error('Error searching users:', error);
         return [];
-      })
+      }),
     );
   }
 
@@ -44,13 +42,13 @@ export class UserService {
    */
   getUserById(userId: string): Observable<User | null> {
     const endpoint = `${this.API_BASE_URL}/api/users/${userId}`;
-    
+
     return this.http.get<ApiResponse<User>>(endpoint).pipe(
-      map(response => response.data || null),
-      catchError(error => {
-        console.error('Error fetching user:', error);
+      map((response) => response.data || null),
+      catchError((error) => {
+        logger.error('Error fetching user:', error);
         return of(null);
-      })
+      }),
     );
   }
 
@@ -59,13 +57,13 @@ export class UserService {
    */
   getUserByUsername(username: string): Observable<User | null> {
     const endpoint = `${this.API_BASE_URL}/api/users/username/${username}`;
-    
+
     return this.http.get<ApiResponse<User>>(endpoint).pipe(
-      map(response => response.data || null),
-      catchError(error => {
-        console.error('Error fetching user by username:', error);
+      map((response) => response.data || null),
+      catchError((error) => {
+        logger.error('Error fetching user by username:', error);
         return of(null);
-      })
+      }),
     );
   }
 
@@ -74,13 +72,13 @@ export class UserService {
    */
   getRecentChatUsers(): Observable<User[]> {
     const endpoint = `${this.API_BASE_URL}/api/chat/users/recent`;
-    
+
     return this.http.get<ApiResponse<User[]>>(endpoint).pipe(
-      map(response => response.data || []),
-      catchError(error => {
-        console.error('Error fetching recent chat users:', error);
+      map((response) => response.data || []),
+      catchError((error) => {
+        logger.error('Error fetching recent chat users:', error);
         return [];
-      })
+      }),
     );
   }
 
@@ -89,13 +87,13 @@ export class UserService {
    */
   getOnlineUsers(): Observable<User[]> {
     const endpoint = `${this.API_BASE_URL}/api/chat/users/online`;
-    
+
     return this.http.get<ApiResponse<User[]>>(endpoint).pipe(
-      map(response => response.data || []),
-      catchError(error => {
-        console.error('Error fetching online users:', error);
+      map((response) => response.data || []),
+      catchError((error) => {
+        logger.error('Error fetching online users:', error);
         return [];
-      })
+      }),
     );
   }
 
@@ -104,13 +102,13 @@ export class UserService {
    */
   updateProfile(profileData: Partial<User>): Observable<User> {
     const endpoint = `${this.API_BASE_URL}/api/user/profile`;
-    
+
     return this.http.put<ApiResponse<User>>(endpoint, profileData).pipe(
-      map(response => response.data!),
-      catchError(error => {
-        console.error('Error updating profile:', error);
+      map((response) => response.data!),
+      catchError((error) => {
+        logger.error('Error updating profile:', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -123,11 +121,11 @@ export class UserService {
     formData.append('image', file);
 
     return this.http.post<ApiResponse<{ imageUrl: string }>>(endpoint, formData).pipe(
-      map(response => response.data!),
-      catchError(error => {
-        console.error('Error uploading profile image:', error);
+      map((response) => response.data!),
+      catchError((error) => {
+        logger.error('Error uploading profile image:', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -136,16 +134,14 @@ export class UserService {
    */
   getFollowers(userId: string, page: number = 0, size: number = 20): Observable<User[]> {
     const endpoint = `${this.API_BASE_URL}/api/users/${userId}/followers`;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+    const params = new HttpParams().set('page', page.toString()).set('size', size.toString());
 
     return this.http.get<ApiListResponse<User>>(endpoint, { params }).pipe(
-      map(response => response.data || []),
-      catchError(error => {
-        console.error('Error fetching followers:', error);
+      map((response) => response.data || []),
+      catchError((error) => {
+        logger.error('Error fetching followers:', error);
         return [];
-      })
+      }),
     );
   }
 
@@ -154,16 +150,14 @@ export class UserService {
    */
   getFollowing(userId: string, page: number = 0, size: number = 20): Observable<User[]> {
     const endpoint = `${this.API_BASE_URL}/api/users/${userId}/following`;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+    const params = new HttpParams().set('page', page.toString()).set('size', size.toString());
 
     return this.http.get<ApiListResponse<User>>(endpoint, { params }).pipe(
-      map(response => response.data || []),
-      catchError(error => {
-        console.error('Error fetching following:', error);
+      map((response) => response.data || []),
+      catchError((error) => {
+        logger.error('Error fetching following:', error);
         return [];
-      })
+      }),
     );
   }
 
@@ -172,13 +166,13 @@ export class UserService {
    */
   followUser(userId: string): Observable<void> {
     const endpoint = `${this.API_BASE_URL}/api/users/${userId}/follow`;
-    
+
     return this.http.post<ApiResponse<void>>(endpoint, {}).pipe(
       map(() => void 0),
-      catchError(error => {
-        console.error('Error following user:', error);
+      catchError((error) => {
+        logger.error('Error following user:', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -187,13 +181,13 @@ export class UserService {
    */
   unfollowUser(userId: string): Observable<void> {
     const endpoint = `${this.API_BASE_URL}/api/users/${userId}/unfollow`;
-    
+
     return this.http.delete<ApiResponse<void>>(endpoint).pipe(
       map(() => void 0),
-      catchError(error => {
-        console.error('Error unfollowing user:', error);
+      catchError((error) => {
+        logger.error('Error unfollowing user:', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -202,13 +196,13 @@ export class UserService {
    */
   isFollowing(userId: string): Observable<boolean> {
     const endpoint = `${this.API_BASE_URL}/api/users/${userId}/follow-status`;
-    
+
     return this.http.get<ApiResponse<{ following: boolean }>>(endpoint).pipe(
-      map(response => response.data?.following || false),
-      catchError(error => {
-        console.error('Error checking follow status:', error);
+      map((response) => response.data?.following || false),
+      catchError((error) => {
+        logger.error('Error checking follow status:', error);
         return of(false);
-      })
+      }),
     );
   }
 
@@ -222,18 +216,22 @@ export class UserService {
     likesReceived: number;
   }> {
     const endpoint = `${this.API_BASE_URL}/api/users/${userId}/stats`;
-    
-    return this.http.get<ApiResponse<{
-      postsCount: number;
-      followersCount: number;
-      followingCount: number;
-      likesReceived: number;
-    }>>(endpoint).pipe(
-      map(response => response.data!),
-      catchError(error => {
-        console.error('Error fetching user stats:', error);
-        throw error;
-      })
-    );
+
+    return this.http
+      .get<
+        ApiResponse<{
+          postsCount: number;
+          followersCount: number;
+          followingCount: number;
+          likesReceived: number;
+        }>
+      >(endpoint)
+      .pipe(
+        map((response) => response.data!),
+        catchError((error) => {
+          logger.error('Error fetching user stats:', error);
+          throw error;
+        }),
+      );
   }
 }

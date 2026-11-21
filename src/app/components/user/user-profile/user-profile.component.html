@@ -15,26 +15,26 @@
   <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="profile-form" novalidate>
     <label>
       <span>First name</span>
-      <input type="text" formControlName="firstName" autocomplete="given-name" />
+      <input type="text" formControlName="firstName" autocomplete="given-name" aria-label="First name" />
     </label>
     <label>
       <span>Last name</span>
-      <input type="text" formControlName="lastName" autocomplete="family-name" />
+      <input type="text" formControlName="lastName" autocomplete="family-name" aria-label="Last name" />
     </label>
     <label class="full-width">
       <span>Email</span>
-      <input type="email" formControlName="email" autocomplete="email" />
+      <input type="email" formControlName="email" autocomplete="email" aria-label="Email" />
       <small *ngIf="profileForm.controls.email.touched && profileForm.controls.email.invalid">
         Enter a valid email address.
       </small>
     </label>
     <label class="full-width">
       <span>Bio</span>
-      <textarea formControlName="bio" rows="4"></textarea>
+      <textarea formControlName="bio" rows="4" aria-label="Bio"></textarea>
     </label>
     <label class="full-width">
       <span>Location</span>
-      <input type="text" formControlName="location" autocomplete="address-level2" />
+      <input type="text" formControlName="location" autocomplete="address-level2" aria-label="Location" />
     </label>
 
     <div class="actions full-width">

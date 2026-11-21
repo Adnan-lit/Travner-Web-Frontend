@@ -1,16 +1,16 @@
+import { logger } from '../../core/logging/logger';
 import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, Renderer2 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
-import { User } from '../../models/common.model';
 
 @Component({
   selector: 'app-signin',
   imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule],
   templateUrl: './signin.component.html',
-  styleUrl: './signin.component.css'
+  styleUrl: './signin.component.css',
 })
 export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
   signinForm!: FormGroup;
@@ -27,15 +27,15 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
     private route: ActivatedRoute,
     private el: ElementRef,
     private renderer: Renderer2,
-    private authService: AuthService
-  ) { }
+    private authService: AuthService,
+  ) {}
 
   ngOnInit(): void {
     this.initializeForm();
     this.createParticles();
 
     // Check for success message and return URL from route params
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       if (params['message']) {
         this.successMessage = params['message'];
         // Clear the success message after 5 seconds
@@ -45,7 +45,7 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
       }
       if (params['returnUrl']) {
         this.returnUrl = params['returnUrl'];
-        console.log('🔐 Signin: Return URL set to:', this.returnUrl);
+        logger.debug('🔐 Signin: Return URL set to:', this.returnUrl);
       }
     });
   }
@@ -57,8 +57,6 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnDestroy(): void {
     this.removeParticles();
   }
-
-
 
   private createParticles(): void {
     const particleContainer = this.renderer.createElement('div');
@@ -110,7 +108,7 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
     this.signinForm = this.formBuilder.group({
       username: ['', [Validators.required, Validators.minLength(3)]],
       password: ['', [Validators.required, Validators.minLength(6)]],
-      rememberMe: [false]
+      rememberMe: [false],
     });
   }
 
@@ -125,7 +123,6 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
   togglePassword(): void {
     this.showPassword = !this.showPassword;
   }
-
 
   onSubmit(): void {
     if (this.signinForm.valid) {
@@ -162,13 +159,13 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
           } else if (error.status === 500) {
             this.errorMessage = 'Server error. Please try again later.';
           } else {
-            this.errorMessage = error.message || `Sign in failed with status ${error.status}. Please check your credentials and try again.`;
+            this.errorMessage = 'Sign in failed. Please check your credentials and try again.';
           }
-        }
+        },
       });
     } else {
       // Mark all fields as touched to show validation errors
-      Object.keys(this.signinForm.controls).forEach(key => {
+      Object.keys(this.signinForm.controls).forEach((key) => {
         const control = this.signinForm.get(key);
         control?.markAsTouched();
       });
@@ -176,14 +173,14 @@ export class SigninComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   signInWithGoogle(): void {
-    console.log('Sign in with Google');
+    logger.debug('Sign in with Google');
     // Implement Google OAuth logic here
     // Placeholder for future OAuth implementation
     this.showSuccessMessage('Google Sign-In integration coming soon!');
   }
 
   signInWithFacebook(): void {
-    console.log('Sign in with Facebook');
+    logger.debug('Sign in with Facebook');
     // Implement Facebook OAuth logic here
     // Placeholder for future OAuth implementation
     this.showSuccessMessage('Facebook Sign-In integration coming soon!');

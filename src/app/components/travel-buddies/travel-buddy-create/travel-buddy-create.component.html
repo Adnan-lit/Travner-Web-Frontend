@@ -85,7 +85,13 @@
 
     <div class="field">
       <label for="budgetRange">Budget range</label>
-      <input id="budgetRange" type="text" formControlName="budgetRange" maxlength="100" placeholder="e.g. 1000-2000 BDT" />
+      <input
+        id="budgetRange"
+        type="text"
+        formControlName="budgetRange"
+        maxlength="100"
+        placeholder="e.g. 1000-2000 BDT"
+      />
       <p class="field-error" *ngIf="form.controls.budgetRange.touched && form.controls.budgetRange.invalid">
         Budget range is too long.
       </p>

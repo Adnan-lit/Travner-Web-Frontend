@@ -12,19 +12,17 @@ describe('SettingsComponent', () => {
   const user: User = {
     id: 'user-1',
     userName: 'alice_01',
-    roles: ['USER']
+    roles: ['USER'],
   };
 
   beforeEach(async () => {
-    authService = jasmine.createSpyObj<AuthService>('AuthService', [
-      'getCurrentUser', 'changePassword', 'logout'
-    ]);
+    authService = jasmine.createSpyObj<AuthService>('AuthService', ['getCurrentUser', 'changePassword', 'logout']);
     authService.getCurrentUser.and.returnValue(user);
     authService.changePassword.and.returnValue(of({ success: true, data: { message: 'Password changed' } }));
 
     await TestBed.configureTestingModule({
       imports: [SettingsComponent],
-      providers: [{ provide: AuthService, useValue: authService }]
+      providers: [{ provide: AuthService, useValue: authService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SettingsComponent);
@@ -36,7 +34,7 @@ describe('SettingsComponent', () => {
     component.passwordForm.patchValue({
       currentPassword: 'old-password',
       newPassword: 'new-password',
-      confirmPassword: 'new-password'
+      confirmPassword: 'new-password',
     });
 
     component.changePassword();
@@ -50,7 +48,7 @@ describe('SettingsComponent', () => {
     component.passwordForm.patchValue({
       currentPassword: 'old-password',
       newPassword: 'new-password',
-      confirmPassword: 'different-password'
+      confirmPassword: 'different-password',
     });
 
     component.changePassword();
@@ -64,7 +62,7 @@ describe('SettingsComponent', () => {
     component.passwordForm.patchValue({
       currentPassword: 'old-password',
       newPassword: 'new-password',
-      confirmPassword: 'new-password'
+      confirmPassword: 'new-password',
     });
 
     component.changePassword();

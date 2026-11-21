@@ -3,7 +3,11 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   padding: 24px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
 }
 
 /* Dashboard Header */
@@ -24,7 +28,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: 
+  background-image:
     radial-gradient(circle at 25% 25%, rgba(231, 76, 60, 0.1) 0%, transparent 50%),
     radial-gradient(circle at 75% 75%, rgba(52, 152, 219, 0.1) 0%, transparent 50%);
   z-index: 1;
@@ -697,16 +701,16 @@
     grid-template-columns: 1fr;
     gap: 20px;
   }
-  
+
   .dashboard-left,
   .dashboard-right {
     order: 2;
   }
-  
+
   .dashboard-center {
     order: 1;
   }
-  
+
   .quick-stats {
     justify-content: center;
   }
@@ -716,28 +720,28 @@
   .dashboard-container {
     padding: 16px;
   }
-  
+
   .dashboard-header {
     padding: 24px;
   }
-  
+
   .welcome-title {
     font-size: 2rem;
   }
-  
+
   .quick-stats {
     flex-direction: column;
     gap: 16px;
   }
-  
+
   .stat-item {
     justify-content: center;
   }
-  
+
   .destinations-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .nav-cards {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -749,11 +753,11 @@
   .welcome-title {
     font-size: 1.8rem;
   }
-  
+
   .nav-cards {
     grid-template-columns: 1fr;
   }
-  
+
   .card {
     padding: 16px;
   }

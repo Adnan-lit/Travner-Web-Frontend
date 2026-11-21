@@ -1,4 +1,11 @@
-import { ApplicationConfig, Injector, inject, provideAppInitializer, provideZoneChangeDetection } from '@angular/core';
+import {
+  ApplicationConfig,
+  ErrorHandler,
+  Injector,
+  inject,
+  provideAppInitializer,
+  provideZoneChangeDetection,
+} from '@angular/core';
 import { provideRouter, withPreloading } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -10,6 +17,7 @@ import { apiEnvelopeInterceptor } from './core/http/api-envelope.interceptor';
 import { AuthService } from './services/auth.service';
 import { SelectivePreloadingStrategy } from './core/routing/selective-preloading.strategy';
 import { loadRuntimeConfig } from './config/runtime.config';
+import { GlobalErrorHandler } from './core/logging/global-error-handler';
 
 /**
  * Load deployment config first, then restore the session from the HttpOnly
@@ -25,17 +33,18 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({
       eventCoalescing: true,
-      runCoalescing: true
+      runCoalescing: true,
     }),
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideRouter(routes, withPreloading(SelectivePreloadingStrategy)),
     provideAnimationsAsync(),
     provideAppInitializer(initializeApp),
     provideHttpClient(
       withFetch(),
       withInterceptors([
-        apiEnvelopeInterceptor,   // Normalize API responses/errors
-        authTokenInterceptor      // Bearer token + single refresh on 401
-      ])
-    )
-  ]
+        apiEnvelopeInterceptor, // Normalize API responses/errors
+        authTokenInterceptor, // Bearer token + single refresh on 401
+      ]),
+    ),
+  ],
 };

@@ -9,13 +9,13 @@ import { User } from '../../models/common.model';
   standalone: true,
   imports: [CommonModule, RouterModule, NgOptimizedImage],
   templateUrl: './admin.component.html',
-  styleUrls: ['./admin.component.css']
+  styleUrls: ['./admin.component.css'],
 })
 export class AdminComponent implements OnInit {
   currentUser: User | null = null;
   isLoading = true;
 
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();

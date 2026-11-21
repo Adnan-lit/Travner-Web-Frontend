@@ -12,7 +12,7 @@ const LOAD_ERROR = 'Could not load this local guide. Please try again.';
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './local-guide-detail.component.html',
-  styleUrls: ['./local-guide-detail.component.css']
+  styleUrls: ['./local-guide-detail.component.css'],
 })
 export class LocalGuideDetailComponent implements OnInit {
   guide: LocalGuide | null = null;
@@ -22,7 +22,7 @@ export class LocalGuideDetailComponent implements OnInit {
 
   constructor(
     private readonly route: ActivatedRoute,
-    private readonly localGuideService: LocalGuideService
+    private readonly localGuideService: LocalGuideService,
   ) {}
 
   ngOnInit(): void {
@@ -42,25 +42,30 @@ export class LocalGuideDetailComponent implements OnInit {
     this.notFound = false;
     this.errorMessage = null;
 
-    this.localGuideService.getLocalGuide(id).pipe(
-      finalize(() => { this.loading = false; })
-    ).subscribe({
-      next: (response) => {
-        if (!response.data) {
-          this.notFound = true;
-          return;
-        }
-        this.guide = response.data;
-      },
-      error: (error: unknown) => {
-        const status = (error as { status?: number } | null)?.status;
-        if (status === 404) {
-          this.notFound = true;
-        } else {
-          this.errorMessage = LOAD_ERROR;
-        }
-      }
-    });
+    this.localGuideService
+      .getLocalGuide(id)
+      .pipe(
+        finalize(() => {
+          this.loading = false;
+        }),
+      )
+      .subscribe({
+        next: (response) => {
+          if (!response.data) {
+            this.notFound = true;
+            return;
+          }
+          this.guide = response.data;
+        },
+        error: (error: unknown) => {
+          const status = (error as { status?: number } | null)?.status;
+          if (status === 404) {
+            this.notFound = true;
+          } else {
+            this.errorMessage = LOAD_ERROR;
+          }
+        },
+      });
   }
 
   get displayName(): string {
@@ -69,10 +74,7 @@ export class LocalGuideDetailComponent implements OnInit {
       return 'Unknown guide';
     }
 
-    const fullName = [author.firstName, author.lastName]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
+    const fullName = [author.firstName, author.lastName].filter(Boolean).join(' ').trim();
 
     return fullName || author.userName || 'Unknown guide';
   }

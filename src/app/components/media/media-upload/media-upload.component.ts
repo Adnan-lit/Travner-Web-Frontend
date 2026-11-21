@@ -1,7 +1,9 @@
-import { Component, EventEmitter, Input, Output, OnInit, OnDestroy } from '@angular/core';
+import { logger } from '../../../core/logging/logger';
+import { Component, EventEmitter, Input, Output, OnInit, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MediaService, MediaFile } from '../../../services/media.service';
 
 export interface MediaUploadItem {
@@ -21,7 +23,7 @@ export interface MediaUploadItem {
   template: `
     <div class="media-upload-container">
       <!-- Upload Area -->
-      <div 
+      <div
         class="upload-area"
         [class.drag-over]="isDragOver"
         [class.uploading]="isUploading"
@@ -65,7 +67,7 @@ export interface MediaUploadItem {
           <p>{{ uploadCount }} of {{ totalFiles }} files</p>
         </div>
 
-        <input 
+        <input
           #fileInput
           type="file"
           multiple
@@ -79,18 +81,13 @@ export interface MediaUploadItem {
       <div class="uploaded-files" *ngIf="uploadedFiles.length > 0">
         <div class="files-header">
           <h4>Uploaded Files ({{ uploadedFiles.length }})</h4>
-          <button 
-            type="button" 
-            class="clear-btn"
-            (click)="clearAll()"
-            *ngIf="uploadedFiles.length > 0"
-          >
+          <button type="button" class="clear-btn" (click)="clearAll()" *ngIf="uploadedFiles.length > 0">
             Clear All
           </button>
         </div>
-        
+
         <div class="files-grid">
-          <div 
+          <div
             class="file-item"
             *ngFor="let item of uploadedFiles; let i = index"
             [class.uploading]="item.uploading"
@@ -99,26 +96,20 @@ export interface MediaUploadItem {
           >
             <!-- File Preview -->
             <div class="file-preview">
-              <img 
+              <img
                 *ngIf="item.preview && isImage(item.file)"
-                [src]="item.preview" 
+                [src]="item.preview"
                 [alt]="item.file.name"
                 class="preview-image"
               />
-              <div 
-                *ngIf="isVideo(item.file) && !item.preview"
-                class="video-placeholder"
-              >
+              <div *ngIf="isVideo(item.file) && !item.preview" class="video-placeholder">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z"/>
+                  <path d="M8 5v14l11-7z" />
                 </svg>
               </div>
-              <div 
-                *ngIf="!item.preview && !isVideo(item.file)"
-                class="file-icon"
-              >
+              <div *ngIf="!item.preview && !isVideo(item.file)" class="file-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                  <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
                 </svg>
               </div>
             </div>
@@ -139,10 +130,7 @@ export interface MediaUploadItem {
             <!-- Upload Progress -->
             <div class="upload-status" *ngIf="item.uploading">
               <div class="progress-bar">
-                <div 
-                  class="progress-fill" 
-                  [style.width.%]="item.progress || 0"
-                ></div>
+                <div class="progress-fill" [style.width.%]="item.progress || 0"></div>
               </div>
               <span class="progress-text">{{ item.progress || 0 }}%</span>
             </div>
@@ -166,9 +154,10 @@ export interface MediaUploadItem {
             </div>
 
             <!-- Remove Button -->
-            <button 
+            <button
               type="button"
               class="remove-btn"
+              [attr.aria-label]="'Remove ' + item.file.name"
               (click)="removeFile(i)"
               [disabled]="item.uploading"
             >
@@ -182,14 +171,14 @@ export interface MediaUploadItem {
       </div>
     </div>
   `,
-  styleUrls: ['./media-upload.component.css']
+  styleUrls: ['./media-upload.component.css'],
 })
-export class MediaUploadComponent implements OnInit, OnDestroy {
+export class MediaUploadComponent implements OnInit {
   @Input() entityId?: string;
   @Input() entityType: string = 'post';
   @Input() maxFiles: number = 10;
   @Input() maxFileSize: number = 20 * 1024 * 1024; // matches backend FileValidationUtil
-  
+
   @Output() filesUploaded = new EventEmitter<MediaFile[]>();
   @Output() uploadProgress = new EventEmitter<number>();
   @Output() uploadComplete = new EventEmitter<void>();
@@ -202,16 +191,11 @@ export class MediaUploadComponent implements OnInit, OnDestroy {
   uploadCount = 0;
   totalFiles = 0;
 
-  private destroy$ = new Subject<void>();
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(private mediaService: MediaService) {}
 
   ngOnInit(): void {}
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
 
   onDragOver(event: DragEvent): void {
     event.preventDefault();
@@ -252,7 +236,7 @@ export class MediaUploadComponent implements OnInit, OnDestroy {
 
     // Validate and create previews
     const validFiles: MediaUploadItem[] = [];
-    
+
     for (const file of files) {
       const validation = this.mediaService.validateFile(file);
       if (!validation.valid) {
@@ -264,7 +248,7 @@ export class MediaUploadComponent implements OnInit, OnDestroy {
         file,
         uploading: false,
         uploaded: false,
-        progress: 0
+        progress: 0,
       };
 
       // Create preview
@@ -275,7 +259,7 @@ export class MediaUploadComponent implements OnInit, OnDestroy {
           item.preview = await this.mediaService.createVideoThumbnail(file);
         }
       } catch (error) {
-        console.warn('Could not create preview for file:', file.name);
+        logger.warn('media-upload.previewFailed');
       }
 
       validFiles.push(item);
@@ -297,24 +281,25 @@ export class MediaUploadComponent implements OnInit, OnDestroy {
       item.uploading = true;
       item.progress = 0;
 
-      this.mediaService.uploadMedia(item.file, this.entityType, this.entityId)
-        .pipe(takeUntil(this.destroy$))
+      this.mediaService
+        .uploadMedia(item.file, this.entityType, this.entityId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: (media) => {
             item.uploading = false;
             item.uploaded = true;
             item.mediaId = media.id;
             item.progress = 100;
-            
+
             // Update preview to server URL for images
             if (this.isImage(item.file) && media.data.downloadUrl) {
               item.preview = media.data.downloadUrl;
             }
-            
+
             uploadedMedia.push(media.data);
             this.uploadCount++;
             this.updateOverallProgress();
-            
+
             if (this.uploadCount === this.totalFiles) {
               this.isUploading = false;
               this.filesUploaded.emit(uploadedMedia);
@@ -323,12 +308,12 @@ export class MediaUploadComponent implements OnInit, OnDestroy {
           },
           error: (error) => {
             item.uploading = false;
-            item.error = error.message || 'Upload failed';
+            item.error = 'Upload failed';
             item.progress = 0;
-            
+
             this.uploadCount++;
             this.updateOverallProgress();
-            
+
             if (this.uploadCount === this.totalFiles) {
               this.isUploading = false;
               if (uploadedMedia.length > 0) {
@@ -336,7 +321,7 @@ export class MediaUploadComponent implements OnInit, OnDestroy {
               }
               this.uploadComplete.emit();
             }
-          }
+          },
         });
     });
   }
@@ -374,4 +359,3 @@ export class MediaUploadComponent implements OnInit, OnDestroy {
     return this.mediaService.formatFileSize(bytes);
   }
 }
-

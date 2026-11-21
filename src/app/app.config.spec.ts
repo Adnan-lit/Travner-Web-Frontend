@@ -11,8 +11,8 @@ describe('app initialization', () => {
     const fetchSpy = spyOn(window, 'fetch').and.returnValue(
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ apiBaseUrl: 'https://preview.example' })
-      } as Response)
+        json: () => Promise.resolve({ apiBaseUrl: 'https://preview.example' }),
+      } as Response),
     );
     let apiBaseUrlAtConstruction = '';
 
@@ -27,7 +27,7 @@ describe('app initialization', () => {
     }
 
     TestBed.configureTestingModule({
-      providers: [{ provide: AuthService, useClass: AuthStub }]
+      providers: [{ provide: AuthService, useClass: AuthStub }],
     });
 
     const restored = await TestBed.runInInjectionContext(() => initializeApp());

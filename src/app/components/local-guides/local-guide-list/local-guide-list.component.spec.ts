@@ -12,11 +12,11 @@ describe('LocalGuideListComponent', () => {
       providers: [
         { provide: LocalGuideService, useValue: {} },
         { provide: Router, useValue: {} },
-        { provide: ChangeDetectorRef, useValue: { markForCheck: () => undefined } }
-      ]
+        { provide: ChangeDetectorRef, useValue: { markForCheck: () => undefined } },
+      ],
     });
     component = TestBed.runInInjectionContext(
-      () => new LocalGuideListComponent(TestBed.inject(LocalGuideService), TestBed.inject(Router))
+      () => new LocalGuideListComponent(TestBed.inject(LocalGuideService), TestBed.inject(Router)),
     );
   });
 

@@ -13,7 +13,7 @@ type TravelBuddyDetail = TravelBuddy & { description?: string };
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './travel-buddy-detail.component.html',
-  styleUrls: ['./travel-buddy-detail.component.css']
+  styleUrls: ['./travel-buddy-detail.component.css'],
 })
 export class TravelBuddyDetailComponent implements OnInit {
   private readonly loadErrorMessage = 'Unable to load this travel buddy request. Please try again.';
@@ -22,7 +22,7 @@ export class TravelBuddyDetailComponent implements OnInit {
     active: 'Active',
     matched: 'Matched',
     expired: 'Expired',
-    cancelled: 'Cancelled'
+    cancelled: 'Cancelled',
   };
 
   travelBuddy: TravelBuddyDetail | null = null;
@@ -32,7 +32,7 @@ export class TravelBuddyDetailComponent implements OnInit {
 
   constructor(
     private readonly route: ActivatedRoute,
-    private readonly travelBuddyService: TravelBuddyService
+    private readonly travelBuddyService: TravelBuddyService,
   ) {}
 
   ngOnInit(): void {
@@ -47,9 +47,7 @@ export class TravelBuddyDetailComponent implements OnInit {
 
   get requesterName(): string {
     const author = this.travelBuddy?.author;
-    const fullName = [author?.firstName, author?.lastName]
-      .filter((part) => !!part?.trim())
-      .join(' ');
+    const fullName = [author?.firstName, author?.lastName].filter((part) => !!part?.trim()).join(' ');
     return fullName || author?.userName || 'Traveller';
   }
 
@@ -90,7 +88,7 @@ export class TravelBuddyDetailComponent implements OnInit {
           return;
         }
         this.error = this.loadErrorMessage;
-      }
+      },
     });
   }
 }

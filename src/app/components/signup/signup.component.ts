@@ -1,5 +1,13 @@
+import { logger } from '../../core/logging/logger';
 import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, Renderer2 } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+  AbstractControl,
+  ValidationErrors,
+} from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
@@ -9,7 +17,7 @@ import { AuthService } from '../../services/auth.service';
   selector: 'app-signup',
   imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule],
   templateUrl: './signup.component.html',
-  styleUrl: './signup.component.css'
+  styleUrl: './signup.component.css',
 })
 export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
   signupForm!: FormGroup;
@@ -26,8 +34,8 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
     private router: Router,
     private el: ElementRef,
     private renderer: Renderer2,
-    private authService: AuthService
-  ) { }
+    private authService: AuthService,
+  ) {}
 
   ngOnInit(): void {
     this.initializeForm();
@@ -41,8 +49,6 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnDestroy(): void {
     this.removeParticles();
   }
-
-
 
   private createParticles(): void {
     const particleContainer = this.renderer.createElement('div');
@@ -91,24 +97,29 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private initializeForm(): void {
-    this.signupForm = this.formBuilder.group({
-      userName: ['', [Validators.required, Validators.minLength(3)]],
-      firstName: ['', [Validators.required, Validators.minLength(2)]],
-      lastName: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [
-        Validators.required,
-        Validators.minLength(6) // Updated to match API requirements
-      ]],
-      confirmPassword: ['', [Validators.required]],
-      bio: ['', [Validators.maxLength(500)]], // Optional bio with max length
-      location: [''], // Optional location
-      acceptTerms: [false, [Validators.requiredTrue]],
-      subscribeNewsletter: [false]
-    }, {
-      validators: this.passwordMatchValidator
-    });
-    
+    this.signupForm = this.formBuilder.group(
+      {
+        userName: ['', [Validators.required, Validators.minLength(3)]],
+        firstName: ['', [Validators.required, Validators.minLength(2)]],
+        lastName: ['', [Validators.required, Validators.minLength(2)]],
+        email: ['', [Validators.required, Validators.email]],
+        password: [
+          '',
+          [
+            Validators.required,
+            Validators.minLength(6), // Updated to match API requirements
+          ],
+        ],
+        confirmPassword: ['', [Validators.required]],
+        bio: ['', [Validators.maxLength(500)]], // Optional bio with max length
+        location: [''], // Optional location
+        acceptTerms: [false, [Validators.requiredTrue]],
+        subscribeNewsletter: [false],
+      },
+      {
+        validators: this.passwordMatchValidator,
+      },
+    );
   }
 
   // Custom validator to check if passwords match
@@ -150,7 +161,6 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
   get password() {
     return this.signupForm.get('password');
   }
-  
 
   get confirmPassword() {
     return this.signupForm.get('confirmPassword');
@@ -176,7 +186,6 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
     this.showConfirmPassword = !this.showConfirmPassword;
   }
 
-
   onSubmit(): void {
     if (this.signupForm.valid) {
       this.isLoading = true;
@@ -190,32 +199,31 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
         lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
-        bio: formData.bio || "Test user for API testing - exploring the world of travel",
-        location: formData.location || "Test City, USA"
+        bio: formData.bio || 'Test user for API testing - exploring the world of travel',
+        location: formData.location || 'Test City, USA',
       };
-
 
       this.authService.signup(signupData).subscribe({
         next: (response: any) => {
           this.isLoading = false;
-          console.log('Signup successful:', response);
+          logger.debug('signup.success');
 
           // Since API returns 200 OK, treat it as success
-          this.successMessage = response?.message || 'Account created successfully!';
+          this.successMessage = 'Account created successfully!';
 
-          // Show success message briefly, then redirect
+          // Show success message briefly, then redirect without putting the
+          // username in the URL (it would leak via history/referrers).
           setTimeout(() => {
             this.router.navigate(['/signin'], {
               queryParams: {
-                message: `Account created successfully! You can now sign in using your username: ${signupData.userName.trim().toLowerCase()}`
-              }
+                message: 'Account created successfully. You can now sign in.',
+              },
             });
           }, 2000);
         },
         error: (error) => {
           this.isLoading = false;
-          console.error('Signup error:', error);
-
+          logger.error('Signup error:', error);
 
           // Handle different error scenarios
           if (error.status === 400) {
@@ -227,14 +235,13 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
           } else if (error.status === 500) {
             this.errorMessage = 'Server error. Please try again later.';
           } else {
-            this.errorMessage = error.error?.message || 'Network error. Please check your connection and try again.';
+            this.errorMessage = 'Network error. Please check your connection and try again.';
           }
-
-        }
+        },
       });
     } else {
       // Mark all fields as touched to show validation errors
-      Object.keys(this.signupForm.controls).forEach(key => {
+      Object.keys(this.signupForm.controls).forEach((key) => {
         const control = this.signupForm.get(key);
         control?.markAsTouched();
       });
@@ -244,10 +251,10 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
   signUpWithGoogle(): void {
     this.isLoading = true;
     this.errorMessage = '';
-    
+
     // Placeholder for Google OAuth implementation
-    console.log('Google OAuth integration would go here');
-    
+    logger.debug('Google OAuth integration would go here');
+
     // Simulate OAuth flow
     setTimeout(() => {
       this.isLoading = false;
@@ -258,15 +265,14 @@ export class SignupComponent implements OnInit, OnDestroy, AfterViewInit {
   signUpWithFacebook(): void {
     this.isLoading = true;
     this.errorMessage = '';
-    
+
     // Placeholder for Facebook OAuth implementation
-    console.log('Facebook OAuth integration would go here');
-    
+    logger.debug('Facebook OAuth integration would go here');
+
     // Simulate OAuth flow
     setTimeout(() => {
       this.isLoading = false;
       this.successMessage = 'Facebook OAuth integration would redirect to Facebook here';
     }, 1500);
   }
-
 }

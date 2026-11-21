@@ -30,8 +30,8 @@ describe('LocalGuideDetailComponent', () => {
       id: 'user-1',
       userName: 'lisbon_local',
       firstName: 'Ana',
-      lastName: 'Silva'
-    }
+      lastName: 'Silva',
+    },
   };
 
   beforeEach(async () => {
@@ -43,8 +43,8 @@ describe('LocalGuideDetailComponent', () => {
       providers: [
         provideRouter([]),
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: 'guide-1' }) } } },
-        { provide: LocalGuideService, useValue: service }
-      ]
+        { provide: LocalGuideService, useValue: service },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LocalGuideDetailComponent);
@@ -81,10 +81,12 @@ describe('LocalGuideDetailComponent', () => {
   });
 
   it('shows a generic error without rendering server error details', () => {
-    service.getLocalGuide.and.returnValue(throwError(() => ({
-      status: 500,
-      message: 'SECRET-SERVER-DETAIL'
-    })));
+    service.getLocalGuide.and.returnValue(
+      throwError(() => ({
+        status: 500,
+        message: 'SECRET-SERVER-DETAIL',
+      })),
+    );
     component.loadGuide();
     fixture.detectChanges();
 

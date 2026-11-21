@@ -1,3 +1,4 @@
+import { logger } from '../../../core/logging/logger';
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -6,7 +7,7 @@ import { Post } from '../../../models/post.model';
 import { Media } from '../../../models/media.model';
 import { PostCreate, PostUpdate } from '../../../models/post.model';
 import { MediaUploadComponent } from '../../media/media-upload/media-upload.component';
-import { MediaService, MediaFile } from '../../../services/media.service';
+import { MediaFile } from '../../../services/media.service';
 
 export type PostFormMode = 'create' | 'edit';
 
@@ -15,126 +16,120 @@ export type PostFormMode = 'create' | 'edit';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule, MediaUploadComponent],
   template: `
-  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="post-form" novalidate>
-    <!-- Title Field -->
-    <div class="form-group">
-      <label for="title" class="form-label">Title *</label>
-      <input
-        type="text"
-        id="title"
-        formControlName="title"
-        class="form-input"
-        placeholder="Enter a compelling title for your post"
-        [class.error]="submitted && form.get('title')?.invalid"
-      />
-      <div class="form-error" *ngIf="submitted && form.get('title')?.invalid">
-        <span *ngIf="form.get('title')?.errors?.['required']">Title is required</span>
-        <span *ngIf="form.get('title')?.errors?.['minlength']">Title must be at least 3 characters</span>
-        <span *ngIf="form.get('title')?.errors?.['maxlength']">Title must be less than 100 characters</span>
-    </div>
-    </div>
-
-    <!-- Content Field -->
-    <div class="form-group">
-      <label for="content" class="form-label">Content *</label>
-      <textarea
-        id="content"
-        formControlName="content"
-        class="form-textarea"
-        placeholder="Share your travel story, tips, or experiences..."
-        rows="6"
-        [class.error]="submitted && form.get('content')?.invalid"
-      ></textarea>
-      <div class="form-error" *ngIf="submitted && form.get('content')?.invalid">
-        <span *ngIf="form.get('content')?.errors?.['required']">Content is required</span>
-        <span *ngIf="form.get('content')?.errors?.['minlength']">Content must be at least 10 characters</span>
-      </div>
-    </div>
-
-    <!-- Location Field -->
-    <div class="form-group">
-      <label for="location" class="form-label">Location</label>
-      <input
-        type="text"
-        id="location"
-        formControlName="location"
-        class="form-input"
-        placeholder="Where did this happen? (e.g., Paris, France)"
-      />
-    </div>
-
-    <!-- Tags Field -->
-    <div class="form-group">
-      <label for="tags" class="form-label">Tags</label>
-      <input
-        type="text"
-        id="tags"
-        formControlName="tags"
-        class="form-input"
-        placeholder="Enter tags separated by commas (e.g., adventure, hiking, nature)"
-      />
-      <div class="form-hint">Separate multiple tags with commas</div>
-    </div>
-
-    <!-- Existing Media Display (Edit Mode) -->
-    <div class="form-group" *ngIf="mode === 'edit' && existingMedia.length > 0">
-      <label class="form-label">Current Media</label>
-      <div class="existing-media-grid">
-        <div class="existing-media-item" *ngFor="let media of existingMedia">
-          <img *ngIf="media.type === 'image'" [src]="media.url" [alt]="media.filename || 'Media'" class="media-preview">
-          <video *ngIf="media.type === 'video'" class="media-preview" controls>
-            <source [src]="media.url" type="video/mp4">
-          </video>
-          <button type="button" class="remove-media-btn" (click)="deleteMedia.emit(media.id)" title="Remove media">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="post-form" novalidate>
+      <!-- Title Field -->
+      <div class="form-group">
+        <label for="title" class="form-label">Title *</label>
+        <input
+          type="text"
+          id="title"
+          formControlName="title"
+          class="form-input"
+          placeholder="Enter a compelling title for your post"
+          [class.error]="submitted && form.get('title')?.invalid"
+        />
+        <div class="form-error" *ngIf="submitted && form.get('title')?.invalid">
+          <span *ngIf="form.get('title')?.errors?.['required']">Title is required</span>
+          <span *ngIf="form.get('title')?.errors?.['minlength']">Title must be at least 3 characters</span>
+          <span *ngIf="form.get('title')?.errors?.['maxlength']">Title must be less than 100 characters</span>
         </div>
       </div>
-    </div>
 
-    <!-- Media Upload Section -->
-    <div class="form-group" *ngIf="allowMedia">
-      <label class="form-label">Add Media</label>
-      <app-media-upload
-        [entityType]="'post'"
-        [maxFiles]="10"
-        (filesUploaded)="onMediaUploaded($event)"
-        (uploadComplete)="onMediaUploadComplete()"
-        (uploadError)="onMediaUploadError($event)"
-      ></app-media-upload>
-    </div>
+      <!-- Content Field -->
+      <div class="form-group">
+        <label for="content" class="form-label">Content *</label>
+        <textarea
+          id="content"
+          formControlName="content"
+          class="form-textarea"
+          placeholder="Share your travel story, tips, or experiences..."
+          rows="6"
+          [class.error]="submitted && form.get('content')?.invalid"
+        ></textarea>
+        <div class="form-error" *ngIf="submitted && form.get('content')?.invalid">
+          <span *ngIf="form.get('content')?.errors?.['required']">Content is required</span>
+          <span *ngIf="form.get('content')?.errors?.['minlength']">Content must be at least 10 characters</span>
+        </div>
+      </div>
 
-    <!-- Form Actions -->
-    <div class="form-actions">
-      <button
-        type="button"
-        class="btn btn-secondary"
-        (click)="cancel.emit()"
-        [disabled]="saving"
-      >
-        Cancel
-      </button>
-      <button
-        type="submit"
-        class="btn btn-primary"
-        [disabled]="form.invalid || saving"
-      >
-        <span *ngIf="!saving">{{ mode === 'create' ? 'Create Post' : 'Save Changes' }}</span>
-        <span *ngIf="saving" class="loading">
-          <svg class="spinner" width="16" height="16" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" opacity="0.25"/>
-            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="4" fill="none"/>
-          </svg>
-          {{ mode === 'create' ? 'Creating...' : 'Saving...' }}
-        </span>
-      </button>
-    </div>
-  </form>
+      <!-- Location Field -->
+      <div class="form-group">
+        <label for="location" class="form-label">Location</label>
+        <input
+          type="text"
+          id="location"
+          formControlName="location"
+          class="form-input"
+          placeholder="Where did this happen? (e.g., Paris, France)"
+        />
+      </div>
+
+      <!-- Tags Field -->
+      <div class="form-group">
+        <label for="tags" class="form-label">Tags</label>
+        <input
+          type="text"
+          id="tags"
+          formControlName="tags"
+          class="form-input"
+          placeholder="Enter tags separated by commas (e.g., adventure, hiking, nature)"
+        />
+        <div class="form-hint">Separate multiple tags with commas</div>
+      </div>
+
+      <!-- Existing Media Display (Edit Mode) -->
+      <div class="form-group" *ngIf="mode === 'edit' && existingMedia.length > 0">
+        <label class="form-label">Current Media</label>
+        <div class="existing-media-grid">
+          <div class="existing-media-item" *ngFor="let media of existingMedia">
+            <img
+              *ngIf="media.type === 'image'"
+              [src]="media.url"
+              [alt]="media.filename || 'Media'"
+              class="media-preview"
+            />
+            <video *ngIf="media.type === 'video'" class="media-preview" controls>
+              <source [src]="media.url" type="video/mp4" />
+            </video>
+            <button type="button" class="remove-media-btn" (click)="deleteMedia.emit(media.id)" title="Remove media">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Media Upload Section -->
+      <div class="form-group" *ngIf="allowMedia">
+        <label class="form-label">Add Media</label>
+        <app-media-upload
+          [entityType]="'post'"
+          [maxFiles]="10"
+          (filesUploaded)="onMediaUploaded($event)"
+          (uploadComplete)="onMediaUploadComplete()"
+          (uploadError)="onMediaUploadError($event)"
+        ></app-media-upload>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="cancelForm.emit()" [disabled]="saving">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="form.invalid || saving">
+          <span *ngIf="!saving">{{ mode === 'create' ? 'Create Post' : 'Save Changes' }}</span>
+          <span *ngIf="saving" class="loading">
+            <svg class="spinner" width="16" height="16" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" opacity="0.25" />
+              <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="4" fill="none" />
+            </svg>
+            {{ mode === 'create' ? 'Creating...' : 'Saving...' }}
+          </span>
+        </button>
+      </div>
+    </form>
   `,
-  styleUrls: ['../post-create/post-create.component.css']
+  styleUrls: ['../post-create/post-create.component.css'],
 })
 export class PostFormComponent implements OnChanges {
   @Input() mode: PostFormMode = 'create';
@@ -142,16 +137,20 @@ export class PostFormComponent implements OnChanges {
   @Input() saving = false;
   @Input() existingMedia: Media[] = [];
   @Input() allowMedia = true;
-  @Output() submitPost = new EventEmitter<{ data: PostCreate | PostUpdate; files: File[]; uploadedMediaIds: string[] }>();
+  @Output() submitPost = new EventEmitter<{
+    data: PostCreate | PostUpdate;
+    files: File[];
+    uploadedMediaIds: string[];
+  }>();
   @Output() deleteMedia = new EventEmitter<string>();
-  @Output() cancel = new EventEmitter<void>();
+  @Output() cancelForm = new EventEmitter<void>();
 
   form: FormGroup;
   submitted = false;
   tags: string[] = [];
   tagInput = '';
   selectedFiles: File[] = [];
-  previews: { file: File; url: string; type: 'image' | 'video'; }[] = [];
+  previews: { file: File; url: string; type: 'image' | 'video' }[] = [];
   uploadedMedia: MediaFile[] = [];
 
   constructor(private fb: FormBuilder) {
@@ -159,7 +158,7 @@ export class PostFormComponent implements OnChanges {
       title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
       content: ['', [Validators.required, Validators.minLength(10)]],
       location: [''],
-      tags: ['']
+      tags: [''],
     });
   }
 
@@ -169,12 +168,12 @@ export class PostFormComponent implements OnChanges {
         title: this.initial.title,
         content: this.initial.content,
         location: this.initial.location,
-        tags: this.initial.tags ? this.initial.tags.join(', ') : ''
+        tags: this.initial.tags ? this.initial.tags.join(', ') : '',
       });
     }
   }
 
-  focusTagInput(): void { }
+  focusTagInput(): void {}
 
   onTagKey(event: KeyboardEvent): void {
     if (event.key === 'Enter') {
@@ -189,15 +188,20 @@ export class PostFormComponent implements OnChanges {
     }
   }
 
-  removeTag(index: number): void { this.tags.splice(index, 1); }
+  removeTag(index: number): void {
+    this.tags.splice(index, 1);
+  }
 
   onSubmit(): void {
     this.submitted = true;
     if (this.form.invalid) return;
 
     // Parse tags from comma-separated string
-    const tags = this.form.value.tags 
-      ? this.form.value.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag)
+    const tags = this.form.value.tags
+      ? this.form.value.tags
+          .split(',')
+          .map((tag: string) => tag.trim())
+          .filter((tag: string) => tag)
       : [];
 
     const base = {
@@ -205,15 +209,15 @@ export class PostFormComponent implements OnChanges {
       content: this.form.value.content,
       location: this.form.value.location,
       tags: tags,
-      mediaIds: this.uploadedMedia.map(media => media.id), // Include uploaded media IDs
-      published: true
+      mediaIds: this.uploadedMedia.map((media) => media.id), // Include uploaded media IDs
+      published: true,
     };
-    
+
     // Emit both selected files (for manual upload) and uploaded media IDs
-    this.submitPost.emit({ 
-      data: base as PostCreate | PostUpdate, 
+    this.submitPost.emit({
+      data: base as PostCreate | PostUpdate,
       files: this.selectedFiles,
-      uploadedMediaIds: this.uploadedMedia.map(media => media.id)
+      uploadedMediaIds: this.uploadedMedia.map((media) => media.id),
     });
   }
 
@@ -223,10 +227,29 @@ export class PostFormComponent implements OnChanges {
     this.addFiles(Array.from(input.files));
     input.value = '';
   }
-  onDragOver(e: DragEvent): void { e.preventDefault(); }
-  onFileDrop(e: DragEvent): void { e.preventDefault(); if (e.dataTransfer?.files) { this.addFiles(Array.from(e.dataTransfer.files)); } }
-  private addFiles(files: File[]): void { for (const file of files) { if (!/^image\//.test(file.type) && !/^video\//.test(file.type)) continue; this.selectedFiles.push(file); const url = URL.createObjectURL(file); this.previews.push({ file, url, type: file.type.startsWith('image') ? 'image' : 'video' }); } }
-  removeNewFile(i: number): void { const p = this.previews[i]; if (p) URL.revokeObjectURL(p.url); this.previews.splice(i, 1); this.selectedFiles.splice(i, 1); }
+  onDragOver(e: DragEvent): void {
+    e.preventDefault();
+  }
+  onFileDrop(e: DragEvent): void {
+    e.preventDefault();
+    if (e.dataTransfer?.files) {
+      this.addFiles(Array.from(e.dataTransfer.files));
+    }
+  }
+  private addFiles(files: File[]): void {
+    for (const file of files) {
+      if (!/^image\//.test(file.type) && !/^video\//.test(file.type)) continue;
+      this.selectedFiles.push(file);
+      const url = URL.createObjectURL(file);
+      this.previews.push({ file, url, type: file.type.startsWith('image') ? 'image' : 'video' });
+    }
+  }
+  removeNewFile(i: number): void {
+    const p = this.previews[i];
+    if (p) URL.revokeObjectURL(p.url);
+    this.previews.splice(i, 1);
+    this.selectedFiles.splice(i, 1);
+  }
 
   // Media upload methods
   onMediaUploaded(mediaFiles: MediaFile[]): void {
@@ -238,6 +261,6 @@ export class PostFormComponent implements OnChanges {
   }
 
   onMediaUploadError(error: string): void {
-    console.error('Media upload error:', error);
+    logger.error('Media upload error:', error);
   }
 }

@@ -203,7 +203,9 @@
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-card);
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -374,7 +376,7 @@
 .view-details-button {
   background-color: #f8f9fa;
   color: #495057;
-  border: var(--border-width) solid #dee2e6;
+  border: var(--border-width) solid #6c757d;
 }
 
 .view-details-button:hover {
@@ -405,7 +407,7 @@
 
 .no-products i {
   font-size: 64px;
-  color: #dee2e6;
+  color: #6c757d;
   margin-bottom: 20px;
 }
 

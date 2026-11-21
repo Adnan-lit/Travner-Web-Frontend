@@ -10,10 +10,10 @@
 a,
 button,
 .btn,
-[role="button"],
-input[type="submit"],
-input[type="button"],
-input[type="reset"],
+[role='button'],
+input[type='submit'],
+input[type='button'],
+input[type='reset'],
 .clickable,
 .clickable-element,
 [onclick],
@@ -25,10 +25,10 @@ input[type="reset"],
 a:hover,
 button:hover,
 .btn:hover,
-[role="button"]:hover,
-input[type="submit"]:hover,
-input[type="button"]:hover,
-input[type="reset"]:hover,
+[role='button']:hover,
+input[type='submit']:hover,
+input[type='button']:hover,
+input[type='reset']:hover,
 .clickable:hover,
 .clickable-element:hover,
 [onclick]:hover,
@@ -37,12 +37,12 @@ input[type="reset"]:hover,
 }
 
 /* Text input cursor */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="search"],
-input[type="url"],
-input[type="tel"],
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='search'],
+input[type='url'],
+input[type='tel'],
 textarea {
   cursor: text !important;
 }
@@ -89,21 +89,3 @@ html {
 .product-card a:hover {
   cursor: pointer !important;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

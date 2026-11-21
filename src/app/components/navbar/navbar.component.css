@@ -554,7 +554,7 @@
   .navbar-nav {
     display: none;
   }
-  
+
   .mobile-toggle {
     display: flex;
   }
@@ -565,26 +565,26 @@
     padding: 0 16px;
     gap: 16px;
   }
-  
+
   .brand-text {
     font-size: 1.3rem;
   }
-  
+
   .brand-icon {
     width: 32px;
     height: 32px;
     font-size: 1rem;
   }
-  
+
   .user-name {
     display: none;
   }
-  
+
   .btn {
     padding: 8px 16px;
     font-size: 0.9rem;
   }
-  
+
   .auth-buttons {
     gap: 8px;
   }
@@ -594,16 +594,16 @@
   .navbar-container {
     padding: 0 12px;
   }
-  
+
   .auth-buttons {
     gap: 6px;
   }
-  
+
   .btn {
     padding: 8px 12px;
     font-size: 0.85rem;
   }
-  
+
   .mobile-menu {
     width: 100vw;
   }
@@ -615,53 +615,53 @@
     background: rgba(30, 30, 30, 0.95);
     border-bottom-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   .navbar.nav-scrolled {
     background: rgba(30, 30, 30, 0.98);
   }
-  
+
   .nav-links a {
     color: #e0e0e0;
   }
-  
+
   .nav-links a:hover {
     background: rgba(255, 255, 255, 0.1);
   }
-  
+
   .user-menu,
   .mobile-menu {
     background: #1e1e1e;
     border-color: rgba(255, 255, 255, 0.2);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
   }
-  
+
   .menu-item {
     color: #e0e0e0;
   }
-  
+
   .menu-item:hover {
     background: rgba(231, 76, 60, 0.15);
     color: #ff6b6b;
   }
-  
+
   .mobile-user-name {
     color: #ffffff;
     font-weight: 700;
   }
-  
+
   .user-name {
     color: #ffffff;
   }
-  
+
   .user-btn {
     color: #ffffff;
   }
-  
+
   .mobile-nav-section a,
   .mobile-nav-section button {
     color: #e0e0e0;
   }
-  
+
   .mobile-nav-section a:hover,
   .mobile-nav-section button:hover {
     background: rgba(231, 76, 60, 0.1);

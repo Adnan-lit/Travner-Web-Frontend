@@ -1,17 +1,20 @@
+import { logger } from '../../core/logging/logger';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  DestroyRef,
   Directive,
   ElementRef,
   forwardRef,
+  inject,
   Input,
   numberAttribute,
   OnChanges,
   OnDestroy,
   OnInit,
-  ViewChild
+  ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ListRange } from '@angular/cdk/collections';
@@ -19,23 +22,22 @@ import {
   CdkVirtualScrollViewport,
   ScrollingModule,
   VIRTUAL_SCROLL_STRATEGY,
-  VirtualScrollStrategy
+  VirtualScrollStrategy,
 } from '@angular/cdk/scrolling';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../services/auth.service';
 import { ChatService } from '../../services/chat.service';
 import { WebSocketService } from '../../services/websocket.service';
 import { UserService } from '../../services/user.service';
 import {
   ChatMessage,
-  ChatConversation,
   ChatParticipant,
   ChatUser,
   ConversationWithParticipants,
   SendMessageRequest,
-  TypingIndicator
 } from '../../models/chat.model';
 import { User } from '../../models/common.model';
 import { UserSearchComponent } from './user-search/user-search.component';
@@ -54,7 +56,10 @@ export class ChatAutosizeVirtualScrollStrategy implements VirtualScrollStrategy 
   private pendingScrollIndex: number | null = null;
   private lastAppliedScrollOffset: number | null = null;
 
-  constructor(private minBufferPx: number, private maxBufferPx: number) {}
+  constructor(
+    private minBufferPx: number,
+    private maxBufferPx: number,
+  ) {}
 
   attach(viewport: CdkVirtualScrollViewport): void {
     this.viewport = viewport;
@@ -128,9 +133,10 @@ export class ChatAutosizeVirtualScrollStrategy implements VirtualScrollStrategy 
       return true;
     }
     const offset = this.offsetForIndex(this.pendingScrollIndex);
-    const stable = this.lastAppliedScrollOffset !== null
-      && Math.abs(offset - this.lastAppliedScrollOffset) < 1
-      && this.measuredSizes.has(this.pendingScrollIndex);
+    const stable =
+      this.lastAppliedScrollOffset !== null &&
+      Math.abs(offset - this.lastAppliedScrollOffset) < 1 &&
+      this.measuredSizes.has(this.pendingScrollIndex);
     this.lastAppliedScrollOffset = offset;
     this.viewport.scrollToOffset(offset, behavior);
     return stable;
@@ -153,7 +159,7 @@ export class ChatAutosizeVirtualScrollStrategy implements VirtualScrollStrategy 
       return this.defaultItemSize;
     }
     let total = 0;
-    this.measuredSizes.forEach(size => total += size);
+    this.measuredSizes.forEach((size) => (total += size));
     return total / this.measuredSizes.size;
   }
 
@@ -207,7 +213,7 @@ export class ChatAutosizeVirtualScrollStrategy implements VirtualScrollStrategy 
     const bufferCount = Math.ceil(bufferPx / itemSize);
     const range: ListRange = {
       start: Math.max(0, firstVisible - bufferCount),
-      end: Math.min(length, firstVisible + visibleCount + bufferCount)
+      end: Math.min(length, firstVisible + visibleCount + bufferCount),
     };
     viewport.setRenderedRange(range);
     viewport.setRenderedContentOffset(this.offsetForIndex(range.start));
@@ -223,9 +229,9 @@ export class ChatAutosizeVirtualScrollStrategy implements VirtualScrollStrategy 
     {
       provide: VIRTUAL_SCROLL_STRATEGY,
       useFactory: (directive: ChatAutosizeViewportDirective) => directive.strategy,
-      deps: [forwardRef(() => ChatAutosizeViewportDirective)]
-    }
-  ]
+      deps: [forwardRef(() => ChatAutosizeViewportDirective)],
+    },
+  ],
 })
 export class ChatAutosizeViewportDirective implements OnChanges {
   @Input({ transform: numberAttribute }) minBufferPx = 300;
@@ -246,7 +252,7 @@ export class ChatAutosizeViewportDirective implements OnChanges {
   styleUrls: ['./chat.component.css'],
   // Chat state is mutated by service/WebSocket/blob callbacks rather than templates,
   // so every async path below explicitly calls markForCheck().
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
@@ -255,26 +261,26 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   // message viewport through its template reference rather than by directive type.
   @ViewChild('messagesContainer', { read: CdkVirtualScrollViewport }) messagesViewport?: CdkVirtualScrollViewport;
 
-    // Data
+  // Data
   conversations: ConversationWithParticipants[] = [];
   selectedConversation: ConversationWithParticipants | null = null;
   messages: ChatMessage[] = [];
   filteredConversations: ConversationWithParticipants[] = [];
-    
-    // UI State
+
+  // UI State
   newMessage = '';
   sendingMessage = false;
   loadingConversations = false;
   loadingMessages = false;
-    showUserSearch = false;
+  showUserSearch = false;
   conversationSearchQuery = '';
   isConnected = false;
-  
+
   // Authentication
   currentUser: User | null = null;
-  
+
   // WebSocket
-    private destroy$ = new Subject<void>();
+  private readonly destroyRef = inject(DestroyRef);
   private typingTimeout: any;
   private destroyed = false;
 
@@ -288,14 +294,14 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     private webSocketService: WebSocketService,
     private userService: UserService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
     if (!this.checkAuthentication()) {
       return;
     }
-    
+
     this.loadConversations();
     this.connectWebSocket();
     this.setupSubscriptions();
@@ -307,15 +313,13 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnDestroy(): void {
     this.destroyed = true;
-    this.destroy$.next();
-    this.destroy$.complete();
     this.webSocketService.disconnect();
-    
+
     if (this.typingTimeout) {
       clearTimeout(this.typingTimeout);
     }
 
-    this.attachmentUrls.forEach(url => URL.revokeObjectURL(url));
+    this.attachmentUrls.forEach((url) => URL.revokeObjectURL(url));
     this.attachmentUrls.clear();
   }
 
@@ -324,7 +328,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
       this.router.navigate(['/signin']);
       return false;
     }
-    
+
     this.currentUser = this.authService.getCurrentUser();
     return true;
   }
@@ -339,48 +343,45 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
         this.cdr.markForCheck();
       },
       error: () => {
-        console.error('Unable to load conversations.');
+        logger.error('Unable to load conversations.');
         this.loadingConversations = false;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
   private connectWebSocket(): void {
     this.webSocketService.connect();
-    this.webSocketService.getConnectionStatus()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(connected => {
+    this.webSocketService
+      .getConnectionStatus()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((connected) => {
         this.isConnected = connected;
         this.cdr.markForCheck();
         if (connected) {
-          console.log('WebSocket connected successfully');
+          logger.debug('WebSocket connected successfully');
         } else {
-          console.warn('WebSocket disconnected');
+          logger.warn('WebSocket disconnected');
         }
       });
   }
 
   private setupSubscriptions(): void {
     // Subscribe to conversations updates
-    this.chatService.conversations$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(conversations => {
-        this.conversations = conversations;
-        this.filteredConversations = conversations;
-        this.cdr.markForCheck();
-      });
+    this.chatService.conversations$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((conversations) => {
+      this.conversations = conversations;
+      this.filteredConversations = conversations;
+      this.cdr.markForCheck();
+    });
 
     // Subscribe to messages updates
-    this.chatService.messages$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(messagesMap => {
-        if (this.selectedConversation) {
-          this.messages = messagesMap.get(this.selectedConversation.id) || [];
-          this.cdr.markForCheck();
-          setTimeout(() => this.scrollToBottom(), 100);
-        }
-      });
+    this.chatService.messages$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((messagesMap) => {
+      if (this.selectedConversation) {
+        this.messages = messagesMap.get(this.selectedConversation.id) || [];
+        this.cdr.markForCheck();
+        setTimeout(() => this.scrollToBottom(), 100);
+      }
+    });
   }
 
   selectConversation(conversation: ConversationWithParticipants): void {
@@ -388,11 +389,11 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.selectedConversation && this.selectedConversation.id !== conversation.id) {
       this.webSocketService.unsubscribeFromConversation(this.selectedConversation.id);
     }
-    
+
     this.selectedConversation = conversation;
     this.loadMessages(conversation.id);
     this.markMessagesAsRead(conversation.id);
-    
+
     // Subscribe to conversation WebSocket channel
     this.webSocketService.subscribeToConversation(conversation.id);
     this.cdr.markForCheck();
@@ -408,19 +409,19 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
         setTimeout(() => this.scrollToBottom(), 100);
       },
       error: () => {
-        console.error('Unable to load messages.');
+        logger.error('Unable to load messages.');
         this.messages = [];
         this.loadingMessages = false;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
   private markMessagesAsRead(conversationId: string): void {
     this.chatService.markMessagesAsRead(conversationId).subscribe({
       error: () => {
-        console.error('Unable to mark messages as read.');
-      }
+        logger.error('Unable to mark messages as read.');
+      },
     });
   }
 
@@ -431,17 +432,17 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
 
     if (!this.isConnected) {
       alert('Not connected to chat server. Please refresh the page and try again.');
-            return;
-        }
+      return;
+    }
 
     const messageContent = this.newMessage.trim();
     this.newMessage = '';
-        this.sendingMessage = true;
+    this.sendingMessage = true;
 
     const request: SendMessageRequest = {
       conversationId: this.selectedConversation.id,
       content: messageContent,
-      messageType: 'TEXT'
+      messageType: 'TEXT',
     };
 
     this.chatService.sendMessage(request).subscribe({
@@ -450,11 +451,11 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
         this.cdr.markForCheck();
       },
       error: (error) => {
-        console.error('Unable to send message.');
+        logger.error('Unable to send message.');
         this.sendingMessage = false;
         this.newMessage = messageContent; // Restore message on error
         this.cdr.markForCheck();
-        
+
         if (error.status === 401) {
           alert('Authentication failed. Please sign in again.');
           this.router.navigate(['/signin']);
@@ -465,7 +466,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
         } else {
           alert('Failed to send message. Please try again.');
         }
-      }
+      },
     });
   }
 
@@ -479,34 +480,34 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   onMessageInput(): void {
     if (this.selectedConversation) {
       this.sendTypingIndicator(true);
-        
-        // Clear existing timeout
-        if (this.typingTimeout) {
-            clearTimeout(this.typingTimeout);
-        }
-        
+
+      // Clear existing timeout
+      if (this.typingTimeout) {
+        clearTimeout(this.typingTimeout);
+      }
+
       // Set timeout to stop typing indicator
-        this.typingTimeout = setTimeout(() => {
-                this.sendTypingIndicator(false);
+      this.typingTimeout = setTimeout(() => {
+        this.sendTypingIndicator(false);
       }, 1000);
     }
-    }
+  }
 
-    private sendTypingIndicator(isTyping: boolean): void {
-        if (this.selectedConversation) {
-            this.webSocketService.sendTypingIndicator(this.selectedConversation.id, isTyping);
-        }
+  private sendTypingIndicator(isTyping: boolean): void {
+    if (this.selectedConversation) {
+      this.webSocketService.sendTypingIndicator(this.selectedConversation.id, isTyping);
     }
+  }
 
   onConversationSearch(event: any): void {
     const query = event.target.value.toLowerCase();
     this.conversationSearchQuery = query;
-    
+
     if (!query.trim()) {
       this.filteredConversations = this.conversations;
     } else {
-      this.filteredConversations = this.conversations.filter(conversation => 
-        conversation.title.toLowerCase().includes(query)
+      this.filteredConversations = this.conversations.filter((conversation) =>
+        conversation.title.toLowerCase().includes(query),
       );
     }
   }
@@ -521,7 +522,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
       // Fallback if we can't find the other participant
       return 'Direct Message';
     }
-    
+
     // For group conversations, use the conversation title
     return conversation.title || 'Group Chat';
   }
@@ -532,7 +533,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     // Return the resolved participant summary as-is: its displayName/avatar
     // would be lost by converting to the legacy User shape (P2-02).
-    return conversation.participants.find(participant => participant.id !== this.currentUser!.id) ?? null;
+    return conversation.participants.find((participant) => participant.id !== this.currentUser!.id) ?? null;
   }
 
   getSenderDisplayName(message: ChatMessage): string {
@@ -552,7 +553,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     // For group conversations, find the participant who sent the message
     if (this.selectedConversation && this.selectedConversation.type === 'GROUP') {
       const senderParticipant = this.selectedConversation.participants?.find(
-        participant => participant.id === message.senderId
+        (participant) => participant.id === message.senderId,
       );
       if (senderParticipant) {
         return this.getParticipantDisplayName(senderParticipant);
@@ -591,7 +592,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!this.selectedConversation || !this.currentUser) {
       return null;
     }
-    
+
     return this.getOtherParticipantFromConversation(this.selectedConversation);
   }
 
@@ -601,8 +602,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     // displayName is the resolved human-readable label from the backend.
-    const displayName = (participant as ChatUser).displayName
-      || (participant as ChatParticipant).displayName;
+    const displayName = (participant as ChatUser).displayName || (participant as ChatParticipant).displayName;
     if (displayName) {
       return displayName;
     }
@@ -631,7 +631,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!this.selectedConversation) {
       return 'Chat';
     }
-    
+
     if (this.selectedConversation.type === 'DIRECT') {
       const otherParticipant = this.getOtherParticipant();
       if (otherParticipant) {
@@ -639,7 +639,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
       }
       return 'Direct Message';
     }
-    
+
     // For group conversations, use the conversation title
     return this.selectedConversation.title || 'Group Chat';
   }
@@ -687,9 +687,9 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
         this.cdr.markForCheck();
       },
       error: () => {
-        console.error('Unable to start conversation.');
+        logger.error('Unable to start conversation.');
         alert('Failed to start conversation. Please try again.');
-      }
+      },
     });
   }
 
@@ -706,14 +706,14 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     fileInput.type = 'file';
     fileInput.accept = 'image/jpeg,image/png,image/gif,image/webp,image/bmp,.pdf,.doc,.docx,.txt,.text,.md,.csv';
     fileInput.multiple = false;
-    
+
     fileInput.onchange = (event: any) => {
       const file = event.target.files[0];
       if (file) {
         this.uploadFile(file);
       }
     };
-    
+
     fileInput.click();
   }
 
@@ -728,9 +728,17 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp',
-      'application/pdf', 'text/plain', 'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/bmp',
+      'application/pdf',
+      'text/plain',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
     const allowedExtension = /\.(jpe?g|png|gif|webp|bmp|pdf|docx?|txt|text|md|csv)$/i;
     if (!allowedTypes.includes(file.type) && !allowedExtension.test(file.name)) {
       alert('File type not supported. Please select an image, PDF, or document file.');
@@ -750,7 +758,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
           conversationId,
           content: `📎 ${attachment.fileName}`,
           messageType: attachment.contentType.startsWith('image/') ? 'IMAGE' : 'FILE',
-          attachmentId: attachment.id
+          attachmentId: attachment.id,
         };
         this.chatService.sendMessage(request).subscribe({
           next: () => {
@@ -758,23 +766,23 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
             this.cdr.markForCheck();
           },
           error: () => {
-            console.error('Unable to send attachment message.');
+            logger.error('Unable to send attachment message.');
             this.sendingMessage = false;
             this.cdr.markForCheck();
             alert('Failed to send file. Please try again.');
             // Best-effort cleanup so a failed send does not leave an orphan.
             this.chatService.deleteAttachment(attachment.id).subscribe({
-              error: () => console.error('Unable to clean up attachment.')
+              error: () => logger.error('Unable to clean up attachment.'),
             });
-          }
+          },
         });
       },
       error: () => {
-        console.error('Unable to upload file.');
+        logger.error('Unable to upload file.');
         this.sendingMessage = false;
         this.cdr.markForCheck();
         alert('Failed to upload file. Please try again.');
-      }
+      },
     });
   }
 
@@ -784,8 +792,12 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   formatFileSize(bytes: number): string {
-    if (bytes < 1024) { return `${bytes} B`; }
-    if (bytes < 1024 * 1024) { return `${(bytes / 1024).toFixed(1)} KB`; }
+    if (bytes < 1024) {
+      return `${bytes} B`;
+    }
+    if (bytes < 1024 * 1024) {
+      return `${(bytes / 1024).toFixed(1)} KB`;
+    }
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
@@ -806,8 +818,9 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
       return null;
     }
     this.loadingAttachments.add(attachment.id);
-    this.chatService.downloadAttachment(attachment.id)
-      .pipe(takeUntil(this.destroy$))
+    this.chatService
+      .downloadAttachment(attachment.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (blob: Blob) => {
           this.loadingAttachments.delete(attachment.id);
@@ -820,11 +833,11 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
         error: () => {
           this.loadingAttachments.delete(attachment.id);
           if (!this.destroyed) {
-            console.error('Unable to download attachment.');
+            logger.error('Unable to download attachment.');
             this.cdr.markForCheck();
           }
         },
-        complete: () => this.loadingAttachments.delete(attachment.id)
+        complete: () => this.loadingAttachments.delete(attachment.id),
       });
     return null;
   }
@@ -835,8 +848,9 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!attachment || this.destroyed) {
       return;
     }
-    this.chatService.downloadAttachment(attachment.id)
-      .pipe(takeUntil(this.destroy$))
+    this.chatService
+      .downloadAttachment(attachment.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (blob: Blob) => {
           if (this.destroyed) {
@@ -853,14 +867,14 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
         },
         error: () => {
           if (!this.destroyed) {
-            console.error('Unable to download attachment.');
+            logger.error('Unable to download attachment.');
           }
-        }
+        },
       });
   }
 
   showConversationInfo(): void {
-    console.log('Show conversation info');
+    logger.debug('Show conversation info');
     // TODO: Implement conversation info
   }
 }

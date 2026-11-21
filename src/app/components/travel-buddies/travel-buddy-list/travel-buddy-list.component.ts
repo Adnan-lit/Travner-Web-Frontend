@@ -1,3 +1,4 @@
+import { logger } from '../../../core/logging/logger';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,29 +12,29 @@ import { TravelBuddy, TravelBuddySearchParams } from '../../../models/location.m
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   templateUrl: './travel-buddy-list.component.html',
-  styleUrls: ['./travel-buddy-list.component.css']
+  styleUrls: ['./travel-buddy-list.component.css'],
 })
 export class TravelBuddyListComponent implements OnInit {
   travelBuddies: TravelBuddy[] = [];
   loading = false;
   error: string | null = null;
-  
+
   // Search and filter parameters
   searchParams: TravelBuddySearchParams = {
     page: 0,
     size: 10,
     sortBy: 'createdAt',
     direction: 'desc',
-    status: 'active'
+    status: 'active',
   };
-  
+
   // Filter options
   destinations: string[] = [];
   selectedDestination = '';
   selectedInterests: string[] = [];
   ageRange = { min: 18, max: 65 };
   preferredGender = '';
-  
+
   // Pagination
   currentPage = 0;
   totalPages = 0;
@@ -43,7 +44,7 @@ export class TravelBuddyListComponent implements OnInit {
 
   constructor(
     private travelBuddyService: TravelBuddyService,
-    private router: Router
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -53,7 +54,7 @@ export class TravelBuddyListComponent implements OnInit {
   loadTravelBuddies(): void {
     this.loading = true;
     this.error = null;
-    
+
     const params = {
       ...this.searchParams,
       page: this.currentPage,
@@ -61,7 +62,7 @@ export class TravelBuddyListComponent implements OnInit {
       interests: this.selectedInterests.length > 0 ? this.selectedInterests : undefined,
       minAge: this.ageRange.min,
       maxAge: this.ageRange.max,
-      preferredGender: this.preferredGender || undefined
+      preferredGender: this.preferredGender || undefined,
     };
 
     this.travelBuddyService.getTravelBuddies(params).subscribe({
@@ -76,8 +77,8 @@ export class TravelBuddyListComponent implements OnInit {
         this.error = 'Failed to load travel buddies';
         this.loading = false;
         this.cdr.markForCheck();
-        console.error('Error loading travel buddies:', error);
-      }
+        logger.error('Error loading travel buddies:', error);
+      },
     });
   }
 
@@ -108,11 +109,11 @@ export class TravelBuddyListComponent implements OnInit {
     const pages: number[] = [];
     const start = Math.max(0, this.currentPage - 2);
     const end = Math.min(this.totalPages - 1, this.currentPage + 2);
-    
+
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
-    
+
     return pages;
   }
 
@@ -142,21 +143,31 @@ export class TravelBuddyListComponent implements OnInit {
 
   getStatusClass(status: string): string {
     switch (status) {
-      case 'active': return 'status-active';
-      case 'matched': return 'status-matched';
-      case 'expired': return 'status-expired';
-      case 'cancelled': return 'status-cancelled';
-      default: return 'status-default';
+      case 'active':
+        return 'status-active';
+      case 'matched':
+        return 'status-matched';
+      case 'expired':
+        return 'status-expired';
+      case 'cancelled':
+        return 'status-cancelled';
+      default:
+        return 'status-default';
     }
   }
 
   getStatusText(status: string): string {
     switch (status) {
-      case 'active': return 'Looking for buddies';
-      case 'matched': return 'Matched';
-      case 'expired': return 'Expired';
-      case 'cancelled': return 'Cancelled';
-      default: return status;
+      case 'active':
+        return 'Looking for buddies';
+      case 'matched':
+        return 'Matched';
+      case 'expired':
+        return 'Expired';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return status;
     }
   }
 }

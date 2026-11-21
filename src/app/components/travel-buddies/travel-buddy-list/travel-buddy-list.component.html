@@ -10,22 +10,26 @@
   <!-- Search and Filters -->
   <div class="filters-section">
     <div class="search-bar">
-      <input 
-        type="text" 
-        placeholder="Search destinations..." 
+      <input
+        type="text"
+        placeholder="Search destinations..."
         [(ngModel)]="searchParams.query"
         (keyup.enter)="onSearch()"
         class="form-control"
-      >
-      <button class="btn btn-secondary" (click)="onSearch()">
-        <i class="fas fa-search"></i> Search
-      </button>
+        aria-label="Search destinations..."
+      />
+      <button class="btn btn-secondary" (click)="onSearch()"><i class="fas fa-search"></i> Search</button>
     </div>
 
     <div class="filters">
       <div class="filter-group">
         <label>Destination:</label>
-        <select [(ngModel)]="selectedDestination" (change)="onFilterChange()" class="form-control">
+        <select
+          [(ngModel)]="selectedDestination"
+          (change)="onFilterChange()"
+          class="form-control"
+          aria-label="Selected destination"
+        >
           <option value="">All Destinations</option>
           <option *ngFor="let dest of destinations; trackBy: trackByValue" [value]="dest">{{ dest }}</option>
         </select>
@@ -34,27 +38,34 @@
       <div class="filter-group">
         <label>Age Range:</label>
         <div class="age-range">
-          <input 
-            type="number" 
-            [(ngModel)]="ageRange.min" 
+          <input
+            type="number"
+            [(ngModel)]="ageRange.min"
             (change)="onFilterChange()"
             placeholder="Min"
             class="form-control"
-          >
+            aria-label="Min"
+          />
           <span>-</span>
-          <input 
-            type="number" 
-            [(ngModel)]="ageRange.max" 
+          <input
+            type="number"
+            [(ngModel)]="ageRange.max"
             (change)="onFilterChange()"
             placeholder="Max"
             class="form-control"
-          >
+            aria-label="Max"
+          />
         </div>
       </div>
 
       <div class="filter-group">
         <label>Gender:</label>
-        <select [(ngModel)]="preferredGender" (change)="onFilterChange()" class="form-control">
+        <select
+          [(ngModel)]="preferredGender"
+          (change)="onFilterChange()"
+          class="form-control"
+          aria-label="Preferred gender"
+        >
           <option value="">Any</option>
           <option value="male">Male</option>
           <option value="female">Female</option>
@@ -78,7 +89,11 @@
 
   <!-- Travel Buddies Grid -->
   <div *ngIf="!loading && !error" class="travel-buddies-grid">
-    <div *ngFor="let buddy of travelBuddies; trackBy: trackByTravelBuddyId" class="travel-buddy-card" (click)="viewTravelBuddy(buddy.id)">
+    <div
+      *ngFor="let buddy of travelBuddies; trackBy: trackByTravelBuddyId"
+      class="travel-buddy-card"
+      (click)="viewTravelBuddy(buddy.id)"
+    >
       <div class="card-header">
         <div class="status-badge" [ngClass]="getStatusClass(buddy.status)">
           {{ getStatusText(buddy.status) }}
@@ -94,7 +109,9 @@
         <div class="interests" *ngIf="buddy.interests && buddy.interests.length > 0">
           <h4>Interests:</h4>
           <div class="interest-tags">
-            <span *ngFor="let interest of buddy.interests; trackBy: trackByValue" class="interest-tag">{{ interest }}</span>
+            <span *ngFor="let interest of buddy.interests; trackBy: trackByValue" class="interest-tag">{{
+              interest
+            }}</span>
           </div>
         </div>
 
@@ -122,7 +139,7 @@
           <i class="fas fa-clock"></i>
           <span>Expires: {{ formatDate(buddy.expiryDate) }}</span>
         </div>
-        
+
         <div class="action-buttons">
           <button class="btn btn-sm btn-primary" (click)="viewTravelBuddy(buddy.id); $event.stopPropagation()">
             View Details
@@ -142,16 +159,12 @@
 
   <!-- Pagination -->
   <div *ngIf="!loading && !error && totalPages > 1" class="pagination">
-    <button 
-      class="btn btn-secondary" 
-      [disabled]="currentPage === 0"
-      (click)="onPageChange(currentPage - 1)"
-    >
+    <button class="btn btn-secondary" [disabled]="currentPage === 0" (click)="onPageChange(currentPage - 1)">
       Previous
     </button>
-    
+
     <div class="page-numbers">
-      <button 
+      <button
         *ngFor="let page of getPageNumbers(); trackBy: trackByPage"
         class="btn"
         [class.btn-primary]="page === currentPage"
@@ -161,9 +174,9 @@
         {{ page + 1 }}
       </button>
     </div>
-    
-    <button 
-      class="btn btn-secondary" 
+
+    <button
+      class="btn btn-secondary"
       [disabled]="currentPage >= totalPages - 1"
       (click)="onPageChange(currentPage + 1)"
     >

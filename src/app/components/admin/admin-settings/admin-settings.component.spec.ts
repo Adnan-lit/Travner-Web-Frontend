@@ -10,22 +10,24 @@ describe('AdminSettingsComponent', () => {
 
   beforeEach(async () => {
     adminService = jasmine.createSpyObj<AdminService>('AdminService', ['getSystemHealth', 'clearCache']);
-    adminService.getSystemHealth.and.returnValue(of({
-      success: true,
-      data: {
-        status: 'UP',
-        database: true,
-        storage: true,
-        cache: true,
-        uptime: 3720,
-        version: '1.0.0'
-      }
-    }));
+    adminService.getSystemHealth.and.returnValue(
+      of({
+        success: true,
+        data: {
+          status: 'UP',
+          database: true,
+          storage: true,
+          cache: true,
+          uptime: 3720,
+          version: '1.0.0',
+        },
+      }),
+    );
     adminService.clearCache.and.returnValue(of({ success: true, data: { message: 'Cache cleared' } }));
 
     await TestBed.configureTestingModule({
       imports: [AdminSettingsComponent],
-      providers: [{ provide: AdminService, useValue: adminService }]
+      providers: [{ provide: AdminService, useValue: adminService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AdminSettingsComponent);

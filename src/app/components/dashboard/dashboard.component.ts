@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { logger } from '../../core/logging/logger';
+import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -6,7 +7,8 @@ import { PostService } from '../../services/post.service';
 import { MarketplaceService } from '../../services/marketplace.service';
 import { User, Post } from '../../models/common.model';
 import { ApiListResponse } from '../../models/api-response.model';
-import { Subject, takeUntil } from 'rxjs';
+
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 interface UserStats {
   posts: number;
@@ -20,9 +22,9 @@ interface UserStats {
   selector: 'app-dashboard',
   imports: [CommonModule, RouterModule, NgOptimizedImage],
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.css']
+  styleUrls: ['./dashboard.component.css'],
 })
-export class DashboardComponent implements OnInit, OnDestroy {
+export class DashboardComponent implements OnInit {
   currentUser: User | null = null;
   isLoading = true;
   recentPosts: Post[] = [];
@@ -31,33 +33,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
     followers: 0,
     trips: 0,
     likes: 0,
-    comments: 0
+    comments: 0,
   };
 
-  private destroy$ = new Subject<void>();
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(
     private authService: AuthService,
     private postService: PostService,
-    private marketplaceService: MarketplaceService
-  ) { }
+    private marketplaceService: MarketplaceService,
+  ) {}
 
   ngOnInit(): void {
-    this.authService.currentUser$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(user => {
-        this.currentUser = user;
-        if (user) {
-          this.loadUserData();
-        } else {
-          this.isLoading = false;
-        }
-      });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    this.authService.currentUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((user) => {
+      this.currentUser = user;
+      if (user) {
+        this.loadUserData();
+      } else {
+        this.isLoading = false;
+      }
+    });
   }
 
   loadUserData(): void {
@@ -69,9 +64,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.recentPosts = response.data || [];
       },
       error: (error: any) => {
-        console.error('Error loading recent posts:', error);
+        logger.error('Error loading recent posts:', error);
         this.recentPosts = [];
-      }
+      },
     });
 
     // Load user's posts for stats
@@ -80,10 +75,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.userStats.posts = response.pagination?.totalElements || 0;
       },
       error: (error: any) => {
-        console.error('Error loading user posts:', error);
+        logger.error('Error loading user posts:', error);
         // Set fallback value on error
         this.userStats.posts = 0;
-      }
+      },
     });
 
     // Mock data for demonstration - in real app, these would come from API
@@ -100,7 +95,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) {
       return 'Just now';
     } else if (diffInHours < 24) {

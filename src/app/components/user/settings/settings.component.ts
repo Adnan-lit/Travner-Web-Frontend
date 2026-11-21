@@ -10,7 +10,7 @@ import { User } from '../../../models/common.model';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './settings.component.html',
-  styleUrls: ['./settings.component.css']
+  styleUrls: ['./settings.component.css'],
 })
 export class SettingsComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
@@ -18,7 +18,7 @@ export class SettingsComponent implements OnInit {
   readonly passwordForm = this.formBuilder.group({
     currentPassword: ['', Validators.required],
     newPassword: ['', [Validators.required, Validators.minLength(6)]],
-    confirmPassword: ['', Validators.required]
+    confirmPassword: ['', Validators.required],
   });
 
   currentUser: User | null = null;
@@ -55,8 +55,13 @@ export class SettingsComponent implements OnInit {
     const currentPassword = values.currentPassword ?? '';
     const newPassword = values.newPassword ?? '';
     this.saving = true;
-    this.authService.changePassword(currentPassword, newPassword)
-      .pipe(finalize(() => { this.saving = false; }))
+    this.authService
+      .changePassword(currentPassword, newPassword)
+      .pipe(
+        finalize(() => {
+          this.saving = false;
+        }),
+      )
       .subscribe({
         next: () => {
           this.passwordForm.reset();
@@ -64,7 +69,7 @@ export class SettingsComponent implements OnInit {
         },
         error: () => {
           this.errorMessage = 'Could not change your password. Please try again.';
-        }
+        },
       });
   }
 

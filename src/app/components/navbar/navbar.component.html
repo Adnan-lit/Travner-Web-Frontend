@@ -41,24 +41,17 @@
         <!-- Quick Actions -->
         <div class="quick-actions">
           <!-- AI Chat -->
-          <button
-            class="action-btn"
-            (click)="go('/ai-chat')"
-            title="AI Travel Assistant"
-          >
+          <button class="action-btn" (click)="go('/ai-chat')" title="AI Travel Assistant">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 12l2 2 4-4"/>
-              <path d="M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              <path d="M9 12l2 2 4-4" />
+              <path
+                d="M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
             </svg>
           </button>
 
           <!-- Chat -->
-          <button
-            class="action-btn"
-            (click)="go('/chat')"
-            *ngIf="!isAdmin()"
-            title="Chat"
-          >
+          <button class="action-btn" (click)="go('/chat')" *ngIf="!isAdmin()" title="Chat">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
@@ -81,12 +74,7 @@
           </button>
 
           <!-- Dashboard -->
-          <button
-            class="action-btn"
-            (click)="go('/dashboard')"
-            *ngIf="!isAdmin()"
-            title="Dashboard"
-          >
+          <button class="action-btn" (click)="go('/dashboard')" *ngIf="!isAdmin()" title="Dashboard">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="7" height="7" />
               <rect x="14" y="3" width="7" height="7" />
@@ -100,15 +88,30 @@
         <div class="user-profile" [class.active]="showUserMenu">
           <button class="user-btn" (click)="toggleUserMenu()">
             <img
-              [ngSrc]="currentUser?.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (currentUser?.firstName || '') + '+' + (currentUser?.lastName || '') + '&background=e74c3c&color=fff&size=32'"
+              [ngSrc]="
+                currentUser?.profileImageUrl ||
+                'https://ui-avatars.com/api/?name=' +
+                  (currentUser?.firstName || '') +
+                  '+' +
+                  (currentUser?.lastName || '') +
+                  '&background=e74c3c&color=fff&size=32'
+              "
               [alt]="currentUser?.firstName || currentUser?.userName"
               width="32"
               height="32"
               disableOptimizedSrcset
               class="user-avatar"
-            >
+            />
             <span class="user-name">{{ currentUser?.firstName || currentUser?.userName }}</span>
-            <svg class="dropdown-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg
+              class="dropdown-icon"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
               <polyline points="6 9 12 15 18 9" />
             </svg>
           </button>
@@ -119,13 +122,20 @@
             <div class="user-menu-header">
               <div class="user-info">
                 <img
-                  [ngSrc]="currentUser?.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (currentUser?.firstName || '') + '+' + (currentUser?.lastName || '') + '&background=e74c3c&color=fff&size=40'"
+                  [ngSrc]="
+                    currentUser?.profileImageUrl ||
+                    'https://ui-avatars.com/api/?name=' +
+                      (currentUser?.firstName || '') +
+                      '+' +
+                      (currentUser?.lastName || '') +
+                      '&background=e74c3c&color=fff&size=40'
+                  "
                   [alt]="currentUser?.firstName || currentUser?.userName"
                   width="40"
                   height="40"
                   disableOptimizedSrcset
                   class="user-avatar-large"
-                >
+                />
                 <div class="user-details">
                   <div class="user-name-large">{{ currentUser?.firstName || currentUser?.userName }}</div>
                   <div class="user-role" *ngIf="isAdmin()">Administrator</div>
@@ -187,7 +197,9 @@
               </a>
               <a routerLink="/marketplace" (click)="closeUserMenu()" class="menu-item">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  <path
+                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+                  />
                 </svg>
                 Marketplace
               </a>
@@ -213,8 +225,10 @@
               </a>
               <a routerLink="/ai-chat" (click)="closeUserMenu()" class="menu-item">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M9 12l2 2 4-4"/>
-                  <path d="M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                  <path d="M9 12l2 2 4-4" />
+                  <path
+                    d="M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
                 </svg>
                 AI Travel Assistant
               </a>
@@ -250,11 +264,7 @@
       </div>
 
       <!-- Mobile Menu Toggle -->
-      <button
-        class="mobile-toggle"
-        (click)="toggleMobileMenu()"
-        aria-label="Toggle menu"
-      >
+      <button class="mobile-toggle" (click)="toggleMobileMenu()" aria-label="Toggle menu">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="3" y1="6" x2="21" y2="6" />
           <line x1="3" y1="12" x2="21" y2="12" />
@@ -274,7 +284,7 @@
         <span class="brand-icon">TR</span>
         <span class="brand-text">Travner</span>
       </div>
-      <button class="mobile-close" (click)="closeMobileMenu()">
+      <button type="button" class="mobile-close" aria-label="Close navigation menu" (click)="closeMobileMenu()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18" />
           <line x1="6" y1="6" x2="18" y2="18" />
@@ -286,13 +296,20 @@
       <!-- User Info -->
       <div class="mobile-user-info" *ngIf="isAuthenticated">
         <img
-          [ngSrc]="currentUser?.profileImageUrl || 'https://ui-avatars.com/api/?name=' + (currentUser?.firstName || '') + '+' + (currentUser?.lastName || '') + '&background=e74c3c&color=fff&size=48'"
+          [ngSrc]="
+            currentUser?.profileImageUrl ||
+            'https://ui-avatars.com/api/?name=' +
+              (currentUser?.firstName || '') +
+              '+' +
+              (currentUser?.lastName || '') +
+              '&background=e74c3c&color=fff&size=48'
+          "
           [alt]="currentUser?.firstName || currentUser?.userName"
           width="48"
           height="48"
           disableOptimizedSrcset
           class="mobile-avatar"
-        >
+        />
         <div class="mobile-user-details">
           <div class="mobile-user-name">{{ currentUser?.firstName || currentUser?.userName }}</div>
           <div class="mobile-user-role" *ngIf="isAdmin()">Administrator</div>
@@ -303,7 +320,12 @@
       <div class="mobile-nav">
         <!-- Admin Navigation -->
         <div class="mobile-nav-section" *ngIf="isAdmin()">
-          <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileMenu()">
+          <a
+            routerLink="/admin"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            (click)="closeMobileMenu()"
+          >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="7" height="7" />
               <rect x="14" y="3" width="7" height="7" />
@@ -337,7 +359,12 @@
 
         <!-- Regular User Navigation -->
         <div class="mobile-nav-section" *ngIf="!isAdmin()">
-          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileMenu()">
+          <a
+            routerLink="/"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            (click)="closeMobileMenu()"
+          >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
             </svg>
@@ -360,7 +387,9 @@
           </a>
           <a routerLink="/marketplace" routerLinkActive="active" (click)="closeMobileMenu()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+              <path
+                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+              />
             </svg>
             Marketplace
           </a>
@@ -386,8 +415,10 @@
           </a>
           <a routerLink="/ai-chat" routerLinkActive="active" (click)="closeMobileMenu()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 12l2 2 4-4"/>
-              <path d="M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              <path d="M9 12l2 2 4-4" />
+              <path
+                d="M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
             </svg>
             AI Travel Assistant
           </a>
@@ -401,7 +432,12 @@
 
         <!-- Unauthenticated Navigation -->
         <div class="mobile-nav-section" *ngIf="!isAuthenticated">
-          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileMenu()">
+          <a
+            routerLink="/"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            (click)="closeMobileMenu()"
+          >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
             </svg>
@@ -415,7 +451,9 @@
           </a>
           <a routerLink="/marketplace" routerLinkActive="active" (click)="closeMobileMenu()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+              <path
+                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+              />
             </svg>
             Marketplace
           </a>
@@ -455,12 +493,8 @@
         </div>
 
         <div class="mobile-nav-section" *ngIf="!isAuthenticated">
-          <button (click)="go('/signin'); closeMobileMenu()" class="btn btn-outline">
-            Sign In
-          </button>
-          <button (click)="go('/signup'); closeMobileMenu()" class="btn btn-primary">
-            Sign Up
-          </button>
+          <button (click)="go('/signin'); closeMobileMenu()" class="btn btn-outline">Sign In</button>
+          <button (click)="go('/signup'); closeMobileMenu()" class="btn btn-primary">Sign Up</button>
         </div>
       </div>
     </div>

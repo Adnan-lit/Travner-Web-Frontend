@@ -12,11 +12,11 @@ describe('TravelBuddyListComponent', () => {
       providers: [
         { provide: TravelBuddyService, useValue: {} },
         { provide: Router, useValue: {} },
-        { provide: ChangeDetectorRef, useValue: { markForCheck: () => undefined } }
-      ]
+        { provide: ChangeDetectorRef, useValue: { markForCheck: () => undefined } },
+      ],
     });
     component = TestBed.runInInjectionContext(
-      () => new TravelBuddyListComponent(TestBed.inject(TravelBuddyService), TestBed.inject(Router))
+      () => new TravelBuddyListComponent(TestBed.inject(TravelBuddyService), TestBed.inject(Router)),
     );
   });
 

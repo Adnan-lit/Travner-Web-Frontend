@@ -14,33 +14,21 @@
   </div>
 
   <!-- Empty Cart -->
-  <div
-    class="empty-cart"
-    *ngIf="!loading && !error && cart && cart.items.length === 0"
-  >
+  <div class="empty-cart" *ngIf="!loading && !error && cart && cart.items.length === 0">
     <div class="empty-cart-icon">
       <i class="fas fa-shopping-cart"></i>
     </div>
     <h2>Your cart is empty</h2>
     <p>Looks like you haven't added anything to your cart yet.</p>
-    <button class="btn btn-primary" (click)="continueShopping()">
-      Continue Shopping
-    </button>
+    <button class="btn btn-primary" (click)="continueShopping()">Continue Shopping</button>
   </div>
 
   <!-- Cart Content -->
-  <div
-    class="cart-content"
-    *ngIf="!loading && !error && cart && cart.items.length > 0"
-  >
+  <div class="cart-content" *ngIf="!loading && !error && cart && cart.items.length > 0">
     <div class="cart-items">
       <div class="cart-item" *ngFor="let item of cart.items">
         <div class="item-image">
-          <img
-            [src]="getCartItemImage()"
-            alt="{{ item.titleSnapshot }}"
-            (error)="handleImageError($event)"
-          />
+          <img [src]="getCartItemImage()" alt="{{ item.titleSnapshot }}" (error)="handleImageError($event)" />
         </div>
 
         <div class="item-details">
@@ -54,9 +42,7 @@
             <button
               class="quantity-btn"
               (click)="updateQuantity(item, item.quantity - 1)"
-              [disabled]="
-                updatingItemIds.has(item.lineId) || item.quantity <= 1
-              "
+              [disabled]="updatingItemIds.has(item.lineId) || item.quantity <= 1"
             >
               -
             </button>
@@ -72,9 +58,7 @@
             <button
               class="quantity-btn"
               (click)="updateQuantity(item, item.quantity + 1)"
-              [disabled]="
-                updatingItemIds.has(item.lineId) || item.quantity >= 10
-              "
+              [disabled]="updatingItemIds.has(item.lineId) || item.quantity >= 10"
             >
               +
             </button>
@@ -83,9 +67,7 @@
 
         <div class="item-total">
           <span class="total-label">Total:</span>
-          <span class="total-amount">{{
-            formatPrice(getItemTotal(item))
-          }}</span>
+          <span class="total-amount">{{ formatPrice(getItemTotal(item)) }}</span>
         </div>
 
         <div class="item-actions">
@@ -121,19 +103,11 @@
         </div>
 
         <div class="summary-actions">
-          <button class="btn btn-secondary" (click)="continueShopping()">
-            Continue Shopping
-          </button>
-          <button class="btn btn-primary" (click)="proceedToCheckout()">
-            Proceed to Checkout
-          </button>
+          <button class="btn btn-secondary" (click)="continueShopping()">Continue Shopping</button>
+          <button class="btn btn-primary" (click)="proceedToCheckout()">Proceed to Checkout</button>
         </div>
 
-        <button
-          class="btn btn-outline clear-cart-btn"
-          (click)="clearCart()"
-          *ngIf="cart && cart.items.length > 0"
-        >
+        <button class="btn btn-outline clear-cart-btn" (click)="clearCart()" *ngIf="cart && cart.items.length > 0">
           Clear Cart
         </button>
       </div>

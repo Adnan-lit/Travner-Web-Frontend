@@ -1,8 +1,9 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { logger } from '../../../core/logging/logger';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Subject, takeUntil } from 'rxjs';
 
 interface DashboardStats {
   users: {
@@ -63,10 +64,10 @@ interface SystemHealth {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './admin-dashboard.component.html',
-  styleUrls: ['./admin-dashboard.component.css']
+  styleUrls: ['./admin-dashboard.component.css'],
 })
-export class AdminDashboardComponent implements OnInit, OnDestroy {
-  private destroy$ = new Subject<void>();
+export class AdminDashboardComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
 
   loading = false;
   dashboardStats: DashboardStats | null = null;
@@ -84,51 +85,49 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.loadSystemHealth();
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
   loadDashboardData(): void {
     this.loading = true;
-    this.http.get<any>('/api/admin/dashboard')
-      .pipe(takeUntil(this.destroy$))
+    this.http
+      .get<any>('/api/admin/dashboard')
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
           this.dashboardStats = response.data;
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading dashboard data:', error);
+          logger.error('Error loading dashboard data:', error);
           this.loading = false;
-        }
+        },
       });
   }
 
   loadUsers(): void {
-    this.http.get<any>('/api/admin/users')
-      .pipe(takeUntil(this.destroy$))
+    this.http
+      .get<any>('/api/admin/users')
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
           this.users = response.data.content;
           this.filterUsers();
         },
         error: (error) => {
-          console.error('Error loading users:', error);
-        }
+          logger.error('Error loading users:', error);
+        },
       });
   }
 
   loadSystemHealth(): void {
-    this.http.get<any>('/api/admin/health')
-      .pipe(takeUntil(this.destroy$))
+    this.http
+      .get<any>('/api/admin/health')
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
           this.systemHealth = response.data;
         },
         error: (error) => {
-          console.error('Error loading system health:', error);
-        }
+          logger.error('Error loading system health:', error);
+        },
       });
   }
 
@@ -139,82 +138,87 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   filterUsers(): void {
-    this.filteredUsers = this.users.filter(user => {
-      const matchesSearch = !this.userSearch || 
+    this.filteredUsers = this.users.filter((user) => {
+      const matchesSearch =
+        !this.userSearch ||
         user.userName.toLowerCase().includes(this.userSearch.toLowerCase()) ||
         user.firstName?.toLowerCase().includes(this.userSearch.toLowerCase()) ||
         user.lastName?.toLowerCase().includes(this.userSearch.toLowerCase()) ||
         user.email?.toLowerCase().includes(this.userSearch.toLowerCase());
-      
+
       const matchesRole = !this.selectedRole || user.roles?.includes(this.selectedRole);
-      
+
       return matchesSearch && matchesRole;
     });
   }
 
   activateUser(username: string): void {
     this.loading = true;
-    this.http.put<any>(`/api/admin/users/${username}/activate`, {})
-      .pipe(takeUntil(this.destroy$))
+    this.http
+      .put<any>(`/api/admin/users/${username}/activate`, {})
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.loadUsers();
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error activating user:', error);
+          logger.error('Error activating user:', error);
           this.loading = false;
-        }
+        },
       });
   }
 
   deactivateUser(username: string): void {
     this.loading = true;
-    this.http.put<any>(`/api/admin/users/${username}/deactivate`, {})
-      .pipe(takeUntil(this.destroy$))
+    this.http
+      .put<any>(`/api/admin/users/${username}/deactivate`, {})
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.loadUsers();
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error deactivating user:', error);
+          logger.error('Error deactivating user:', error);
           this.loading = false;
-        }
+        },
       });
   }
 
   deleteUser(username: string): void {
     if (confirm(`Are you sure you want to delete user ${username}?`)) {
       this.loading = true;
-      this.http.delete<any>(`/api/admin/users/${username}`)
-        .pipe(takeUntil(this.destroy$))
+      this.http
+        .delete<any>(`/api/admin/users/${username}`)
+        .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {
             this.loadUsers();
             this.loading = false;
           },
           error: (error) => {
-            console.error('Error deleting user:', error);
+            logger.error('Error deleting user:', error);
             this.loading = false;
-          }
+          },
         });
     }
   }
 
   cleanupMediaUrls(): void {
     this.loading = true;
-    this.http.post<any>('/api/admin/cleanup/media-urls', {})
-      .pipe(takeUntil(this.destroy$))
+    this.http
+      .post<any>('/api/admin/cleanup/media-urls', {})
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
-          alert(response.message);
+        next: () => {
+          alert('Media URL cleanup completed.');
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error cleaning up media URLs:', error);
+          logger.error('Error cleaning up media URLs:', error);
           this.loading = false;
-        }
+        },
       });
   }
 
@@ -234,12 +238,12 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   formatUptime(uptime: number | undefined): string {
     if (!uptime) return 'Unknown';
-    
+
     const seconds = Math.floor(uptime / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
-    
+
     if (days > 0) return `${days}d ${hours % 24}h`;
     if (hours > 0) return `${hours}h ${minutes % 60}m`;
     if (minutes > 0) return `${minutes}m ${seconds % 60}s`;

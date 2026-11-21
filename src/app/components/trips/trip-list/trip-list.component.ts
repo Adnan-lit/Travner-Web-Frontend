@@ -1,3 +1,4 @@
+import { logger } from '../../../core/logging/logger';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
@@ -5,7 +6,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TripService } from '../../../services/trip.service';
 import { AuthService } from '../../../services/auth.service';
 import { ToastService } from '../../../services/toast.service';
-import { Trip, TripParticipant } from '../../../services/trip.service';
+import { Trip } from '../../../services/trip.service';
 
 @Component({
   selector: 'app-trip-list',
@@ -82,7 +83,7 @@ import { Trip, TripParticipant } from '../../../services/trip.service';
       <!-- Trips Grid -->
       <div class="trips-grid" *ngIf="!loading && !error">
         <!-- Trip Cards -->
-        <div 
+        <div
           *ngFor="let trip of trips; trackBy: trackByTripId"
           class="trip-card"
           [class.featured]="trip.status === 'CONFIRMED'"
@@ -165,21 +166,18 @@ import { Trip, TripParticipant } from '../../../services/trip.service';
 
             <!-- Trip Actions -->
             <div class="trip-actions">
-              <button 
-                class="action-btn primary" 
-                (click)="viewTripDetails(trip.id); $event.stopPropagation()"
-              >
+              <button class="action-btn primary" (click)="viewTripDetails(trip.id); $event.stopPropagation()">
                 View Details
               </button>
-              <button 
-                class="action-btn secondary" 
+              <button
+                class="action-btn secondary"
                 (click)="joinTrip(trip); $event.stopPropagation()"
                 *ngIf="canJoinTrip(trip)"
               >
                 Join Trip
               </button>
-              <button 
-                class="action-btn danger" 
+              <button
+                class="action-btn danger"
                 (click)="leaveTrip(trip); $event.stopPropagation()"
                 *ngIf="isParticipant(trip)"
               >
@@ -202,16 +200,12 @@ import { Trip, TripParticipant } from '../../../services/trip.service';
 
       <!-- Pagination -->
       <div class="pagination" *ngIf="totalPages > 1">
-        <button 
-          class="pagination-btn" 
-          [disabled]="currentPage === 0"
-          (click)="onPageChange(currentPage - 1)"
-        >
+        <button class="pagination-btn" [disabled]="currentPage === 0" (click)="onPageChange(currentPage - 1)">
           Previous
         </button>
-        
+
         <div class="page-numbers">
-          <button 
+          <button
             *ngFor="let page of getPageNumbers(); trackBy: trackByPage"
             class="page-btn"
             [class.active]="page === currentPage"
@@ -220,9 +214,9 @@ import { Trip, TripParticipant } from '../../../services/trip.service';
             {{ page + 1 }}
           </button>
         </div>
-        
-        <button 
-          class="pagination-btn" 
+
+        <button
+          class="pagination-btn"
           [disabled]="currentPage >= totalPages - 1"
           (click)="onPageChange(currentPage + 1)"
         >
@@ -231,487 +225,498 @@ import { Trip, TripParticipant } from '../../../services/trip.service';
       </div>
     </div>
   `,
-  styles: [`
-    .trip-list-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-
-    .trip-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-      padding-bottom: 1.5rem;
-      border-bottom: 2px solid #e9ecef;
-    }
-
-    .header-content h1 {
-      margin: 0 0 0.5rem 0;
-      color: #333;
-      font-size: 2.5rem;
-      font-weight: 700;
-    }
-
-    .header-content p {
-      margin: 0;
-      color: #666;
-      font-size: 1.1rem;
-    }
-
-    .create-trip-btn {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.5rem;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .create-trip-btn:hover {
-      background: #0056b3;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
-    }
-
-    .filters-section {
-      margin-bottom: 2rem;
-      background: white;
-      padding: 1.5rem;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .search-form {
-      width: 100%;
-    }
-
-    .search-input-group {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .search-input {
-      flex: 2;
-      padding: 0.75rem 1rem;
-      border: 2px solid #e9ecef;
-      border-radius: 8px;
-      font-size: 1rem;
-      transition: border-color 0.3s ease;
-    }
-
-    .search-input:focus {
-      outline: none;
-      border-color: #007bff;
-    }
-
-    .status-select, .destination-select {
-      flex: 1;
-      padding: 0.75rem 1rem;
-      border: 2px solid #e9ecef;
-      border-radius: 8px;
-      font-size: 1rem;
-      background: white;
-      cursor: pointer;
-    }
-
-    .search-btn, .clear-btn {
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .search-btn {
-      background: #28a745;
-      color: white;
-    }
-
-    .search-btn:hover {
-      background: #218838;
-    }
-
-    .clear-btn {
-      background: #6c757d;
-      color: white;
-    }
-
-    .clear-btn:hover {
-      background: #5a6268;
-    }
-
-    .loading-state, .error-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 2rem;
-      text-align: center;
-    }
-
-    .loader {
-      width: 40px;
-      height: 40px;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #007bff;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 1rem;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .error-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-    }
-
-    .retry-btn {
-      padding: 0.75rem 1.5rem;
-      background: #dc3545;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 1rem;
-    }
-
-    .trips-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 2rem;
-      margin-bottom: 2rem;
-    }
-
-    .trip-card {
-      background: white;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      transition: all 0.3s ease;
-      cursor: pointer;
-      position: relative;
-    }
-
-    .trip-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-    }
-
-    .trip-card.featured {
-      border: 2px solid #28a745;
-    }
-
-    .trip-image {
-      position: relative;
-      height: 200px;
-      overflow: hidden;
-    }
-
-    .trip-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.3s ease;
-    }
-
-    .trip-card:hover .trip-image img {
-      transform: scale(1.05);
-    }
-
-    .trip-status {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      padding: 0.5rem 1rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .trip-status.planning {
-      background: #ffc107;
-      color: #000;
-    }
-
-    .trip-status.confirmed {
-      background: #28a745;
-      color: white;
-    }
-
-    .trip-status.in-progress {
-      background: #17a2b8;
-      color: white;
-    }
-
-    .trip-status.completed {
-      background: #6c757d;
-      color: white;
-    }
-
-    .trip-status.cancelled {
-      background: #dc3545;
-      color: white;
-    }
-
-    .trip-dates {
-      position: absolute;
-      bottom: 1rem;
-      left: 1rem;
-      right: 1rem;
-      background: rgba(0,0,0,0.7);
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.9rem;
-    }
-
-    .date-separator {
-      margin: 0 0.5rem;
-    }
-
-    .trip-content {
-      padding: 1.5rem;
-    }
-
-    .trip-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 1rem;
-    }
-
-    .trip-title {
-      margin: 0;
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: #333;
-      line-height: 1.3;
-    }
-
-    .trip-budget {
-      text-align: right;
-    }
-
-    .budget-amount {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #28a745;
-    }
-
-    .trip-destination {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: #666;
-      margin-bottom: 1rem;
-      font-size: 0.9rem;
-    }
-
-    .trip-description {
-      color: #666;
-      line-height: 1.5;
-      margin-bottom: 1rem;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .trip-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .tag {
-      padding: 0.25rem 0.75rem;
-      background: #e9ecef;
-      color: #495057;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
-
-    .more-tags {
-      padding: 0.25rem 0.75rem;
-      background: #007bff;
-      color: white;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
-
-    .trip-stats {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 1.5rem;
-      padding: 1rem 0;
-      border-top: 1px solid #e9ecef;
-      border-bottom: 1px solid #e9ecef;
-    }
-
-    .stat {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: #666;
-      font-size: 0.9rem;
-    }
-
-    .trip-actions {
-      display: flex;
-      gap: 0.75rem;
-    }
-
-    .action-btn {
-      flex: 1;
-      padding: 0.75rem 1rem;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .action-btn.primary {
-      background: #007bff;
-      color: white;
-    }
-
-    .action-btn.primary:hover {
-      background: #0056b3;
-    }
-
-    .action-btn.secondary {
-      background: #28a745;
-      color: white;
-    }
-
-    .action-btn.secondary:hover {
-      background: #218838;
-    }
-
-    .action-btn.danger {
-      background: #dc3545;
-      color: white;
-    }
-
-    .action-btn.danger:hover {
-      background: #c82333;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 4rem 2rem;
-      color: #666;
-    }
-
-    .empty-icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-    }
-
-    .pagination {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-
-    .pagination-btn {
-      padding: 0.75rem 1.5rem;
-      border: 2px solid #e9ecef;
-      background: white;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .pagination-btn:hover:not(:disabled) {
-      border-color: #007bff;
-      color: #007bff;
-    }
-
-    .pagination-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .page-numbers {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .page-btn {
-      padding: 0.75rem 1rem;
-      border: 2px solid #e9ecef;
-      background: white;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .page-btn:hover {
-      border-color: #007bff;
-      color: #007bff;
-    }
-
-    .page-btn.active {
-      background: #007bff;
-      color: white;
-      border-color: #007bff;
-    }
-
-    @media (max-width: 768px) {
+  styles: [
+    `
       .trip-list-container {
-        padding: 1rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
       }
 
       .trip-header {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #e9ecef;
       }
 
-      .search-input-group {
-        flex-direction: column;
+      .header-content h1 {
+        margin: 0 0 0.5rem 0;
+        color: #333;
+        font-size: 2.5rem;
+        font-weight: 700;
       }
 
-      .search-input, .status-select, .destination-select {
-        flex: none;
+      .header-content p {
+        margin: 0;
+        color: #666;
+        font-size: 1.1rem;
+      }
+
+      .create-trip-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .create-trip-btn:hover {
+        background: #0056b3;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+      }
+
+      .filters-section {
+        margin-bottom: 2rem;
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .search-form {
         width: 100%;
       }
 
-      .trips-grid {
-        grid-template-columns: 1fr;
+      .search-input-group {
+        display: flex;
         gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .search-input {
+        flex: 2;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+      }
+
+      .search-input:focus {
+        outline: none;
+        border-color: #007bff;
+      }
+
+      .status-select,
+      .destination-select {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
+        background: white;
+        cursor: pointer;
+      }
+
+      .search-btn,
+      .clear-btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .search-btn {
+        background: #28a745;
+        color: white;
+      }
+
+      .search-btn:hover {
+        background: #218838;
+      }
+
+      .clear-btn {
+        background: #6c757d;
+        color: white;
+      }
+
+      .clear-btn:hover {
+        background: #5a6268;
+      }
+
+      .loading-state,
+      .error-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem 2rem;
+        text-align: center;
+      }
+
+      .loader {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #007bff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+      }
+
+      .retry-btn {
+        padding: 0.75rem 1.5rem;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 1rem;
+      }
+
+      .trips-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .trip-card {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+      }
+
+      .trip-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      }
+
+      .trip-card.featured {
+        border: 2px solid #28a745;
+      }
+
+      .trip-image {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+      }
+
+      .trip-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+      }
+
+      .trip-card:hover .trip-image img {
+        transform: scale(1.05);
+      }
+
+      .trip-status {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .trip-status.planning {
+        background: #ffc107;
+        color: #000;
+      }
+
+      .trip-status.confirmed {
+        background: #28a745;
+        color: white;
+      }
+
+      .trip-status.in-progress {
+        background: #17a2b8;
+        color: white;
+      }
+
+      .trip-status.completed {
+        background: #6c757d;
+        color: white;
+      }
+
+      .trip-status.cancelled {
+        background: #dc3545;
+        color: white;
+      }
+
+      .trip-dates {
+        position: absolute;
+        bottom: 1rem;
+        left: 1rem;
+        right: 1rem;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.9rem;
+      }
+
+      .date-separator {
+        margin: 0 0.5rem;
+      }
+
+      .trip-content {
+        padding: 1.5rem;
+      }
+
+      .trip-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+      }
+
+      .trip-title {
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #333;
+        line-height: 1.3;
+      }
+
+      .trip-budget {
+        text-align: right;
+      }
+
+      .budget-amount {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #28a745;
+      }
+
+      .trip-destination {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #666;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+      }
+
+      .trip-description {
+        color: #666;
+        line-height: 1.5;
+        margin-bottom: 1rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .trip-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .tag {
+        padding: 0.25rem 0.75rem;
+        background: #e9ecef;
+        color: #495057;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+
+      .more-tags {
+        padding: 0.25rem 0.75rem;
+        background: #007bff;
+        color: white;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+
+      .trip-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        padding: 1rem 0;
+        border-top: 1px solid #e9ecef;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .stat {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #666;
+        font-size: 0.9rem;
       }
 
       .trip-actions {
-        flex-direction: column;
+        display: flex;
+        gap: 0.75rem;
       }
-    }
-  `]
+
+      .action-btn {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .action-btn.primary {
+        background: #007bff;
+        color: white;
+      }
+
+      .action-btn.primary:hover {
+        background: #0056b3;
+      }
+
+      .action-btn.secondary {
+        background: #28a745;
+        color: white;
+      }
+
+      .action-btn.secondary:hover {
+        background: #218838;
+      }
+
+      .action-btn.danger {
+        background: #dc3545;
+        color: white;
+      }
+
+      .action-btn.danger:hover {
+        background: #c82333;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #666;
+      }
+
+      .empty-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+      }
+
+      .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 2rem;
+      }
+
+      .pagination-btn {
+        padding: 0.75rem 1.5rem;
+        border: 2px solid #e9ecef;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .pagination-btn:hover:not(:disabled) {
+        border-color: #007bff;
+        color: #007bff;
+      }
+
+      .pagination-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .page-numbers {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .page-btn {
+        padding: 0.75rem 1rem;
+        border: 2px solid #e9ecef;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .page-btn:hover {
+        border-color: #007bff;
+        color: #007bff;
+      }
+
+      .page-btn.active {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+      }
+
+      @media (max-width: 768px) {
+        .trip-list-container {
+          padding: 1rem;
+        }
+
+        .trip-header {
+          flex-direction: column;
+          gap: 1rem;
+          align-items: stretch;
+        }
+
+        .search-input-group {
+          flex-direction: column;
+        }
+
+        .search-input,
+        .status-select,
+        .destination-select {
+          flex: none;
+          width: 100%;
+        }
+
+        .trips-grid {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+
+        .trip-actions {
+          flex-direction: column;
+        }
+      }
+    `,
+  ],
 })
 export class TripListComponent implements OnInit, OnDestroy {
   trips: Trip[] = [];
@@ -735,12 +740,12 @@ export class TripListComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private toastService: ToastService,
     private router: Router,
-    private fb: FormBuilder
+    private fb: FormBuilder,
   ) {
     this.searchForm = this.fb.group({
       search: [''],
       status: [''],
-      destination: ['']
+      destination: [''],
     });
   }
 
@@ -754,12 +759,12 @@ export class TripListComponent implements OnInit, OnDestroy {
   }
 
   private checkAuthentication(): void {
-    this.authService.isAuthenticated$.subscribe(isAuth => {
+    this.authService.isAuthenticated$.subscribe((isAuth) => {
       this.isAuthenticated = isAuth;
       this.cdr.markForCheck();
     });
 
-    this.authService.currentUser$.subscribe(user => {
+    this.authService.currentUser$.subscribe((user) => {
       this.currentUser = user;
       this.cdr.markForCheck();
     });
@@ -773,38 +778,45 @@ export class TripListComponent implements OnInit, OnDestroy {
     const statusValue = this.searchForm.get('status')?.value || '';
     const destinationValue = this.searchForm.get('destination')?.value || '';
 
-    this.tripService.getTrips(
-      this.currentPage, 
-      this.pageSize, 
-      searchValue || undefined,
-      statusValue || undefined,
-      destinationValue || undefined
-    ).subscribe({
-      next: (response) => {
-        // Ensure we have an array for NgFor
-        if (Array.isArray(response.data)) {
-          this.trips = response.data;
-        } else if (response.data && typeof response.data === 'object' && 'content' in response.data && Array.isArray((response.data as any).content)) {
-          // Handle case where data is wrapped in a content property
-          this.trips = (response.data as any).content;
-        } else {
-          console.warn('Unexpected response format:', response);
-          this.trips = [];
-        }
-        
-        this.totalPages = response.pagination?.totalPages || 0;
-        this.totalElements = response.pagination?.totalElements || 0;
-        this.loading = false;
-        this.cdr.markForCheck();
-      },
-      error: (error) => {
-        console.error('Error loading trips:', error);
-        this.error = 'Failed to load trips. Please try again.';
-        this.loading = false;
-        this.cdr.markForCheck();
-        this.toastService.error('Failed to load trips', '');
-      }
-    });
+    this.tripService
+      .getTrips(
+        this.currentPage,
+        this.pageSize,
+        searchValue || undefined,
+        statusValue || undefined,
+        destinationValue || undefined,
+      )
+      .subscribe({
+        next: (response) => {
+          // Ensure we have an array for NgFor
+          if (Array.isArray(response.data)) {
+            this.trips = response.data;
+          } else if (
+            response.data &&
+            typeof response.data === 'object' &&
+            'content' in response.data &&
+            Array.isArray((response.data as any).content)
+          ) {
+            // Handle case where data is wrapped in a content property
+            this.trips = (response.data as any).content;
+          } else {
+            logger.warn('Unexpected response format:', response);
+            this.trips = [];
+          }
+
+          this.totalPages = response.pagination?.totalPages || 0;
+          this.totalElements = response.pagination?.totalElements || 0;
+          this.loading = false;
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          logger.error('Error loading trips:', error);
+          this.error = 'Failed to load trips. Please try again.';
+          this.loading = false;
+          this.cdr.markForCheck();
+          this.toastService.error('Failed to load trips', '');
+        },
+      });
   }
 
   onSearch(): void {
@@ -827,11 +839,11 @@ export class TripListComponent implements OnInit, OnDestroy {
     const pages: number[] = [];
     const start = Math.max(0, this.currentPage - 2);
     const end = Math.min(this.totalPages - 1, this.currentPage + 2);
-    
+
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
-    
+
     return pages;
   }
 
@@ -854,7 +866,7 @@ export class TripListComponent implements OnInit, OnDestroy {
   createNewTrip(): void {
     if (!this.isAuthenticated) {
       this.router.navigate(['/signin'], {
-        queryParams: { returnUrl: '/trips/create' }
+        queryParams: { returnUrl: '/trips/create' },
       });
       return;
     }
@@ -864,7 +876,7 @@ export class TripListComponent implements OnInit, OnDestroy {
   joinTrip(trip: Trip): void {
     if (!this.isAuthenticated) {
       this.router.navigate(['/signin'], {
-        queryParams: { returnUrl: this.router.url }
+        queryParams: { returnUrl: this.router.url },
       });
       return;
     }
@@ -875,9 +887,9 @@ export class TripListComponent implements OnInit, OnDestroy {
         this.loadTrips();
       },
       error: (error) => {
-        console.error('Error joining trip:', error);
+        logger.error('Error joining trip:', error);
         this.toastService.error('Failed to join trip', '');
-      }
+      },
     });
   }
 
@@ -897,7 +909,7 @@ export class TripListComponent implements OnInit, OnDestroy {
 
   isParticipant(trip: Trip): boolean {
     if (!this.currentUser || !trip.participants) return false;
-    return trip.participants.some(p => p.userId === this.currentUser.id);
+    return trip.participants.some((p) => p.userId === this.currentUser.id);
   }
 
   getTripImage(trip: Trip): string {
@@ -919,24 +931,24 @@ export class TripListComponent implements OnInit, OnDestroy {
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     });
   }
 
   formatCurrency(amount: number, currency: string): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency || 'USD'
+      currency: currency || 'USD',
     }).format(amount);
   }
 
   getStatusText(status: string): string {
     const statusMap: { [key: string]: string } = {
-      'PLANNING': 'Planning',
-      'CONFIRMED': 'Confirmed',
-      'IN_PROGRESS': 'In Progress',
-      'COMPLETED': 'Completed',
-      'CANCELLED': 'Cancelled'
+      PLANNING: 'Planning',
+      CONFIRMED: 'Confirmed',
+      IN_PROGRESS: 'In Progress',
+      COMPLETED: 'Completed',
+      CANCELLED: 'Cancelled',
     };
     return statusMap[status] || status;
   }

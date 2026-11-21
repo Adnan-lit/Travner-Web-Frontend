@@ -18,7 +18,7 @@ interface SystemHealth {
   standalone: true,
   imports: [CommonModule],
   templateUrl: './admin-settings.component.html',
-  styleUrls: ['./admin-settings.component.css']
+  styleUrls: ['./admin-settings.component.css'],
 })
 export class AdminSettingsComponent implements OnInit {
   health: SystemHealth | null = null;
@@ -36,8 +36,13 @@ export class AdminSettingsComponent implements OnInit {
   loadHealth(): void {
     this.loadingHealth = true;
     this.errorMessage = '';
-    this.adminService.getSystemHealth()
-      .pipe(finalize(() => { this.loadingHealth = false; }))
+    this.adminService
+      .getSystemHealth()
+      .pipe(
+        finalize(() => {
+          this.loadingHealth = false;
+        }),
+      )
       .subscribe({
         next: (response: ApiResponse<SystemHealth>) => {
           this.health = response.data ?? null;
@@ -48,7 +53,7 @@ export class AdminSettingsComponent implements OnInit {
         error: () => {
           this.health = null;
           this.errorMessage = 'Could not load system health. Please try again.';
-        }
+        },
       });
   }
 
@@ -56,17 +61,21 @@ export class AdminSettingsComponent implements OnInit {
     this.clearingCache = true;
     this.errorMessage = '';
     this.successMessage = '';
-    this.adminService.clearCache()
-      .pipe(finalize(() => { this.clearingCache = false; }))
+    this.adminService
+      .clearCache()
+      .pipe(
+        finalize(() => {
+          this.clearingCache = false;
+        }),
+      )
       .subscribe({
         next: (response: ApiResponse<{ message: string }>) => {
-          const message = response.data?.message ?? response.message;
-          this.successMessage = message || 'Cache cleared successfully.';
+          this.successMessage = 'Cache cleared';
           this.loadHealth();
         },
         error: () => {
           this.errorMessage = 'Could not clear the cache. Please try again.';
-        }
+        },
       });
   }
 

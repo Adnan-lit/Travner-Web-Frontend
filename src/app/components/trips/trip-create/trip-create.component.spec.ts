@@ -19,7 +19,7 @@ describe('TripCreateComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [TripCreateComponent],
-      providers: [provideRouter([]), { provide: TripService, useValue: serviceSpy }]
+      providers: [provideRouter([]), { provide: TripService, useValue: serviceSpy }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TripCreateComponent);
@@ -37,7 +37,7 @@ describe('TripCreateComponent', () => {
       budget: '1500',
       currency: ' usd ',
       visibility: 'PRIVATE',
-      tags: 'ski, snow, food'
+      tags: 'ski, snow, food',
     });
   }
 
@@ -65,7 +65,7 @@ describe('TripCreateComponent', () => {
       budget: 1500,
       currency: 'USD',
       visibility: 'PRIVATE',
-      tags: ['ski', 'snow', 'food']
+      tags: ['ski', 'snow', 'food'],
     });
     expect(navigateSpy).toHaveBeenCalledOnceWith(['/trips', 'trip-42']);
     expect(component.submitting).toBeFalse();
@@ -87,7 +87,7 @@ describe('TripCreateComponent', () => {
       startDate: '2026-12-01',
       endDate: '2026-12-08',
       currency: 'USD',
-      visibility: 'PRIVATE'
+      visibility: 'PRIVATE',
     });
   });
 
@@ -134,7 +134,7 @@ describe('TripCreateComponent', () => {
 
   it('shows a safe generic error and never displays server details', () => {
     serviceSpy.createTrip.and.returnValue(
-      throwError(() => ({ status: 400, error: { detail: 'SECRET alice@example.com' } }))
+      throwError(() => ({ status: 400, error: { detail: 'SECRET alice@example.com' } })),
     );
     fillForm();
 

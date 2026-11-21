@@ -28,7 +28,7 @@
           <i class="fas fa-users"></i>
         </div>
         <div class="stat-content">
-          <h3>{{userStats.totalUsers | number}}</h3>
+          <h3>{{ userStats.totalUsers | number }}</h3>
           <p>Total Users</p>
         </div>
       </div>
@@ -38,7 +38,7 @@
           <i class="fas fa-user-check"></i>
         </div>
         <div class="stat-content">
-          <h3>{{userStats.activeUsers | number}}</h3>
+          <h3>{{ userStats.activeUsers | number }}</h3>
           <p>Active Users</p>
         </div>
       </div>
@@ -48,7 +48,7 @@
           <i class="fas fa-user-shield"></i>
         </div>
         <div class="stat-content">
-          <h3>{{userStats.adminUsers | number}}</h3>
+          <h3>{{ userStats.adminUsers | number }}</h3>
           <p>Admin Users</p>
         </div>
       </div>
@@ -58,7 +58,7 @@
           <i class="fas fa-user-times"></i>
         </div>
         <div class="stat-content">
-          <h3>{{userStats.bannedUsers | number}}</h3>
+          <h3>{{ userStats.bannedUsers | number }}</h3>
           <p>Banned Users</p>
         </div>
       </div>
@@ -68,7 +68,7 @@
           <i class="fas fa-user-plus"></i>
         </div>
         <div class="stat-content">
-          <h3>{{userStats.newUsersToday | number}}</h3>
+          <h3>{{ userStats.newUsersToday | number }}</h3>
           <p>New Today</p>
         </div>
       </div>
@@ -78,7 +78,7 @@
           <i class="fas fa-calendar-week"></i>
         </div>
         <div class="stat-content">
-          <h3>{{userStats.newUsersThisWeek | number}}</h3>
+          <h3>{{ userStats.newUsersThisWeek | number }}</h3>
           <p>New This Week</p>
         </div>
       </div>
@@ -95,17 +95,19 @@
           placeholder="Search users by name, email, or username..."
           [(ngModel)]="filters.search"
           (input)="onSearchChange($any($event.target).value)"
-          class="search-input">
+          class="search-input"
+          aria-label="Search users by name, email, or username..."
+        />
       </div>
 
-      <select [(ngModel)]="filters.role" (change)="onFilterChange()" class="filter-select">
+      <select [(ngModel)]="filters.role" (change)="onFilterChange()" class="filter-select" aria-label="Role">
         <option value="">All Roles</option>
         <option value="USER">User</option>
         <option value="ADMIN">Admin</option>
         <option value="MODERATOR">Moderator</option>
       </select>
 
-      <select [(ngModel)]="filters.status" (change)="onFilterChange()" class="filter-select">
+      <select [(ngModel)]="filters.status" (change)="onFilterChange()" class="filter-select" aria-label="Status">
         <option value="">All Status</option>
         <option value="ACTIVE">Active</option>
         <option value="INACTIVE">Inactive</option>
@@ -113,14 +115,14 @@
         <option value="PENDING">Pending</option>
       </select>
 
-      <select [(ngModel)]="filters.sortBy" (change)="onSortChange()" class="filter-select">
+      <select [(ngModel)]="filters.sortBy" (change)="onSortChange()" class="filter-select" aria-label="Sort by">
         <option value="createdAt">Sort by Date</option>
         <option value="firstName">Sort by Name</option>
         <option value="email">Sort by Email</option>
         <option value="lastLogin">Sort by Last Login</option>
       </select>
 
-      <select [(ngModel)]="filters.sortOrder" (change)="onSortChange()" class="filter-select">
+      <select [(ngModel)]="filters.sortOrder" (change)="onSortChange()" class="filter-select" aria-label="Sort order">
         <option value="desc">Newest First</option>
         <option value="asc">Oldest First</option>
       </select>
@@ -130,7 +132,7 @@
   <!-- Bulk Actions -->
   <div class="bulk-actions" *ngIf="showBulkActions">
     <div class="bulk-actions-content">
-      <span class="selected-count">{{selectedUsers.size}} users selected</span>
+      <span class="selected-count">{{ selectedUsers.size }} users selected</span>
       <div class="bulk-buttons">
         <button class="btn btn-sm btn-danger" (click)="bulkAction('delete')">
           <i class="fas fa-trash"></i>
@@ -162,7 +164,9 @@
               type="checkbox"
               [checked]="selectedUsers.size === users.length && users.length > 0"
               [indeterminate]="selectedUsers.size > 0 && selectedUsers.size < users.length"
-              (change)="selectAllUsers()">
+              aria-label="Select all users"
+              (change)="selectAllUsers()"
+            />
           </th>
           <th>User</th>
           <th>Role</th>
@@ -178,7 +182,9 @@
             <input
               type="checkbox"
               [checked]="selectedUsers.has(user.id)"
-              (change)="toggleUserSelection(user.id)">
+              aria-label="Select user"
+              (change)="toggleUserSelection(user.id)"
+            />
           </td>
           <td class="user-info">
             <div class="user-avatar">
@@ -188,34 +194,35 @@
                 [alt]="user.firstName + ' ' + user.lastName"
                 width="50"
                 height="50"
-                disableOptimizedSrcset>
+                disableOptimizedSrcset
+              />
               <ng-template #defaultAvatar>
                 <div class="avatar-placeholder">
-                  {{getInitials(user.firstName || '', user.lastName || '')}}
+                  {{ getInitials(user.firstName || '', user.lastName || '') }}
                 </div>
               </ng-template>
             </div>
             <div class="user-details">
-              <h4 class="user-name">{{user.firstName}} {{user.lastName}}</h4>
-              <p class="user-username">{{'@' + user.userName}}</p>
-              <p class="user-email">{{user.email}}</p>
+              <h4 class="user-name">{{ user.firstName }} {{ user.lastName }}</h4>
+              <p class="user-username">{{ '@' + user.userName }}</p>
+              <p class="user-email">{{ user.email }}</p>
             </div>
           </td>
           <td>
             <span class="badge" [ngClass]="getRoleBadgeClass(user.role || 'USER')">
-              {{user.role || 'USER'}}
+              {{ user.role || 'USER' }}
             </span>
           </td>
           <td>
             <span class="badge" [ngClass]="getStatusBadgeClass(user.status || 'ACTIVE')">
-              {{user.status || 'ACTIVE'}}
+              {{ user.status || 'ACTIVE' }}
             </span>
           </td>
           <td class="date-cell">
-            {{user.lastLogin || user.lastLoginAt ? formatDate(user.lastLogin || user.lastLoginAt!) : 'Never'}}
+            {{ user.lastLogin || user.lastLoginAt ? formatDate(user.lastLogin || user.lastLoginAt!) : 'Never' }}
           </td>
           <td class="date-cell">
-            {{formatDate(user.createdAt || '')}}
+            {{ formatDate(user.createdAt || '') }}
           </td>
           <td class="actions-cell">
             <div class="action-buttons">
@@ -254,12 +261,15 @@
 
   <!-- Pagination -->
   <div class="pagination-section" *ngIf="pagination.totalPages > 1">
-    <div class="pagination-info">
-      Showing {{getPaginationInfo()}} users
-    </div>
+    <div class="pagination-info">Showing {{ getPaginationInfo() }} users</div>
 
     <div class="pagination-controls">
-      <select [(ngModel)]="pagination.size" (change)="onPageSizeChange($any($event.target).value)" class="page-size-select">
+      <select
+        [(ngModel)]="pagination.size"
+        (change)="onPageSizeChange($any($event.target).value)"
+        class="page-size-select"
+        aria-label="Size"
+      >
         <option value="10">10 per page</option>
         <option value="20">20 per page</option>
         <option value="50">50 per page</option>
@@ -270,7 +280,8 @@
         <button
           class="btn btn-outline btn-sm"
           [disabled]="pagination.page === 0"
-          (click)="onPageChange(pagination.page - 1)">
+          (click)="onPageChange(pagination.page - 1)"
+        >
           <i class="fas fa-chevron-left"></i>
         </button>
 
@@ -278,14 +289,16 @@
           *ngFor="let page of getPageNumbers()"
           class="btn btn-sm"
           [ngClass]="page === pagination.page ? 'btn-primary' : 'btn-outline'"
-          (click)="onPageChange(page)">
-          {{page + 1}}
+          (click)="onPageChange(page)"
+        >
+          {{ page + 1 }}
         </button>
 
         <button
           class="btn btn-outline btn-sm"
           [disabled]="pagination.page === pagination.totalPages - 1"
-          (click)="onPageChange(pagination.page + 1)">
+          (click)="onPageChange(pagination.page + 1)"
+        >
           <i class="fas fa-chevron-right"></i>
         </button>
       </div>
@@ -311,23 +324,24 @@
             [alt]="selectedUser.firstName + ' ' + selectedUser.lastName"
             width="80"
             height="80"
-            disableOptimizedSrcset>
+            disableOptimizedSrcset
+          />
           <ng-template #defaultAvatar>
             <div class="avatar-placeholder-large">
-              {{getInitials(selectedUser.firstName || '', selectedUser.lastName || '')}}
+              {{ getInitials(selectedUser.firstName || '', selectedUser.lastName || '') }}
             </div>
           </ng-template>
         </div>
         <div class="profile-details">
-          <h3>{{selectedUser.firstName}} {{selectedUser.lastName}}</h3>
-          <p class="username">{{'@' + selectedUser.userName}}</p>
-          <p class="email">{{selectedUser.email}}</p>
+          <h3>{{ selectedUser.firstName }} {{ selectedUser.lastName }}</h3>
+          <p class="username">{{ '@' + selectedUser.userName }}</p>
+          <p class="email">{{ selectedUser.email }}</p>
           <div class="profile-badges">
             <span class="badge" [ngClass]="getRoleBadgeClass(selectedUser.role || 'USER')">
-              {{selectedUser.role || 'USER'}}
+              {{ selectedUser.role || 'USER' }}
             </span>
             <span class="badge" [ngClass]="getStatusBadgeClass(selectedUser.status || 'ACTIVE')">
-              {{selectedUser.status || 'ACTIVE'}}
+              {{ selectedUser.status || 'ACTIVE' }}
             </span>
           </div>
         </div>
@@ -336,19 +350,23 @@
       <div class="profile-info">
         <div class="info-row">
           <label>Created:</label>
-          <span>{{formatDate(selectedUser.createdAt || '')}}</span>
+          <span>{{ formatDate(selectedUser.createdAt || '') }}</span>
         </div>
         <div class="info-row">
           <label>Last Login:</label>
-          <span>{{selectedUser.lastLogin || selectedUser.lastLoginAt ? formatDate(selectedUser.lastLogin || selectedUser.lastLoginAt!) : 'Never'}}</span>
+          <span>{{
+            selectedUser.lastLogin || selectedUser.lastLoginAt
+              ? formatDate(selectedUser.lastLogin || selectedUser.lastLoginAt!)
+              : 'Never'
+          }}</span>
         </div>
         <div class="info-row" *ngIf="selectedUser.bio">
           <label>Bio:</label>
-          <span>{{selectedUser.bio}}</span>
+          <span>{{ selectedUser.bio }}</span>
         </div>
         <div class="info-row" *ngIf="selectedUser.location">
           <label>Location:</label>
-          <span>{{selectedUser.location}}</span>
+          <span>{{ selectedUser.location }}</span>
         </div>
       </div>
     </div>
@@ -369,7 +387,10 @@
       </button>
     </div>
     <div class="modal-body">
-      <p>Are you sure you want to delete <strong>{{selectedUser.firstName}} {{selectedUser.lastName}}</strong>?</p>
+      <p>
+        Are you sure you want to delete <strong>{{ selectedUser.firstName }} {{ selectedUser.lastName }}</strong
+        >?
+      </p>
       <p class="text-danger">This action cannot be undone and will permanently remove the user and all their data.</p>
     </div>
     <div class="modal-footer">

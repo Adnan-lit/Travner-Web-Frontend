@@ -1,7 +1,8 @@
-import { Component, OnInit, OnDestroy, Input } from '@angular/core';
+import { Component, OnInit, Input, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { Subject, interval, takeUntil } from 'rxjs';
+import { interval } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 export interface Activity {
   id: string;
@@ -37,15 +38,19 @@ export interface Activity {
       </div>
 
       <div class="activity-list" *ngIf="activities.length > 0; else emptyState">
-        <div class="activity-item" 
-             *ngFor="let activity of activities; trackBy: trackByActivity"
-             [class.new]="isNewActivity(activity)"
-             [@slideIn]>
+        <div
+          class="activity-item"
+          *ngFor="let activity of activities; trackBy: trackByActivity"
+          [class.new]="isNewActivity(activity)"
+          [@slideIn]
+        >
           <div class="activity-avatar">
-            <img *ngIf="activity.user.avatar" 
-                 [src]="activity.user.avatar" 
-                 [alt]="activity.user.name"
-                 (error)="handleAvatarError($event)">
+            <img
+              *ngIf="activity.user.avatar"
+              [src]="activity.user.avatar"
+              [alt]="activity.user.name"
+              (error)="handleAvatarError($event)"
+            />
             <div *ngIf="!activity.user.avatar" class="avatar-placeholder">
               {{ getInitials(activity.user.name) }}
             </div>
@@ -55,9 +60,7 @@ export interface Activity {
             <div class="activity-text">
               <span class="user-name">{{ activity.user.name }}</span>
               <span class="activity-action">{{ getActivityText(activity) }}</span>
-              <span class="activity-target" *ngIf="activity.postTitle">
-                "{{ activity.postTitle }}"
-              </span>
+              <span class="activity-target" *ngIf="activity.postTitle"> "{{ activity.postTitle }}" </span>
             </div>
             <div class="activity-meta">
               <span class="activity-time">{{ formatTime(activity.timestamp) }}</span>
@@ -66,9 +69,7 @@ export interface Activity {
           </div>
 
           <div class="activity-actions" *ngIf="activity.postId">
-            <a [routerLink]="['/community', activity.postId]" 
-               class="view-post-btn"
-               title="View Post">
+            <a [routerLink]="['/community', activity.postId]" class="view-post-btn" title="View Post">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
@@ -91,232 +92,238 @@ export interface Activity {
       </ng-template>
     </div>
   `,
-  styles: [`
-    .activity-feed {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-    }
-
-    .activity-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-
-    .activity-title {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .activity-indicator {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      opacity: 0.8;
-    }
-
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      background: #ff6b6b;
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-
-    .activity-indicator.active .pulse-dot {
-      background: #51cf66;
-    }
-
-    @keyframes pulse {
-      0% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(1.1); }
-      100% { opacity: 1; transform: scale(1); }
-    }
-
-    .activity-list {
-      max-height: 400px;
-      overflow-y: auto;
-    }
-
-    .activity-item {
-      display: flex;
-      align-items: center;
-      padding: 16px 20px;
-      border-bottom: 1px solid #f0f0f0;
-      transition: all 0.3s ease;
-      animation: slideIn 0.5s ease-out;
-    }
-
-    .activity-item:hover {
-      background: #f8f9fa;
-    }
-
-    .activity-item.new {
-      background: #e3f2fd;
-      border-left: 4px solid #2196f3;
-    }
-
-    .activity-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      overflow: hidden;
-      margin-right: 12px;
-      flex-shrink: 0;
-    }
-
-    .activity-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .avatar-placeholder {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      font-size: 14px;
-    }
-
-    .activity-content {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .activity-text {
-      margin-bottom: 4px;
-      line-height: 1.4;
-    }
-
-    .user-name {
-      font-weight: 600;
-      color: #333;
-    }
-
-    .activity-action {
-      color: #666;
-      margin: 0 4px;
-    }
-
-    .activity-target {
-      color: #2196f3;
-      font-style: italic;
-    }
-
-    .activity-meta {
-      display: flex;
-      gap: 12px;
-      font-size: 12px;
-      color: #999;
-    }
-
-    .activity-actions {
-      margin-left: 12px;
-    }
-
-    .view-post-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: #f0f0f0;
-      color: #666;
-      text-decoration: none;
-      transition: all 0.3s ease;
-    }
-
-    .view-post-btn:hover {
-      background: #2196f3;
-      color: white;
-      transform: scale(1.1);
-    }
-
-    .empty-activity {
-      text-align: center;
-      padding: 40px 20px;
-      color: #666;
-    }
-
-    .empty-icon {
-      margin-bottom: 16px;
-      opacity: 0.5;
-    }
-
-    .empty-activity p {
-      margin: 0 0 8px 0;
-      font-weight: 500;
-    }
-
-    .empty-activity small {
-      font-size: 12px;
-      opacity: 0.7;
-    }
-
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateX(-20px);
+  styles: [
+    `
+      .activity-feed {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
       }
-      to {
-        opacity: 1;
-        transform: translateX(0);
+
+      .activity-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
       }
-    }
 
-    /* Scrollbar styling */
-    .activity-list::-webkit-scrollbar {
-      width: 4px;
-    }
+      .activity-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
 
-    .activity-list::-webkit-scrollbar-track {
-      background: #f1f1f1;
-    }
+      .activity-indicator {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        opacity: 0.8;
+      }
 
-    .activity-list::-webkit-scrollbar-thumb {
-      background: #c1c1c1;
-      border-radius: 2px;
-    }
+      .pulse-dot {
+        width: 8px;
+        height: 8px;
+        background: #ff6b6b;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
 
-    .activity-list::-webkit-scrollbar-thumb:hover {
-      background: #a8a8a8;
-    }
-  `]
+      .activity-indicator.active .pulse-dot {
+        background: #51cf66;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(1.1);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      .activity-list {
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .activity-item {
+        display: flex;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.3s ease;
+        animation: slideIn 0.5s ease-out;
+      }
+
+      .activity-item:hover {
+        background: #f8f9fa;
+      }
+
+      .activity-item.new {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+      }
+
+      .activity-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-right: 12px;
+        flex-shrink: 0;
+      }
+
+      .activity-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .activity-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .activity-text {
+        margin-bottom: 4px;
+        line-height: 1.4;
+      }
+
+      .user-name {
+        font-weight: 600;
+        color: #333;
+      }
+
+      .activity-action {
+        color: #666;
+        margin: 0 4px;
+      }
+
+      .activity-target {
+        color: #2196f3;
+        font-style: italic;
+      }
+
+      .activity-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 12px;
+        color: #999;
+      }
+
+      .activity-actions {
+        margin-left: 12px;
+      }
+
+      .view-post-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #f0f0f0;
+        color: #666;
+        text-decoration: none;
+        transition: all 0.3s ease;
+      }
+
+      .view-post-btn:hover {
+        background: #2196f3;
+        color: white;
+        transform: scale(1.1);
+      }
+
+      .empty-activity {
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+      }
+
+      .empty-icon {
+        margin-bottom: 16px;
+        opacity: 0.5;
+      }
+
+      .empty-activity p {
+        margin: 0 0 8px 0;
+        font-weight: 500;
+      }
+
+      .empty-activity small {
+        font-size: 12px;
+        opacity: 0.7;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      /* Scrollbar styling */
+      .activity-list::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .activity-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+
+      .activity-list::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 2px;
+      }
+
+      .activity-list::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+      }
+    `,
+  ],
 })
-export class ActivityFeedComponent implements OnInit, OnDestroy {
+export class ActivityFeedComponent implements OnInit {
   @Input() maxActivities = 10;
   @Input() refreshInterval = 30000; // 30 seconds
 
   activities: Activity[] = [];
   isLive = false;
-  private destroy$ = new Subject<void>();
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor() {}
 
   ngOnInit(): void {
     this.loadInitialActivities();
     this.startLiveUpdates();
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   private loadInitialActivities(): void {
@@ -329,7 +336,7 @@ export class ActivityFeedComponent implements OnInit, OnDestroy {
         content: 'created a new post',
         timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
         postId: 'post-1',
-        postTitle: 'Amazing sunset in Santorini'
+        postTitle: 'Amazing sunset in Santorini',
       },
       {
         id: '2',
@@ -338,24 +345,28 @@ export class ActivityFeedComponent implements OnInit, OnDestroy {
         content: 'liked a post',
         timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
         postId: 'post-2',
-        postTitle: 'Hidden gems in Tokyo'
+        postTitle: 'Hidden gems in Tokyo',
       },
       {
         id: '3',
         type: 'comment_added',
-        user: { id: '3', name: 'Mike Johnson', avatar: 'https://ui-avatars.com/api/?name=Mike+Johnson&background=random' },
+        user: {
+          id: '3',
+          name: 'Mike Johnson',
+          avatar: 'https://ui-avatars.com/api/?name=Mike+Johnson&background=random',
+        },
         content: 'commented on a post',
         timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
         postId: 'post-3',
-        postTitle: 'Best restaurants in Paris'
-      }
+        postTitle: 'Best restaurants in Paris',
+      },
     ];
     this.isLive = true;
   }
 
   private startLiveUpdates(): void {
     interval(this.refreshInterval)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.simulateNewActivity();
       });
@@ -369,12 +380,12 @@ export class ActivityFeedComponent implements OnInit, OnDestroy {
       user: {
         id: Math.random().toString(),
         name: this.getRandomName(),
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(this.getRandomName())}&background=random`
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(this.getRandomName())}&background=random`,
       },
       content: this.getActivityContent(this.getRandomActivityType()),
       timestamp: new Date().toISOString(),
       postId: `post-${Math.floor(Math.random() * 100)}`,
-      postTitle: this.getRandomPostTitle()
+      postTitle: this.getRandomPostTitle(),
     };
 
     this.activities.unshift(newActivity);
@@ -399,18 +410,23 @@ export class ActivityFeedComponent implements OnInit, OnDestroy {
       'Street food adventure in Bangkok',
       'Mountain hiking in Switzerland',
       'Beach day in Maldives',
-      'Cultural tour in Rome'
+      'Cultural tour in Rome',
     ];
     return titles[Math.floor(Math.random() * titles.length)];
   }
 
   private getActivityContent(type: Activity['type']): string {
     switch (type) {
-      case 'post_created': return 'created a new post';
-      case 'post_liked': return 'liked a post';
-      case 'comment_added': return 'commented on a post';
-      case 'user_joined': return 'joined the community';
-      default: return 'performed an action';
+      case 'post_created':
+        return 'created a new post';
+      case 'post_liked':
+        return 'liked a post';
+      case 'comment_added':
+        return 'commented on a post';
+      case 'user_joined':
+        return 'joined the community';
+      default:
+        return 'performed an action';
     }
   }
 
@@ -431,11 +447,16 @@ export class ActivityFeedComponent implements OnInit, OnDestroy {
 
   getActivityTypeLabel(type: Activity['type']): string {
     switch (type) {
-      case 'post_created': return 'New Post';
-      case 'post_liked': return 'Like';
-      case 'comment_added': return 'Comment';
-      case 'user_joined': return 'Join';
-      default: return 'Activity';
+      case 'post_created':
+        return 'New Post';
+      case 'post_liked':
+        return 'Like';
+      case 'comment_added':
+        return 'Comment';
+      case 'user_joined':
+        return 'Join';
+      default:
+        return 'Activity';
     }
   }
 
@@ -453,7 +474,11 @@ export class ActivityFeedComponent implements OnInit, OnDestroy {
   }
 
   getInitials(name: string): string {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase();
   }
 
   handleAvatarError(event: any): void {
@@ -461,4 +486,3 @@ export class ActivityFeedComponent implements OnInit, OnDestroy {
     event.target.nextElementSibling.style.display = 'flex';
   }
 }
-

@@ -2,7 +2,11 @@
 .signup-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   position: relative;
   overflow: hidden;
 }
@@ -14,15 +18,20 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: 
+  background-image:
     radial-gradient(circle at 25% 25%, rgba(231, 76, 60, 0.1) 0%, transparent 50%),
     radial-gradient(circle at 75% 75%, rgba(52, 152, 219, 0.1) 0%, transparent 50%);
   animation: patternFloat 20s ease-in-out infinite;
 }
 
 @keyframes patternFloat {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(1deg); }
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(1deg);
+  }
 }
 
 .floating-element {
@@ -57,9 +66,16 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33% { transform: translateY(-30px) rotate(120deg); }
-  66% { transform: translateY(20px) rotate(240deg); }
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-30px) rotate(120deg);
+  }
+  66% {
+    transform: translateY(20px) rotate(240deg);
+  }
 }
 
 /* Main Container */
@@ -414,7 +430,7 @@
   line-height: 1.4;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   display: none;
 }
 
@@ -429,12 +445,12 @@
   margin-top: 2px;
 }
 
-.checkbox-label input[type="checkbox"]:checked + .checkmark {
+.checkbox-label input[type='checkbox']:checked + .checkmark {
   background: #e74c3c;
   border-color: #e74c3c;
 }
 
-.checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+.checkbox-label input[type='checkbox']:checked + .checkmark::after {
   content: '';
   position: absolute;
   left: 4px;
@@ -516,8 +532,12 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Footer */
@@ -622,25 +642,25 @@
   .signup-container {
     padding: 1rem;
   }
-  
+
   .signup-card {
     padding: 2rem 1.5rem;
   }
-  
+
   .signup-title {
     font-size: 2rem;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   .home-nav {
     top: 1rem;
     left: 1rem;
   }
-  
+
   .social-buttons {
     flex-direction: column;
   }
@@ -650,11 +670,11 @@
   .signup-card {
     padding: 1.5rem 1rem;
   }
-  
+
   .signup-title {
     font-size: 1.75rem;
   }
-  
+
   .welcome-badge {
     font-size: 0.8rem;
     padding: 6px 12px;

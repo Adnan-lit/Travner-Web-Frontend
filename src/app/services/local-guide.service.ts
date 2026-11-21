@@ -3,15 +3,14 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { getApiBaseUrl } from '../config/runtime.config';
 import {
-  LocalGuide,
   LocalGuideCreate,
   LocalGuideSearchParams,
   LocalGuideListResponse,
-  LocalGuideResponse
+  LocalGuideResponse,
 } from '../models/location.model';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class LocalGuideService {
   private apiUrl = `${getApiBaseUrl()}/api/local-guides`;
@@ -21,13 +20,13 @@ export class LocalGuideService {
   // Get all local guides with search and pagination
   getLocalGuides(params?: LocalGuideSearchParams): Observable<LocalGuideListResponse> {
     let httpParams = new HttpParams();
-    
+
     if (params) {
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         const value = params[key as keyof LocalGuideSearchParams];
         if (value !== undefined && value !== null) {
           if (Array.isArray(value)) {
-            value.forEach(v => httpParams = httpParams.append(key, v.toString()));
+            value.forEach((v) => (httpParams = httpParams.append(key, v.toString())));
           } else {
             httpParams = httpParams.set(key, value.toString());
           }
@@ -66,13 +65,13 @@ export class LocalGuideService {
   // Get available local guides
   getAvailableGuides(params?: LocalGuideSearchParams): Observable<LocalGuideListResponse> {
     let httpParams = new HttpParams().set('isAvailable', 'true');
-    
+
     if (params) {
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         const value = params[key as keyof LocalGuideSearchParams];
         if (value !== undefined && value !== null) {
           if (Array.isArray(value)) {
-            value.forEach(v => httpParams = httpParams.append(key, v.toString()));
+            value.forEach((v) => (httpParams = httpParams.append(key, v.toString())));
           } else {
             httpParams = httpParams.set(key, value.toString());
           }
@@ -86,13 +85,13 @@ export class LocalGuideService {
   // Get guides by location
   getGuidesByLocation(location: string, params?: LocalGuideSearchParams): Observable<LocalGuideListResponse> {
     let httpParams = new HttpParams().set('location', location);
-    
+
     if (params) {
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         const value = params[key as keyof LocalGuideSearchParams];
         if (value !== undefined && value !== null) {
           if (Array.isArray(value)) {
-            value.forEach(v => httpParams = httpParams.append(key, v.toString()));
+            value.forEach((v) => (httpParams = httpParams.append(key, v.toString())));
           } else {
             httpParams = httpParams.set(key, value.toString());
           }
@@ -106,13 +105,13 @@ export class LocalGuideService {
   // Get guides by specialty
   getGuidesBySpecialty(specialty: string, params?: LocalGuideSearchParams): Observable<LocalGuideListResponse> {
     let httpParams = new HttpParams().set('specialty', specialty);
-    
+
     if (params) {
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         const value = params[key as keyof LocalGuideSearchParams];
         if (value !== undefined && value !== null) {
           if (Array.isArray(value)) {
-            value.forEach(v => httpParams = httpParams.append(key, v.toString()));
+            value.forEach((v) => (httpParams = httpParams.append(key, v.toString())));
           } else {
             httpParams = httpParams.set(key, value.toString());
           }
@@ -126,13 +125,13 @@ export class LocalGuideService {
   // Search local guides
   searchGuides(query: string, params?: LocalGuideSearchParams): Observable<LocalGuideListResponse> {
     let httpParams = new HttpParams().set('query', query);
-    
+
     if (params) {
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         const value = params[key as keyof LocalGuideSearchParams];
         if (value !== undefined && value !== null) {
           if (Array.isArray(value)) {
-            value.forEach(v => httpParams = httpParams.append(key, v.toString()));
+            value.forEach((v) => (httpParams = httpParams.append(key, v.toString())));
           } else {
             httpParams = httpParams.set(key, value.toString());
           }
@@ -146,13 +145,13 @@ export class LocalGuideService {
   // Get top-rated guides
   getTopRatedGuides(params?: LocalGuideSearchParams): Observable<LocalGuideListResponse> {
     let httpParams = new HttpParams();
-    
+
     if (params) {
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         const value = params[key as keyof LocalGuideSearchParams];
         if (value !== undefined && value !== null) {
           if (Array.isArray(value)) {
-            value.forEach(v => httpParams = httpParams.append(key, v.toString()));
+            value.forEach((v) => (httpParams = httpParams.append(key, v.toString())));
           } else {
             httpParams = httpParams.set(key, value.toString());
           }

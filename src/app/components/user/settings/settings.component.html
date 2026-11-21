@@ -31,15 +31,25 @@
     <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="password-form" novalidate>
       <label>
         <span>Current password</span>
-        <input type="password" formControlName="currentPassword" autocomplete="current-password" />
+        <input
+          type="password"
+          formControlName="currentPassword"
+          autocomplete="current-password"
+          aria-label="Current password"
+        />
       </label>
       <label>
         <span>New password</span>
-        <input type="password" formControlName="newPassword" autocomplete="new-password" />
+        <input type="password" formControlName="newPassword" autocomplete="new-password" aria-label="New password" />
       </label>
       <label>
         <span>Confirm new password</span>
-        <input type="password" formControlName="confirmPassword" autocomplete="new-password" />
+        <input
+          type="password"
+          formControlName="confirmPassword"
+          autocomplete="new-password"
+          aria-label="Confirm password"
+        />
       </label>
       <button type="submit" [disabled]="saving">
         {{ saving ? 'Changing…' : 'Change password' }}

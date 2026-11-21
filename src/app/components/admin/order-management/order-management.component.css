@@ -77,12 +77,24 @@
   box-shadow: var(--shadow-lg);
 }
 
-.stat-card:nth-child(1) { border-left-color: var(--primary-500); }
-.stat-card:nth-child(2) { border-left-color: var(--warning-500); }
-.stat-card:nth-child(3) { border-left-color: var(--info-500); }
-.stat-card:nth-child(4) { border-left-color: var(--success-500); }
-.stat-card:nth-child(5) { border-left-color: var(--success-600); }
-.stat-card:nth-child(6) { border-left-color: var(--primary-600); }
+.stat-card:nth-child(1) {
+  border-left-color: var(--primary-500);
+}
+.stat-card:nth-child(2) {
+  border-left-color: var(--warning-500);
+}
+.stat-card:nth-child(3) {
+  border-left-color: var(--info-500);
+}
+.stat-card:nth-child(4) {
+  border-left-color: var(--success-500);
+}
+.stat-card:nth-child(5) {
+  border-left-color: var(--success-600);
+}
+.stat-card:nth-child(6) {
+  border-left-color: var(--primary-600);
+}
 
 .stat-icon {
   width: 50px;
@@ -239,7 +251,7 @@
   text-align: center;
 }
 
-.checkbox-column input[type="checkbox"] {
+.checkbox-column input[type='checkbox'] {
   width: 18px;
   height: 18px;
   accent-color: var(--primary-500);
@@ -386,8 +398,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-content p {
@@ -608,11 +624,11 @@
     grid-template-columns: 1fr 1fr 1fr;
     gap: var(--space-4);
   }
-  
+
   .search-box {
     grid-column: 1 / -1;
   }
-  
+
   .order-details-grid {
     grid-template-columns: 1fr;
   }
@@ -622,51 +638,51 @@
   .order-management {
     padding: var(--space-4);
   }
-  
+
   .page-header {
     flex-direction: column;
     gap: var(--space-4);
     align-items: stretch;
   }
-  
+
   .header-actions {
     justify-content: flex-start;
   }
-  
+
   .stats-grid {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: var(--space-4);
   }
-  
+
   .filters-grid {
     grid-template-columns: 1fr;
     gap: var(--space-4);
   }
-  
+
   .orders-table {
     font-size: var(--text-sm);
   }
-  
+
   .orders-table th,
   .orders-table td {
     padding: var(--space-3);
   }
-  
+
   .action-buttons {
     flex-direction: column;
     gap: var(--space-1);
   }
-  
+
   .bulk-actions-content {
     flex-direction: column;
     gap: var(--space-4);
     align-items: stretch;
   }
-  
+
   .bulk-buttons {
     justify-content: center;
   }
-  
+
   .modal-content {
     margin: var(--space-4);
   }
@@ -676,24 +692,24 @@
   .page-title {
     font-size: var(--text-3xl);
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .orders-table {
     font-size: var(--text-xs);
   }
-  
+
   .orders-table th,
   .orders-table td {
     padding: var(--space-2);
   }
-  
+
   .customer-name {
     font-size: var(--text-sm);
   }
-  
+
   .customer-email {
     font-size: var(--text-xs);
   }

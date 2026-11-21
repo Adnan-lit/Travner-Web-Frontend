@@ -1,3 +1,4 @@
+import { logger } from '../../../core/logging/logger';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,28 +11,28 @@ import { Itinerary, ItinerarySearchParams } from '../../../models/location.model
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './itinerary-list.component.html',
-  styleUrls: ['./itinerary-list.component.css']
+  styleUrls: ['./itinerary-list.component.css'],
 })
 export class ItineraryListComponent implements OnInit {
   itineraries: Itinerary[] = [];
   loading = false;
   error: string | null = null;
-  
+
   // Search and filter parameters
   searchParams: ItinerarySearchParams = {
     page: 0,
     size: 10,
     sortBy: 'createdAt',
-    direction: 'desc'
+    direction: 'desc',
   };
-  
+
   // Filter options
   destinations: string[] = [];
   selectedDestination = '';
   selectedTags: string[] = [];
   showPublicOnly = true;
   showTemplatesOnly = false;
-  
+
   // Pagination
   currentPage = 0;
   totalPages = 0;
@@ -39,7 +40,7 @@ export class ItineraryListComponent implements OnInit {
 
   constructor(
     private itineraryService: ItineraryService,
-    private router: Router
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -49,32 +50,32 @@ export class ItineraryListComponent implements OnInit {
   loadItineraries(): void {
     this.loading = true;
     this.error = null;
-    
+
     const params = {
       ...this.searchParams,
       page: this.currentPage,
       destination: this.selectedDestination || undefined,
       tags: this.selectedTags.length > 0 ? this.selectedTags : undefined,
       isPublic: this.showPublicOnly ? true : undefined,
-      isTemplate: this.showTemplatesOnly ? true : undefined
+      isTemplate: this.showTemplatesOnly ? true : undefined,
     };
 
-    console.log('🧳 Loading itineraries with params:', params);
+    logger.debug('🧳 Loading itineraries with params:', params);
 
     this.itineraryService.getItineraries(params).subscribe({
       next: (response) => {
-        console.log('✅ Itineraries response:', response);
+        logger.debug('✅ Itineraries response:', response);
         this.itineraries = response.data || [];
         this.totalPages = response.pagination?.totalPages || 0;
         this.totalElements = response.pagination?.totalElements || 0;
         this.loading = false;
-        console.log('📊 Loaded', this.itineraries.length, 'itineraries');
+        logger.debug('📊 Loaded', this.itineraries.length, 'itineraries');
       },
       error: (error) => {
         this.error = 'Failed to load itineraries';
         this.loading = false;
-        console.error('❌ Error loading itineraries:', error);
-      }
+        logger.error('❌ Error loading itineraries:', error);
+      },
     });
   }
 
@@ -105,11 +106,11 @@ export class ItineraryListComponent implements OnInit {
     const pages: number[] = [];
     const start = Math.max(0, this.currentPage - 2);
     const end = Math.min(this.totalPages - 1, this.currentPage + 2);
-    
+
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
-    
+
     return pages;
   }
 

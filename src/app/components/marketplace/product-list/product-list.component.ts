@@ -1,10 +1,11 @@
+import { logger } from '../../../core/logging/logger';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIf, NgFor, NgClass, NgOptimizedImage } from '@angular/common';
-import { Observable, Subscription, of } from 'rxjs';
-import { debounceTime, distinctUntilChanged, tap, catchError } from 'rxjs/operators';
-import { Product, ProductListResponse, ProductSearchParams } from '../../../models/marketplace.model';
+import { Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Product, ProductSearchParams } from '../../../models/marketplace.model';
 import { MarketplaceService } from '../../../services/marketplace.service';
 import { ToastService } from '../../../services/toast.service';
 import { AuthService } from '../../../services/auth.service';
@@ -14,14 +15,7 @@ import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
   selector: 'app-product-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    ReactiveFormsModule,
-    NgIf,
-    NgFor,
-    NgClass,
-    NgOptimizedImage,
-    CartSummaryComponent
-  ],
+  imports: [ReactiveFormsModule, NgIf, NgFor, NgClass, NgOptimizedImage, CartSummaryComponent],
   template: `
     <div class="product-list-container">
       <!-- Cart Summary Widget -->
@@ -32,13 +26,8 @@ import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
         <div class="search-container">
           <form [formGroup]="searchForm" (ngSubmit)="onSearch()">
             <div class="search-input-group">
-              <input
-                type="text"
-                formControlName="query"
-                placeholder="Search products..."
-                class="search-input"
-              />
-              <button type="submit" class="search-button">
+              <input type="text" formControlName="query" placeholder="Search products..." class="search-input" />
+              <button type="submit" class="search-button" aria-label="Search products">
                 <i class="fas fa-search"></i>
               </button>
             </div>
@@ -59,11 +48,7 @@ import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
                 </select>
               </div>
 
-              <button
-                *ngIf="currentQuery || currentCategory"
-                (click)="clearFilters()"
-                class="clear-filters-button"
-              >
+              <button *ngIf="currentQuery || currentCategory" (click)="clearFilters()" class="clear-filters-button">
                 <i class="fas fa-times"></i> Clear Filters
               </button>
             </div>
@@ -110,26 +95,21 @@ import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
               <h3 class="product-title">{{ product.name }}</h3>
               <p class="product-description">
                 {{
-                  (product.description && product.description.length > 100)
-                    ? product.description.substring(0, 100) + "..."
-                    : (product.description || "")
+                  product.description && product.description.length > 100
+                    ? product.description.substring(0, 100) + '...'
+                    : product.description || ''
                 }}
               </p>
 
               <div class="product-meta">
                 <span class="product-category">{{ product.category }}</span>
-                <span
-                  class="product-stock"
-                  [class]="getStockClass(product.stockQuantity)"
-                >
+                <span class="product-stock" [class]="getStockClass(product.stockQuantity)">
                   {{ getStockStatus(product.stockQuantity) }}
                 </span>
               </div>
 
               <div class="product-footer">
-                <span class="product-price">{{
-                  formatPrice(product.price)
-                }}</span>
+                <span class="product-price">{{ formatPrice(product.price) }}</span>
                 <div class="product-actions">
                   <button
                     *ngIf="product.stockQuantity > 0"
@@ -158,12 +138,8 @@ import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
         <div *ngIf="!products || products.length === 0" class="no-products">
           <i class="fas fa-box-open"></i>
           <h3>No products found</h3>
-          <p *ngIf="currentQuery || currentCategory">
-            Try adjusting your search or filters.
-          </p>
-          <p *ngIf="!currentQuery && !currentCategory">
-            Check back later for new products.
-          </p>
+          <p *ngIf="currentQuery || currentCategory">Try adjusting your search or filters.</p>
+          <p *ngIf="!currentQuery && !currentCategory">Check back later for new products.</p>
         </div>
       </div>
 
@@ -198,7 +174,7 @@ import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
       </div>
     </div>
   `,
-  styleUrls: ['./product-list.component.css']
+  styleUrls: ['./product-list.component.css'],
 })
 export class ProductListComponent implements OnInit, OnDestroy {
   products: Product[] = [];
@@ -219,9 +195,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   currentQuery: string | null = null;
 
   // Available categories for filter
-  categories: string[] = [
-    'electronics', 'gadgets', 'home', 'fashion', 'books', 'sports', 'toys', 'other'
-  ];
+  categories: string[] = ['electronics', 'gadgets', 'home', 'fashion', 'books', 'sports', 'toys', 'other'];
 
   constructor(
     private marketplaceService: MarketplaceService,
@@ -229,33 +203,30 @@ export class ProductListComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private toastService: ToastService,
-    private auth: AuthService
+    private auth: AuthService,
   ) {
     this.searchForm = this.fb.group({
       query: [''],
-      category: ['']
+      category: [''],
     });
   }
 
   ngOnInit(): void {
-    console.log('🛒 ProductListComponent: Initializing...');
-    
+    logger.debug('🛒 ProductListComponent: Initializing...');
+
     // Load products on init
     this.loadProducts();
 
     // Set up search subscription
     this.searchSubscription = this.searchForm.valueChanges
-      .pipe(
-        debounceTime(300),
-        distinctUntilChanged()
-      )
+      .pipe(debounceTime(300), distinctUntilChanged())
       .subscribe(() => {
         this.currentPage = 0;
         this.loadProducts();
       });
 
     // Handle URL parameters
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       if (params['query']) {
         this.currentQuery = params['query'];
         this.searchForm.patchValue({ query: params['query'] });
@@ -278,7 +249,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   loadProducts(): void {
-    console.log('🛒 ProductListComponent: Loading products...');
+    logger.debug('🛒 ProductListComponent: Loading products...');
     this.loading = true;
     this.error = null;
 
@@ -286,18 +257,18 @@ export class ProductListComponent implements OnInit, OnDestroy {
       page: this.currentPage,
       size: this.pageSize,
       query: this.currentQuery || undefined,
-      category: this.currentCategory || undefined
+      category: this.currentCategory || undefined,
     };
 
-    console.log('🛒 ProductListComponent: Params:', params);
+    logger.debug('🛒 ProductListComponent: Params:', params);
 
     this.marketplaceService.getProducts(params).subscribe({
       next: (response: any) => {
-        console.log('✅ ProductListComponent: Products response:', response);
-        
+        logger.debug('✅ ProductListComponent: Products response:', response);
+
         if (response && response.success && response.data) {
           this.products = response.data;
-          
+
           if (response.pagination) {
             this.totalPages = response.pagination.totalPages;
             this.totalElements = response.pagination.totalElements;
@@ -310,19 +281,19 @@ export class ProductListComponent implements OnInit, OnDestroy {
           this.totalPages = 0;
           this.totalElements = 0;
         }
-        
+
         this.loading = false;
         this.cdr.markForCheck();
-        console.log('✅ ProductListComponent: Products loaded:', this.products.length);
+        logger.debug('✅ ProductListComponent: Products loaded:', this.products.length);
       },
       error: (err) => {
-        console.error('❌ ProductListComponent: Error loading products:', err);
+        logger.error('❌ ProductListComponent: Error loading products:', err);
         this.error = 'Failed to load products. Please try again later.';
         this.loading = false;
         this.products = [];
         this.cdr.markForCheck();
         this.toastService.error('Failed to load products', '');
-      }
+      },
     });
   }
 
@@ -364,7 +335,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: queryParams,
-      queryParamsHandling: 'merge'
+      queryParamsHandling: 'merge',
     });
   }
 
@@ -402,7 +373,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   formatPrice(price: number): string {
     return new Intl.NumberFormat('bn-BD', {
       style: 'currency',
-      currency: 'BDT'
+      currency: 'BDT',
     }).format(price);
   }
 
@@ -433,10 +404,10 @@ export class ProductListComponent implements OnInit, OnDestroy {
       if (this.toastService) {
         this.toastService.error('Please sign in to add items to cart', '');
       } else {
-        console.error('Please sign in to add items to cart');
+        logger.error('Please sign in to add items to cart');
       }
       this.router.navigate(['/signin'], {
-        queryParams: { returnUrl: this.router.url }
+        queryParams: { returnUrl: this.router.url },
       });
       return;
     }
@@ -444,10 +415,12 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.isAddingToCart = true;
 
     try {
-      const response = await this.marketplaceService.addToCart({
-        productId: product.id,
-        quantity: 1
-      }).toPromise();
+      const response = await this.marketplaceService
+        .addToCart({
+          productId: product.id,
+          quantity: 1,
+        })
+        .toPromise();
 
       if (response && response.success) {
         this.toastService.success('Item added to cart successfully', '');
@@ -455,7 +428,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
         this.toastService.error('Failed to add item to cart', '');
       }
     } catch (error) {
-      console.error('Error adding to cart:', error);
+      logger.error('Error adding to cart:', error);
       this.toastService.error('Failed to add item to cart', '');
     } finally {
       this.isAddingToCart = false;

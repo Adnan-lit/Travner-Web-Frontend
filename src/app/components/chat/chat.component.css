@@ -280,7 +280,7 @@
 }
 
 .no-conversation-content svg {
-  color: #dee2e6;
+  color: #6c757d;
   margin-bottom: 20px;
 }
 
@@ -481,7 +481,8 @@
   opacity: 0.6;
 }
 
-.attach-btn, .send-btn {
+.attach-btn,
+.send-btn {
   background: none;
   border: none;
   padding: 8px;
@@ -494,7 +495,8 @@
   justify-content: center;
 }
 
-.attach-btn:hover, .send-btn:hover {
+.attach-btn:hover,
+.send-btn:hover {
   background: #e9ecef;
   color: #212529;
 }
@@ -548,8 +550,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Floating Action Button for Mobile */
@@ -582,24 +588,24 @@
   .chat-container {
     flex-direction: column;
   }
-  
+
   .chat-sidebar {
     width: 100%;
     height: 200px;
   }
-  
+
   .chat-main {
     height: calc(100vh - 200px);
   }
-  
+
   .message-content {
     max-width: 85%;
   }
-  
+
   .floating-action-btn {
     display: flex;
   }
-  
+
   .new-message-btn {
     display: none;
   }

@@ -1,20 +1,22 @@
-import { Component, OnInit, OnDestroy, HostListener, inject } from '@angular/core';
+import { logger } from '../../core/logging/logger';
+import { Component, DestroyRef, OnInit, HostListener, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 import { MarketplaceService } from '../../services/marketplace.service';
-import { filter, takeUntil } from 'rxjs/operators';
-import { Observable, of, Subject } from 'rxjs';
+import { filter } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-navbar',
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.css'],
   standalone: true,
-  imports: [CommonModule, RouterModule, NgOptimizedImage]
+  imports: [CommonModule, RouterModule, NgOptimizedImage],
 })
-export class NavbarComponent implements OnInit, OnDestroy {
+export class NavbarComponent implements OnInit {
   isAuthenticated = false;
   currentUser: any = null;
   showMobileMenu = false;
@@ -30,20 +32,20 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
 
   private marketplaceService = inject(MarketplaceService);
-  private destroy$ = new Subject<void>();
+  private readonly destroyRef = inject(DestroyRef);
 
   theme$ = of('light');
   cartItemCount = 0;
   hasUnreadMessages = false;
 
-  constructor() { }
+  constructor() {}
 
   ngOnInit(): void {
     this.ensureBackdropSupport();
-    this.authService.currentUser$.pipe(takeUntil(this.destroy$)).subscribe(user => {
+    this.authService.currentUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((user) => {
       this.isAuthenticated = !!user;
       this.currentUser = user;
-      console.log('🧭 Navbar: Authentication status changed:', this.isAuthenticated);
+      logger.debug('🧭 Navbar: Authentication status changed:', this.isAuthenticated);
 
       // Only load cart count if user is authenticated AND on marketplace page
       if (this.isAuthenticated && this.isMarketplacePage()) {
@@ -60,42 +62,47 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.isLandingRoute = this.router.url === '/' || this.router.url === '';
     if (this.isLandingRoute) {
       // Ensure we start at top and have correct scroll state
-      setTimeout(() => { window.scrollTo(0, 0); this.onScroll(); });
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        this.onScroll();
+      });
     }
 
-    this.router.events.pipe(
-      filter(e => e instanceof NavigationEnd),
-      takeUntil(this.destroy$)
-    ).subscribe((e: any) => {
-      const landing = e.urlAfterRedirects === '/' || e.url === '/';
-      if (landing !== this.isLandingRoute) {
-        // If entering landing, suppress transition for smoother visual
-        if (landing) {
-          this.suppressTransition = true;
-          // Force scroll top so scrolled class doesn't persist from previous page
-          window.scrollTo(0, 0);
-          this.onScroll();
-          // Allow class change without transition in next frame
-          requestAnimationFrame(() => {
+    this.router.events
+      .pipe(
+        filter((e) => e instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((e: any) => {
+        const landing = e.urlAfterRedirects === '/' || e.url === '/';
+        if (landing !== this.isLandingRoute) {
+          // If entering landing, suppress transition for smoother visual
+          if (landing) {
+            this.suppressTransition = true;
+            // Force scroll top so scrolled class doesn't persist from previous page
+            window.scrollTo(0, 0);
+            this.onScroll();
+            // Allow class change without transition in next frame
+            requestAnimationFrame(() => {
+              this.isLandingRoute = landing;
+              // Re-enable transitions after a short delay
+              setTimeout(() => (this.suppressTransition = false), 80);
+            });
+          } else {
             this.isLandingRoute = landing;
-            // Re-enable transitions after a short delay
-            setTimeout(() => this.suppressTransition = false, 80);
-          });
-        } else {
-          this.isLandingRoute = landing;
+          }
+        } else if (landing) {
+          // Still landing: ensure scroll state recalculated (e.g., manual route reuse)
+          this.onScroll();
         }
-      } else if (landing) {
-        // Still landing: ensure scroll state recalculated (e.g., manual route reuse)
-        this.onScroll();
-      }
 
-      // Load cart count when entering marketplace pages
-      if (this.isAuthenticated && this.isMarketplacePage()) {
-        this.loadCartCount();
-      } else {
-        this.cartItemCount = 0;
-      }
-    });
+        // Load cart count when entering marketplace pages
+        if (this.isAuthenticated && this.isMarketplacePage()) {
+          this.loadCartCount();
+        } else {
+          this.cartItemCount = 0;
+        }
+      });
   }
 
   /**
@@ -124,11 +131,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
       this.hidden = false; // scrolling up show
     }
     this.lastScrollY = currentY;
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   isAdmin(): boolean {
@@ -185,26 +187,29 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
     // Double-check authentication before making the request
     if (!this.authService.isAuthenticated()) {
-      console.log('🧭 Navbar: User not authenticated, skipping cart count load');
+      logger.debug('🧭 Navbar: User not authenticated, skipping cart count load');
       this.cartItemCount = 0;
       return;
     }
 
-        this.marketplaceService.getCartItemCount().pipe(takeUntil(this.destroy$)).subscribe({
-      next: (response: any) => {
-        this.cartItemCount = response?.data || 0;
-        console.log('🧭 Navbar: Cart count loaded successfully:', this.cartItemCount);
-      },
-      error: (err: any) => {
-        console.warn('🧭 Navbar: Failed to load cart count:', err);
-        if (err.status === 401) {
-          console.log('🧭 Navbar: Authentication failed, clearing cart count');
-          // If we get a 401, the user is not properly authenticated
-          this.cartItemCount = 0;
-        } else {
-          this.cartItemCount = 0;
-        }
-      }
-    });
+    this.marketplaceService
+      .getCartItemCount()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response: any) => {
+          this.cartItemCount = response?.data || 0;
+          logger.debug('🧭 Navbar: Cart count loaded successfully:', this.cartItemCount);
+        },
+        error: (err: any) => {
+          logger.warn('🧭 Navbar: Failed to load cart count:', err);
+          if (err.status === 401) {
+            logger.debug('🧭 Navbar: Authentication failed, clearing cart count');
+            // If we get a 401, the user is not properly authenticated
+            this.cartItemCount = 0;
+          } else {
+            this.cartItemCount = 0;
+          }
+        },
+      });
   }
 }

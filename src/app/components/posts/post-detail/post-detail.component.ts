@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, Renderer2 } from '@angular/core';
+import { logger } from '../../../core/logging/logger';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -18,8 +19,17 @@ import { ToastService } from '../../../services/toast.service';
     <div class="post-detail-container">
       <!-- Back Button -->
       <div class="back-nav">
-  <button class="back-button" routerLink="/community">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button class="back-button" routerLink="/community">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
           Back to Community
@@ -43,26 +53,38 @@ import { ToastService } from '../../../services/toast.service';
         <!-- Post Header -->
         <header class="post-header">
           <h1 class="post-title">{{ post.title }}</h1>
-          
+
           <div class="post-meta">
             <div class="author-info">
-              <div class="author-avatar">{{ getInitials((post.author?.firstName || '') + ' ' + (post.author?.lastName || '')) }}</div>
+              <div class="author-avatar">
+                {{ getInitials((post.author?.firstName || '') + ' ' + (post.author?.lastName || '')) }}
+              </div>
               <div>
                 <div class="author-name">{{ post.author?.firstName }} {{ post.author?.lastName }}</div>
                 <div class="post-date">{{ formatDate(post.createdAt) }}</div>
               </div>
             </div>
-            
+
             <div class="post-actions" *ngIf="canModifyPost()">
               <button class="edit-btn" (click)="onEdit()">Edit</button>
               <button class="delete-btn" (click)="onDelete()">Delete</button>
             </div>
           </div>
-          
+
           <div class="post-location">
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              />
             </svg>
             <span>{{ post.location }}</span>
           </div>
@@ -71,45 +93,35 @@ import { ToastService } from '../../../services/toast.service';
         <!-- Post Body -->
         <div class="post-body">
           <p class="post-text">{{ post.content }}</p>
-          
+
           <!-- Media Gallery -->
           <div class="media-gallery" *ngIf="media && media.length > 0">
             <div class="gallery-container" [class.gallery-grid]="media.length > 1">
               <div *ngFor="let item of media" class="media-item">
-                <img *ngIf="item.type === 'image'" [src]="item.url" [alt]="post.title" class="media-image">
+                <img *ngIf="item.type === 'image'" [src]="item.url" [alt]="post.title" class="media-image" />
                 <video *ngIf="item.type === 'video'" controls class="media-video">
-                  <source [src]="item.url" type="video/mp4">
+                  <source [src]="item.url" type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
               </div>
             </div>
           </div>
-          
+
           <!-- Tags -->
           <div class="post-tags" *ngIf="post.tags && post.tags.length > 0">
             <span class="tag" *ngFor="let tag of post.tags">{{ tag }}</span>
           </div>
-          
+
           <!-- Vote Actions -->
           <div class="vote-actions">
-            <button
-              class="vote-btn upvote"
-              [class.active]="false"
-              (click)="onUpvote()"
-              [disabled]="false"
-            >
+            <button class="vote-btn upvote" [class.active]="false" (click)="onUpvote()" [disabled]="false">
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
               </svg>
               <span>{{ post.likes || 0 }}</span>
             </button>
-            
-            <button
-              class="vote-btn downvote"
-              [class.active]="false"
-              (click)="onDownvote()"
-              [disabled]="false"
-            >
+
+            <button class="vote-btn downvote" [class.active]="false" (click)="onDownvote()" [disabled]="false">
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
               </svg>
@@ -121,15 +133,15 @@ import { ToastService } from '../../../services/toast.service';
         <!-- Comments Section -->
         <section class="comments-section">
           <h2 class="comments-title">Comments</h2>
-          
+
           <!-- New Comment Form -->
           <div class="comment-form-container" *ngIf="isAuthenticated">
             <form [formGroup]="commentForm" (ngSubmit)="onSubmitComment()" class="comment-form">
               <div class="form-group">
-                <textarea 
-                  formControlName="content" 
+                <textarea
+                  formControlName="content"
                   placeholder="Share your thoughts on this travel post..."
-                  rows="3" 
+                  rows="3"
                   class="comment-textarea"
                 ></textarea>
                 <div class="error-message" *ngIf="commentSubmitted && commentForm.get('content')?.errors">
@@ -141,11 +153,11 @@ import { ToastService } from '../../../services/toast.service';
               </button>
             </form>
           </div>
-          
+
           <div class="login-to-comment" *ngIf="!isAuthenticated">
             <p>Please <a routerLink="/signin">sign in</a> to leave a comment.</p>
           </div>
-          
+
           <!-- Comments List -->
           <div class="comments-list">
             <ng-container *ngIf="comments && comments.length > 0; else noComments">
@@ -158,27 +170,27 @@ import { ToastService } from '../../../services/toast.service';
                 (commentUpdated)="onCommentUpdated($event)"
                 (commentDeleted)="onCommentDeleted($event)"
               ></app-comment>
-              
+
               <!-- Pagination Controls -->
               <div class="pagination-controls" *ngIf="totalCommentPages > 1">
-                <button 
-                  [disabled]="currentCommentPage === 0" 
-                  (click)="loadCommentPage(currentCommentPage - 1)" 
+                <button
+                  [disabled]="currentCommentPage === 0"
+                  (click)="loadCommentPage(currentCommentPage - 1)"
                   class="pagination-btn"
                 >
                   Previous
                 </button>
                 <span class="page-info">Page {{ currentCommentPage + 1 }} of {{ totalCommentPages }}</span>
-                <button 
-                  [disabled]="currentCommentPage >= totalCommentPages - 1" 
-                  (click)="loadCommentPage(currentCommentPage + 1)" 
+                <button
+                  [disabled]="currentCommentPage >= totalCommentPages - 1"
+                  (click)="loadCommentPage(currentCommentPage + 1)"
                   class="pagination-btn"
                 >
                   Next
                 </button>
               </div>
             </ng-container>
-            
+
             <ng-template #noComments>
               <div class="no-comments">
                 <p>No comments yet. Be the first to share your thoughts!</p>
@@ -189,534 +201,544 @@ import { ToastService } from '../../../services/toast.service';
       </div>
     </div>
   `,
-  styles: [`
-    .post-detail-container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    
-    .back-nav {
-      margin-bottom: 20px;
-    }
-    
-    .back-button {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 8px 12px;
-      background: none;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: all 0.2s;
-    }
-    
-    .back-button:hover {
-      background-color: #f5f5f5;
-    }
-    
-    .loading-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 50px 0;
-    }
-    
-    .loader {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #4CAF50;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin-bottom: 15px;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    .error-state {
-      text-align: center;
-      padding: 30px;
-      color: #f44336;
-    }
-    
-    .retry-button {
-      padding: 8px 15px;
-      background-color: #f44336;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    
-    .post-content {
-      background-color: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      overflow: hidden;
-    }
-    
-    .post-header {
-      padding: 20px;
-      border-bottom: 1px solid #eee;
-    }
-    
-    .post-title {
-      margin: 0 0 15px 0;
-      font-size: 28px;
-      color: #333;
-    }
-    
-    .post-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-    
-    .author-info {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .author-avatar {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background-color: #4CAF50;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: 18px;
-    }
-    
-    .author-avatar-small {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background-color: #4CAF50;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: 12px;
-    }
-    
-    .author-name {
-      font-weight: bold;
-      color: #333;
-    }
-    
-    .post-date {
-      font-size: 12px;
-      color: #888;
-    }
-    
-    .post-actions {
-      display: flex;
-      gap: 10px;
-    }
-    
-    .edit-btn, .delete-btn {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 4px;
-      font-size: 12px;
-      cursor: pointer;
-    }
-    
-    .edit-btn {
-      background-color: #2196F3;
-      color: white;
-    }
-    
-    .delete-btn {
-      background-color: #f44336;
-      color: white;
-    }
-    
-    .post-location {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      color: #666;
-      font-size: 14px;
-    }
-    
-    .post-body {
-      padding: 20px;
-    }
-    
-    .post-text {
-      margin-bottom: 20px;
-      color: #333;
-      line-height: 1.6;
-      font-size: 16px;
-    }
-    
-    .media-gallery {
-      margin-bottom: 20px;
-    }
-    
-    .gallery-container {
-      display: flex;
-      overflow: hidden;
-      border-radius: 8px;
-    }
-    
-    .gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      grid-gap: 10px;
-    }
-    
-    .media-item {
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .media-image, .media-video {
-      width: 100%;
-      height: auto;
-      object-fit: cover;
-      display: block;
-    }
-    
-    .post-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin: 15px 0;
-    }
-    
-    .tag {
-      padding: 4px 10px;
-      background-color: #e1f5fe;
-      color: #0288d1;
-      border-radius: 16px;
-      font-size: 12px;
-    }
-    
-    .vote-actions {
-      display: flex;
-      gap: 15px;
-      margin-top: 20px;
-    }
-    
-    .vote-btn {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      background: none;
-      border: none;
-      color: #666;
-      cursor: pointer;
-      padding: 5px 10px;
-      border-radius: 4px;
-      font-size: 16px;
-    }
-    
-    .vote-btn:hover:not(:disabled) {
-      background-color: #f0f0f0;
-    }
-    
-    .vote-btn.active {
-      color: #4CAF50;
-      font-weight: bold;
-    }
-    
-    .vote-btn:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-    
-    .comments-section {
-      margin-top: 30px;
-      padding: 20px;
-    }
-    
-    .comments-title {
-      margin: 0 0 20px 0;
-      font-size: 20px;
-      color: #333;
-    }
-    
-    .comment-form-container {
-      margin-bottom: 30px;
-    }
-    
-    .comment-form {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    
-    .comment-textarea, .reply-textarea {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      resize: vertical;
-      font-size: 15px;
-    }
-    
-    .comment-submit-btn {
-      align-self: flex-end;
-      padding: 8px 15px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    
-    .login-to-comment {
-      margin-bottom: 30px;
-      text-align: center;
-      padding: 15px;
-      background-color: #f8f9fa;
-      border-radius: 4px;
-      color: #666;
-    }
-    
-    .login-to-comment a {
-      color: #4CAF50;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    
-    .comments-list {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    
-    .comment-thread {
-      margin-bottom: 20px;
-    }
-    
-    .comment {
-      padding: 15px;
-      background-color: #f9f9f9;
-      border-radius: 8px;
-    }
-    
-    .comment-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-    
-    .comment-author {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .comment-author-name {
-      font-weight: bold;
-      font-size: 14px;
-      color: #333;
-    }
-    
-    .comment-date {
-      font-size: 12px;
-      color: #888;
-    }
-    
-    .comment-actions {
-      display: flex;
-      gap: 8px;
-    }
-    
-    .btn-edit, .btn-delete {
-      padding: 4px 8px;
-      border: none;
-      border-radius: 4px;
-      font-size: 12px;
-      cursor: pointer;
-    }
-    
-    .btn-edit {
-      background-color: #e3f2fd;
-      color: #2196F3;
-    }
-    
-    .btn-delete {
-      background-color: #ffebee;
-      color: #f44336;
-    }
-    
-    .comment-text {
-      margin: 0 0 10px 0;
-      line-height: 1.5;
-      font-size: 14px;
-      color: #333;
-    }
-    
-    .comment-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 10px;
-    }
-    
-    .comment-votes {
-      display: flex;
-      gap: 10px;
-    }
-    
-    .vote-btn-small {
-      display: flex;
-      align-items: center;
-      gap: 3px;
-      background: none;
-      border: none;
-      color: #666;
-      cursor: pointer;
-      padding: 3px 6px;
-      border-radius: 4px;
-      font-size: 12px;
-    }
-    
-    .vote-btn-small:hover:not(:disabled) {
-      background-color: #f0f0f0;
-    }
-    
-    .vote-btn-small.active {
-      color: #4CAF50;
-      font-weight: bold;
-    }
-    
-    .vote-btn-small:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-    
-    .reply-btn {
-      background: none;
-      border: none;
-      color: #2196F3;
-      cursor: pointer;
-      font-size: 12px;
-      padding: 3px 6px;
-    }
-    
-    .reply-btn:hover {
-      text-decoration: underline;
-    }
-    
-    .reply-form-container {
-      margin-top: 10px;
-      padding: 10px;
-      background-color: #fff;
-      border-radius: 4px;
-      border: 1px solid #eee;
-    }
-    
-    .reply-form {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
-    .reply-form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-    
-    .reply-submit-btn {
-      padding: 6px 12px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-    
-    .cancel-btn {
-      padding: 6px 12px;
-      background-color: #f1f1f1;
-      color: #333;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-    
-    .replies {
-      margin-top: 15px;
-      padding-left: 20px;
-      border-left: 2px solid #eee;
-    }
-    
-    .reply {
-      padding: 10px;
-      background-color: #fff;
-      border-radius: 4px;
-      margin-bottom: 10px;
-    }
-    
-    .no-comments {
-      text-align: center;
-      padding: 30px;
-      color: #666;
-      background-color: #f8f9fa;
-      border-radius: 8px;
-      border: 1px dashed #ddd;
-    }
-    
-    .error-message {
-      color: #f44336;
-      font-size: 12px;
-      margin-top: 4px;
-    }
-    
-    .pagination-controls {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 15px;
-      margin-top: 30px;
-    }
-    
-    .pagination-btn {
-      padding: 8px 15px;
-      background-color: #2196F3;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    
-    .pagination-btn:hover:not(:disabled) {
-      background-color: #0b7dda;
-    }
-    
-    .pagination-btn:disabled {
-      background-color: #cccccc;
-      cursor: not-allowed;
-    }
-    
-    .page-info {
-      font-size: 14px;
-      color: #555;
-    }
-  `]
+  styles: [
+    `
+      .post-detail-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .back-nav {
+        margin-bottom: 20px;
+      }
+
+      .back-button {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 8px 12px;
+        background: none;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+      }
+
+      .back-button:hover {
+        background-color: #f5f5f5;
+      }
+
+      .loading-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 50px 0;
+      }
+
+      .loader {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #4caf50;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 15px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error-state {
+        text-align: center;
+        padding: 30px;
+        color: #f44336;
+      }
+
+      .retry-button {
+        padding: 8px 15px;
+        background-color: #f44336;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+
+      .post-content {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .post-header {
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .post-title {
+        margin: 0 0 15px 0;
+        font-size: 28px;
+        color: #333;
+      }
+
+      .post-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .author-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .author-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #4caf50;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .author-avatar-small {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: #4caf50;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 12px;
+      }
+
+      .author-name {
+        font-weight: bold;
+        color: #333;
+      }
+
+      .post-date {
+        font-size: 12px;
+        color: #888;
+      }
+
+      .post-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .edit-btn,
+      .delete-btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .edit-btn {
+        background-color: #2196f3;
+        color: white;
+      }
+
+      .delete-btn {
+        background-color: #f44336;
+        color: white;
+      }
+
+      .post-location {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #666;
+        font-size: 14px;
+      }
+
+      .post-body {
+        padding: 20px;
+      }
+
+      .post-text {
+        margin-bottom: 20px;
+        color: #333;
+        line-height: 1.6;
+        font-size: 16px;
+      }
+
+      .media-gallery {
+        margin-bottom: 20px;
+      }
+
+      .gallery-container {
+        display: flex;
+        overflow: hidden;
+        border-radius: 8px;
+      }
+
+      .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        grid-gap: 10px;
+      }
+
+      .media-item {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .media-image,
+      .media-video {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+        display: block;
+      }
+
+      .post-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin: 15px 0;
+      }
+
+      .tag {
+        padding: 4px 10px;
+        background-color: #e1f5fe;
+        color: #0288d1;
+        border-radius: 16px;
+        font-size: 12px;
+      }
+
+      .vote-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      .vote-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        background: none;
+        border: none;
+        color: #666;
+        cursor: pointer;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+
+      .vote-btn:hover:not(:disabled) {
+        background-color: #f0f0f0;
+      }
+
+      .vote-btn.active {
+        color: #4caf50;
+        font-weight: bold;
+      }
+
+      .vote-btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+
+      .comments-section {
+        margin-top: 30px;
+        padding: 20px;
+      }
+
+      .comments-title {
+        margin: 0 0 20px 0;
+        font-size: 20px;
+        color: #333;
+      }
+
+      .comment-form-container {
+        margin-bottom: 30px;
+      }
+
+      .comment-form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .comment-textarea,
+      .reply-textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        resize: vertical;
+        font-size: 15px;
+      }
+
+      .comment-submit-btn {
+        align-self: flex-end;
+        padding: 8px 15px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .login-to-comment {
+        margin-bottom: 30px;
+        text-align: center;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        color: #666;
+      }
+
+      .login-to-comment a {
+        color: #4caf50;
+        text-decoration: none;
+        font-weight: bold;
+      }
+
+      .comments-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .comment-thread {
+        margin-bottom: 20px;
+      }
+
+      .comment {
+        padding: 15px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+      }
+
+      .comment-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+
+      .comment-author {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .comment-author-name {
+        font-weight: bold;
+        font-size: 14px;
+        color: #333;
+      }
+
+      .comment-date {
+        font-size: 12px;
+        color: #888;
+      }
+
+      .comment-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .btn-edit,
+      .btn-delete {
+        padding: 4px 8px;
+        border: none;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .btn-edit {
+        background-color: #e3f2fd;
+        color: #2196f3;
+      }
+
+      .btn-delete {
+        background-color: #ffebee;
+        color: #f44336;
+      }
+
+      .comment-text {
+        margin: 0 0 10px 0;
+        line-height: 1.5;
+        font-size: 14px;
+        color: #333;
+      }
+
+      .comment-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+      }
+
+      .comment-votes {
+        display: flex;
+        gap: 10px;
+      }
+
+      .vote-btn-small {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        background: none;
+        border: none;
+        color: #666;
+        cursor: pointer;
+        padding: 3px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+
+      .vote-btn-small:hover:not(:disabled) {
+        background-color: #f0f0f0;
+      }
+
+      .vote-btn-small.active {
+        color: #4caf50;
+        font-weight: bold;
+      }
+
+      .vote-btn-small:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+
+      .reply-btn {
+        background: none;
+        border: none;
+        color: #2196f3;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 3px 6px;
+      }
+
+      .reply-btn:hover {
+        text-decoration: underline;
+      }
+
+      .reply-form-container {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #fff;
+        border-radius: 4px;
+        border: 1px solid #eee;
+      }
+
+      .reply-form {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .reply-form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .reply-submit-btn {
+        padding: 6px 12px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+      .cancel-btn {
+        padding: 6px 12px;
+        background-color: #f1f1f1;
+        color: #333;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+      .replies {
+        margin-top: 15px;
+        padding-left: 20px;
+        border-left: 2px solid #eee;
+      }
+
+      .reply {
+        padding: 10px;
+        background-color: #fff;
+        border-radius: 4px;
+        margin-bottom: 10px;
+      }
+
+      .no-comments {
+        text-align: center;
+        padding: 30px;
+        color: #666;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border: 1px dashed #ddd;
+      }
+
+      .error-message {
+        color: #f44336;
+        font-size: 12px;
+        margin-top: 4px;
+      }
+
+      .pagination-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-top: 30px;
+      }
+
+      .pagination-btn {
+        padding: 8px 15px;
+        background-color: #2196f3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .pagination-btn:hover:not(:disabled) {
+        background-color: #0b7dda;
+      }
+
+      .pagination-btn:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+
+      .page-info {
+        font-size: 14px;
+        color: #555;
+      }
+    `,
+  ],
 })
 export class PostDetailComponent implements OnInit {
   postId: string | null = null;
@@ -752,8 +774,8 @@ export class PostDetailComponent implements OnInit {
     private authService: AuthService,
     private formBuilder: FormBuilder,
     private router: Router,
-    private toast: ToastService
-  ) { }
+    private toast: ToastService,
+  ) {}
 
   ngOnInit(): void {
     // Show feedback when redirected from guard
@@ -762,7 +784,7 @@ export class PostDetailComponent implements OnInit {
       this.toast.info('You are not allowed to edit that post.', '');
     }
     // Get post ID from route
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.subscribe((params) => {
       const id = params.get('id');
       if (id) {
         this.postId = id;
@@ -774,12 +796,12 @@ export class PostDetailComponent implements OnInit {
     });
 
     // Check authentication status
-    this.authService.isAuthenticated$.subscribe(isAuth => {
+    this.authService.isAuthenticated$.subscribe((isAuth) => {
       this.isAuthenticated = isAuth;
     });
 
     // Get current user
-    this.authService.currentUser$.subscribe(user => {
+    this.authService.currentUser$.subscribe((user) => {
       this.currentUser = user;
     });
 
@@ -790,12 +812,12 @@ export class PostDetailComponent implements OnInit {
   initForms(): void {
     // Comment form
     this.commentForm = this.formBuilder.group({
-      content: ['', [Validators.required]]
+      content: ['', [Validators.required]],
     });
 
     // Reply form
     this.replyForm = this.formBuilder.group({
-      content: ['', [Validators.required]]
+      content: ['', [Validators.required]],
     });
   }
 
@@ -818,10 +840,10 @@ export class PostDetailComponent implements OnInit {
         this.loadComments();
       },
       error: (error) => {
-        console.error('Error loading post:', error);
+        logger.error('Error loading post:', error);
         this.error = 'Failed to load post. Please try again.';
         this.loading = false;
-      }
+      },
     });
   }
 
@@ -846,7 +868,7 @@ export class PostDetailComponent implements OnInit {
         downloadUrl: url,
         gridFsId: `gridfs-${index}`,
         url: url,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       }));
     }
   }
@@ -861,11 +883,11 @@ export class PostDetailComponent implements OnInit {
         this.totalCommentElements = response?.totalElements || 0;
       },
       error: (error) => {
-        console.error('Error loading comments:', error);
+        logger.error('Error loading comments:', error);
         this.comments = [];
         this.totalCommentPages = 0;
         this.totalCommentElements = 0;
-      }
+      },
     });
   }
 
@@ -880,8 +902,9 @@ export class PostDetailComponent implements OnInit {
 
   getInitials(name: string): string {
     if (!name) return '?';
-    return name.split(' ')
-      .map(part => part.charAt(0))
+    return name
+      .split(' ')
+      .map((part) => part.charAt(0))
       .join('')
       .substring(0, 2)
       .toUpperCase();
@@ -894,7 +917,7 @@ export class PostDetailComponent implements OnInit {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 
@@ -908,7 +931,7 @@ export class PostDetailComponent implements OnInit {
         const parsed = JSON.parse(user);
         user = parsed.data || parsed;
       } catch (e) {
-        console.error('Failed to parse current user in post detail:', e);
+        logger.error('Failed to parse current user in post detail:', e);
         user = null;
       }
     }
@@ -916,7 +939,7 @@ export class PostDetailComponent implements OnInit {
     // Create a PostOwner-compatible object from the Post
     const postOwner = {
       authorId: this.post.author?.id,
-      authorName: this.post.author?.userName // Use username instead of concatenated names
+      authorName: this.post.author?.userName, // Use username instead of concatenated names
     };
     return isPostOwner(postOwner, user);
   }
@@ -948,8 +971,8 @@ export class PostDetailComponent implements OnInit {
         this.post = updatedPost.data || null;
       },
       error: (error) => {
-        console.error('Error upvoting post:', error);
-      }
+        logger.error('Error upvoting post:', error);
+      },
     });
   }
 
@@ -961,8 +984,8 @@ export class PostDetailComponent implements OnInit {
         this.post = updatedPost.data || null;
       },
       error: (error) => {
-        console.error('Error downvoting post:', error);
-      }
+        logger.error('Error downvoting post:', error);
+      },
     });
   }
 
@@ -981,9 +1004,9 @@ export class PostDetailComponent implements OnInit {
           this.router.navigate(['/community']);
         },
         error: (error) => {
-          console.error('Error deleting post:', error);
+          logger.error('Error deleting post:', error);
           alert('Failed to delete post.');
-        }
+        },
       });
     }
   }
@@ -1002,7 +1025,7 @@ export class PostDetailComponent implements OnInit {
 
     const commentData: CommentCreate = {
       content: this.commentForm.get('content')?.value,
-      postId: this.postId!
+      postId: this.postId!,
     };
 
     this.postService.createComment(this.postId, commentData).subscribe({
@@ -1018,19 +1041,19 @@ export class PostDetailComponent implements OnInit {
         this.loadComments();
       },
       error: (error) => {
-        console.error('Error creating comment:', error);
+        logger.error('Error creating comment:', error);
         this.commentLoading = false;
-      }
+      },
     });
   }
 
   get topLevelComments(): Comment[] {
-    return this.comments.filter(comment => !(comment as any).parentId);
+    return this.comments.filter((comment) => !(comment as any).parentId);
   }
 
   onCommentUpdated(comment: Comment): void {
     // Find and update the comment in our array
-    const index = this.comments.findIndex(c => c.id === comment.id);
+    const index = this.comments.findIndex((c) => c.id === comment.id);
     if (index !== -1) {
       this.comments[index] = comment;
     }
@@ -1069,7 +1092,7 @@ export class PostDetailComponent implements OnInit {
 
     const replyData: CommentCreate = {
       content: this.replyForm.get('content')?.value,
-      postId: this.postId!
+      postId: this.postId!,
       // parentId: parentId // Removed as it's not in CommentCreate model
     };
 
@@ -1086,9 +1109,9 @@ export class PostDetailComponent implements OnInit {
         this.loadComments();
       },
       error: (error) => {
-        console.error('Error creating reply:', error);
+        logger.error('Error creating reply:', error);
         this.replyLoading = false;
-      }
+      },
     });
   }
 
@@ -1107,8 +1130,8 @@ export class PostDetailComponent implements OnInit {
           this.loadComments();
         },
         error: (error) => {
-          console.error('Error deleting comment:', error);
-        }
+          logger.error('Error deleting comment:', error);
+        },
       });
     }
   }
@@ -1122,8 +1145,8 @@ export class PostDetailComponent implements OnInit {
         this.updateCommentInList(updatedComment.data);
       },
       error: (error) => {
-        console.error('Error upvoting comment:', error);
-      }
+        logger.error('Error upvoting comment:', error);
+      },
     });
   }
 
@@ -1136,8 +1159,8 @@ export class PostDetailComponent implements OnInit {
         this.updateCommentInList(updatedComment.data);
       },
       error: (error) => {
-        console.error('Error downvoting comment:', error);
-      }
+        logger.error('Error downvoting comment:', error);
+      },
     });
   }
 

@@ -1,3 +1,4 @@
+import { logger } from '../core/logging/logger';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -7,27 +8,25 @@ import { ApiResponse, ApiListResponse } from '../models/api-response.model';
 import { Comment, CreateCommentRequest } from '../models/common.model';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class CommentService {
   private readonly API_BASE_URL = getApiBaseUrl();
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   /**
    * Get comments for a post with pagination
    */
   getComments(postId: string, page: number = 0, size: number = 10): Observable<ApiListResponse<Comment>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${postId}/comments`;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+    const params = new HttpParams().set('page', page.toString()).set('size', size.toString());
 
     return this.http.get<ApiListResponse<Comment>>(endpoint, { params }).pipe(
-      catchError(error => {
-        console.error(`Error fetching comments for post ${postId}:`, error);
+      catchError((error) => {
+        logger.error(`Error fetching comments for post ${postId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -37,10 +36,10 @@ export class CommentService {
   createComment(postId: string, commentData: CreateCommentRequest): Observable<ApiResponse<Comment>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${postId}/comments`;
     return this.http.post<ApiResponse<Comment>>(endpoint, commentData).pipe(
-      catchError(error => {
-        console.error(`Error creating comment on post ${postId}:`, error);
+      catchError((error) => {
+        logger.error(`Error creating comment on post ${postId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -50,10 +49,10 @@ export class CommentService {
   updateComment(postId: string, commentId: string, content: string): Observable<ApiResponse<Comment>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${postId}/comments/${commentId}`;
     return this.http.put<ApiResponse<Comment>>(endpoint, { content }).pipe(
-      catchError(error => {
-        console.error(`Error updating comment ${commentId} on post ${postId}:`, error);
+      catchError((error) => {
+        logger.error(`Error updating comment ${commentId} on post ${postId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -63,10 +62,10 @@ export class CommentService {
   deleteComment(postId: string, commentId: string): Observable<ApiResponse<void>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${postId}/comments/${commentId}`;
     return this.http.delete<ApiResponse<void>>(endpoint).pipe(
-      catchError(error => {
-        console.error(`Error deleting comment ${commentId} on post ${postId}:`, error);
+      catchError((error) => {
+        logger.error(`Error deleting comment ${commentId} on post ${postId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -76,10 +75,10 @@ export class CommentService {
   upvoteComment(postId: string, commentId: string): Observable<ApiResponse<Comment>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${postId}/comments/${commentId}/upvote`;
     return this.http.post<ApiResponse<Comment>>(endpoint, {}).pipe(
-      catchError(error => {
-        console.error(`Error upvoting comment ${commentId} on post ${postId}:`, error);
+      catchError((error) => {
+        logger.error(`Error upvoting comment ${commentId} on post ${postId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -89,10 +88,10 @@ export class CommentService {
   downvoteComment(postId: string, commentId: string): Observable<ApiResponse<Comment>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${postId}/comments/${commentId}/downvote`;
     return this.http.post<ApiResponse<Comment>>(endpoint, {}).pipe(
-      catchError(error => {
-        console.error(`Error downvoting comment ${commentId} on post ${postId}:`, error);
+      catchError((error) => {
+        logger.error(`Error downvoting comment ${commentId} on post ${postId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -100,9 +99,7 @@ export class CommentService {
    * Vote on a comment (upvote or downvote)
    */
   voteComment(postId: string, commentId: string, isUpvote: boolean): Observable<ApiResponse<Comment>> {
-    return isUpvote ? 
-      this.upvoteComment(postId, commentId) : 
-      this.downvoteComment(postId, commentId);
+    return isUpvote ? this.upvoteComment(postId, commentId) : this.downvoteComment(postId, commentId);
   }
 
   /**
@@ -111,27 +108,30 @@ export class CommentService {
   getCommentById(postId: string, commentId: string): Observable<ApiResponse<Comment>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${postId}/comments/${commentId}`;
     return this.http.get<ApiResponse<Comment>>(endpoint).pipe(
-      catchError(error => {
-        console.error(`Error fetching comment ${commentId} on post ${postId}:`, error);
+      catchError((error) => {
+        logger.error(`Error fetching comment ${commentId} on post ${postId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
   /**
    * Get replies to a comment
    */
-  getCommentReplies(postId: string, parentCommentId: string, page: number = 0, size: number = 10): Observable<ApiListResponse<Comment>> {
+  getCommentReplies(
+    postId: string,
+    parentCommentId: string,
+    page: number = 0,
+    size: number = 10,
+  ): Observable<ApiListResponse<Comment>> {
     const endpoint = `${this.API_BASE_URL}/api/posts/${postId}/comments/${parentCommentId}/replies`;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+    const params = new HttpParams().set('page', page.toString()).set('size', size.toString());
 
     return this.http.get<ApiListResponse<Comment>>(endpoint, { params }).pipe(
-      catchError(error => {
-        console.error(`Error fetching replies for comment ${parentCommentId} on post ${postId}:`, error);
+      catchError((error) => {
+        logger.error(`Error fetching replies for comment ${parentCommentId} on post ${postId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -141,7 +141,7 @@ export class CommentService {
   createReply(postId: string, parentCommentId: string, content: string): Observable<ApiResponse<Comment>> {
     return this.createComment(postId, {
       content,
-      parentCommentId
+      parentCommentId,
     });
   }
 

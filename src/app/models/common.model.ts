@@ -8,323 +8,322 @@ export interface ApiResponse<T> {
 }
 
 export interface User {
-    id: string;
-    userName: string;
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    roles?: string[];
-    bio?: string | null;
-    profileImageUrl?: string | null;
-    location?: string | null;
-    createdAt?: string;
-    lastLoginAt?: string;
-    active?: boolean;
-    isOnline?: boolean;
+  id: string;
+  userName: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  roles?: string[];
+  bio?: string | null;
+  profileImageUrl?: string | null;
+  location?: string | null;
+  createdAt?: string;
+  lastLoginAt?: string;
+  active?: boolean;
+  isOnline?: boolean;
 }
 
 export interface AdminUser extends User {
-    isActive: boolean;
-    lastLoginAt?: string;
-    lastLogin?: string; // Alternative property name
-    profilePictureUrl?: string;
-    role?: string; // For admin display
-    roles?: string[]; // Array of roles
-    status?: 'ACTIVE' | 'INACTIVE' | 'BANNED' | 'PENDING'; // User status
+  isActive: boolean;
+  lastLoginAt?: string;
+  lastLogin?: string; // Alternative property name
+  profilePictureUrl?: string;
+  role?: string; // For admin display
+  roles?: string[]; // Array of roles
+  status?: 'ACTIVE' | 'INACTIVE' | 'BANNED' | 'PENDING'; // User status
 }
 
 export interface SignupRequest {
-    userName: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    password: string;
-    bio?: string;
-    location?: string;
+  userName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  bio?: string;
+  location?: string;
 }
 
 export interface UpdateProfileRequest {
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    bio?: string;
-    location?: string;
-    profileImageUrl?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  bio?: string;
+  location?: string;
+  profileImageUrl?: string;
 }
 
 export interface ChangePasswordRequest {
-    currentPassword: string;
-    newPassword: string;
+  currentPassword: string;
+  newPassword: string;
 }
 
 export interface Post {
-    id: string;
-    title: string;
-    content: string;
-    location?: string;
-    tags?: string[];
-    authorId: string;
-    authorUsername: string;
-    published: boolean;
-    upvotes: number;
-    downvotes: number;
-    commentCount: number;
-    likes?: number;
-    shares?: number;
-    comments?: Comment[];
-    views?: number;
-    createdAt: string;
-    updatedAt: string;
-    author?: User;
-    media?: MediaFile[];
-    mediaUrls?: string[];
-    status?: string;
+  id: string;
+  title: string;
+  content: string;
+  location?: string;
+  tags?: string[];
+  authorId: string;
+  authorUsername: string;
+  published: boolean;
+  upvotes: number;
+  downvotes: number;
+  commentCount: number;
+  likes?: number;
+  shares?: number;
+  comments?: Comment[];
+  views?: number;
+  createdAt: string;
+  updatedAt: string;
+  author?: User;
+  media?: MediaFile[];
+  mediaUrls?: string[];
+  status?: string;
 }
 
 export interface CreatePostRequest {
-    title: string;
-    content: string;
-    location?: string;
-    tags?: string[];
-    published: boolean;
-    mediaIds?: string[];
+  title: string;
+  content: string;
+  location?: string;
+  tags?: string[];
+  published: boolean;
+  mediaIds?: string[];
 }
 
 export interface UpdatePostRequest {
-    title?: string;
-    content?: string;
-    location?: string;
-    tags?: string[];
-    published?: boolean;
-    mediaIds?: string[];
+  title?: string;
+  content?: string;
+  location?: string;
+  tags?: string[];
+  published?: boolean;
+  mediaIds?: string[];
 }
 
 export interface VoteRequest {
-    isUpvote: boolean;
+  isUpvote: boolean;
 }
 
 export interface Comment {
-    id: string;
-    postId: string;
-    content: string;
-    authorId: string;
-    authorUsername: string;
-    parentCommentId?: string;
-    upvotes: number;
-    downvotes: number;
-    createdAt: string;
-    updatedAt: string;
+  id: string;
+  postId: string;
+  content: string;
+  authorId: string;
+  authorUsername: string;
+  parentCommentId?: string;
+  upvotes: number;
+  downvotes: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateCommentRequest {
-    content: string;
-    parentCommentId?: string;
+  content: string;
+  parentCommentId?: string;
 }
 
-
 export interface DiagnosticStep {
-    step: string;
-    status: string;
-    data: any;
+  step: string;
+  status: string;
+  data: any;
 }
 
 export interface DiagnosticResults {
-    timestamp: string;
-    status: string;
-    steps: DiagnosticStep[];
+  timestamp: string;
+  status: string;
+  steps: DiagnosticStep[];
 }
 
 export interface UserListResponse {
-    id: string;
-    userName: string;
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    roles?: string[];
-    active?: boolean;
-    createdAt?: string;
+  id: string;
+  userName: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  roles?: string[];
+  active?: boolean;
+  createdAt?: string;
 }
 
 export interface UserFilter {
-    search: string;
-    role: string;
-    sortBy: string;
-    sortOrder: 'asc' | 'desc';
+  search: string;
+  role: string;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
 }
 
 export interface SystemStats {
-    totalUsers: number;
-    totalPosts: number;
-    totalActiveUsers: number;
-    totalAdmins: number;
+  totalUsers: number;
+  totalPosts: number;
+  totalActiveUsers: number;
+  totalAdmins: number;
 }
 
 export interface AdminUserResponse {
-    id: string;
-    userName: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    roles: string[];
-    active: boolean;
-    createdAt: string;
+  id: string;
+  userName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  roles: string[];
+  active: boolean;
+  createdAt: string;
 }
 
 export interface ApiError {
-    message: string;
-    status?: number;
-    error?: string;
+  message: string;
+  status?: number;
+  error?: string;
 }
 
 export interface CreateUserRequest {
-    userName: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    email: string;
+  userName: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  email: string;
 }
 
 // Public API interfaces
 export interface PublicUser {
-    id: string;
-    userName: string;
-    firstName?: string;
-    lastName?: string;
-    bio?: string | null;
-    profileImageUrl?: string | null;
-    location?: string | null;
-    createdAt?: string;
+  id: string;
+  userName: string;
+  firstName?: string;
+  lastName?: string;
+  bio?: string | null;
+  profileImageUrl?: string | null;
+  location?: string | null;
+  createdAt?: string;
 }
 
 export interface HealthCheckResponse {
-    status: string;
-    timestamp: string;
+  status: string;
+  timestamp: string;
 }
 
 // Chat interfaces
 export interface ChatMessage {
-    id: string;
-    conversationId: string;
-    senderId: string;
-    senderUsername: string;
-    content: string;
-    kind: 'TEXT' | 'IMAGE' | 'FILE';
-    attachments?: any[];
-    replyTo?: string;
-    createdAt: string;
-    readBy: Array<{
-        userId: string;
-        readAt: string;
-    }>;
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderUsername: string;
+  content: string;
+  kind: 'TEXT' | 'IMAGE' | 'FILE';
+  attachments?: any[];
+  replyTo?: string;
+  createdAt: string;
+  readBy: Array<{
+    userId: string;
+    readAt: string;
+  }>;
 }
 
 export interface Conversation {
+  id: string;
+  type: 'DIRECT' | 'GROUP';
+  title?: string;
+  participants: Array<{
     id: string;
-    type: 'DIRECT' | 'GROUP';
-    title?: string;
-    participants: Array<{
-        id: string;
-        username: string;
-        firstName?: string;
-        lastName?: string;
-        profileImageUrl?: string;
-        isOnline?: boolean;
-    }>;
-    lastMessage?: string;
-    lastMessageAt?: string;
-    unreadCount?: number;
-    createdAt: string;
-    updatedAt: string;
+    username: string;
+    firstName?: string;
+    lastName?: string;
+    profileImageUrl?: string;
+    isOnline?: boolean;
+  }>;
+  lastMessage?: string;
+  lastMessageAt?: string;
+  unreadCount?: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateConversationRequest {
-    type: 'DIRECT' | 'GROUP';
-    participantIds: string[];
-    title?: string;
+  type: 'DIRECT' | 'GROUP';
+  participantIds: string[];
+  title?: string;
 }
 
 export interface Message {
-    id: string;
-    conversationId: string;
-    senderId: string;
-    senderUsername: string;
-    content: string;
-    kind: 'TEXT' | 'IMAGE' | 'FILE';
-    attachments?: any[];
-    replyTo?: string;
-    createdAt: string;
-    readBy: Array<{
-        userId: string;
-        readAt: string;
-    }>;
-    isEdited?: boolean;
-    status?: 'sent' | 'delivered' | 'read';
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderUsername: string;
+  content: string;
+  kind: 'TEXT' | 'IMAGE' | 'FILE';
+  attachments?: any[];
+  replyTo?: string;
+  createdAt: string;
+  readBy: Array<{
+    userId: string;
+    readAt: string;
+  }>;
+  isEdited?: boolean;
+  status?: 'sent' | 'delivered' | 'read';
 }
 
 export interface AddMembersRequest {
-    memberIds: string[];
+  memberIds: string[];
 }
 
 export interface MarkReadRequest {
-    lastReadMessageId?: string;
+  lastReadMessageId?: string;
 }
 
 // Media interfaces
 export interface MediaFile {
-    id: string;
-    filename: string;
-    originalFilename: string;
-    contentType: string;
-    size: number;
-    uploadedBy: string;
-    type: string;
-    entityId?: string;
-    uploadedAt: string;
-    downloadUrl: string;
-    gridFsId: string;
+  id: string;
+  filename: string;
+  originalFilename: string;
+  contentType: string;
+  size: number;
+  uploadedBy: string;
+  type: string;
+  entityId?: string;
+  uploadedAt: string;
+  downloadUrl: string;
+  gridFsId: string;
 }
 
 export interface UploadMediaRequest {
-    files: File[];
-    type: 'image' | 'video';
+  files: File[];
+  type: 'image' | 'video';
 }
 
 // Admin interfaces
 export interface ActivateUserRequest {
-    active: boolean;
+  active: boolean;
 }
 
 export interface AdminPost {
-    id: string;
-    title: string;
-    content: string;
-    location?: string;
-    tags?: string[];
-    authorId: string;
-    authorUsername: string;
-    published: boolean;
-    upvotes: number;
-    downvotes: number;
-    commentCount: number;
-    createdAt: string;
-    updatedAt: string;
-    status: string;
+  id: string;
+  title: string;
+  content: string;
+  location?: string;
+  tags?: string[];
+  authorId: string;
+  authorUsername: string;
+  published: boolean;
+  upvotes: number;
+  downvotes: number;
+  commentCount: number;
+  createdAt: string;
+  updatedAt: string;
+  status: string;
 }
 
 export interface AdminProduct {
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    category: string;
-    stockQuantity: number;
-    location: string;
-    tags: string[];
-    images: string[];
-    sellerId: string;
-    sellerUsername: string;
-    isAvailable: boolean;
-    status: string;
-    createdAt: string;
-    updatedAt: string;
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  stockQuantity: number;
+  location: string;
+  tags: string[];
+  images: string[];
+  sellerId: string;
+  sellerUsername: string;
+  isAvailable: boolean;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 }

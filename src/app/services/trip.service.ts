@@ -1,3 +1,4 @@
+import { logger } from '../core/logging/logger';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -133,23 +134,27 @@ export interface UpdateTripRequest {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class TripService {
   private readonly API_BASE_URL = getApiBaseUrl();
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   // Trip Management
 
   /**
    * Get all trips with pagination and filtering
    */
-  getTrips(page: number = 0, size: number = 10, search?: string, status?: string, destination?: string): Observable<ApiListResponse<Trip>> {
+  getTrips(
+    page: number = 0,
+    size: number = 10,
+    search?: string,
+    status?: string,
+    destination?: string,
+  ): Observable<ApiListResponse<Trip>> {
     const endpoint = `${this.API_BASE_URL}/api/trips`;
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+    let params = new HttpParams().set('page', page.toString()).set('size', size.toString());
 
     if (search) {
       params = params.set('search', search);
@@ -162,10 +167,10 @@ export class TripService {
     }
 
     return this.http.get<ApiListResponse<Trip>>(endpoint, { params }).pipe(
-      catchError(error => {
-        console.error('Error fetching trips:', error);
+      catchError((error) => {
+        logger.error('Error fetching trips:', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -175,10 +180,10 @@ export class TripService {
   getTripById(tripId: string): Observable<ApiResponse<Trip>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}`;
     return this.http.get<ApiResponse<Trip>>(endpoint).pipe(
-      catchError(error => {
-        console.error(`Error fetching trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error fetching trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -188,10 +193,10 @@ export class TripService {
   createTrip(tripData: CreateTripRequest): Observable<ApiResponse<Trip>> {
     const endpoint = `${this.API_BASE_URL}/api/trips`;
     return this.http.post<ApiResponse<Trip>>(endpoint, tripData).pipe(
-      catchError(error => {
-        console.error('Error creating trip:', error);
+      catchError((error) => {
+        logger.error('Error creating trip:', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -201,10 +206,10 @@ export class TripService {
   updateTrip(tripId: string, tripData: UpdateTripRequest): Observable<ApiResponse<Trip>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}`;
     return this.http.put<ApiResponse<Trip>>(endpoint, tripData).pipe(
-      catchError(error => {
-        console.error(`Error updating trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error updating trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -214,10 +219,10 @@ export class TripService {
   deleteTrip(tripId: string): Observable<ApiResponse<void>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}`;
     return this.http.delete<ApiResponse<void>>(endpoint).pipe(
-      catchError(error => {
-        console.error(`Error deleting trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error deleting trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -226,15 +231,13 @@ export class TripService {
    */
   getUserTrips(userId: string, page: number = 0, size: number = 10): Observable<ApiListResponse<Trip>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/user/${userId}`;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+    const params = new HttpParams().set('page', page.toString()).set('size', size.toString());
 
     return this.http.get<ApiListResponse<Trip>>(endpoint, { params }).pipe(
-      catchError(error => {
-        console.error(`Error fetching trips for user ${userId}:`, error);
+      catchError((error) => {
+        logger.error(`Error fetching trips for user ${userId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -243,15 +246,13 @@ export class TripService {
    */
   getTripsByDestination(destination: string, page: number = 0, size: number = 10): Observable<ApiListResponse<Trip>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/destination/${destination}`;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+    const params = new HttpParams().set('page', page.toString()).set('size', size.toString());
 
     return this.http.get<ApiListResponse<Trip>>(endpoint, { params }).pipe(
-      catchError(error => {
-        console.error(`Error fetching trips for destination ${destination}:`, error);
+      catchError((error) => {
+        logger.error('trip-service.byDestination.error', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -260,13 +261,17 @@ export class TripService {
   /**
    * Add participant to trip
    */
-  addParticipant(tripId: string, userId: string, role: 'PARTICIPANT' | 'VIEWER' = 'PARTICIPANT'): Observable<ApiResponse<TripParticipant>> {
+  addParticipant(
+    tripId: string,
+    userId: string,
+    role: 'PARTICIPANT' | 'VIEWER' = 'PARTICIPANT',
+  ): Observable<ApiResponse<TripParticipant>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/participants`;
     return this.http.post<ApiResponse<TripParticipant>>(endpoint, { userId, role }).pipe(
-      catchError(error => {
-        console.error(`Error adding participant to trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error adding participant to trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -276,23 +281,27 @@ export class TripService {
   removeParticipant(tripId: string, userId: string): Observable<ApiResponse<void>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/participants/${userId}`;
     return this.http.delete<ApiResponse<void>>(endpoint).pipe(
-      catchError(error => {
-        console.error(`Error removing participant from trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error removing participant from trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
   /**
    * Update participant role
    */
-  updateParticipantRole(tripId: string, userId: string, role: 'ORGANIZER' | 'PARTICIPANT' | 'VIEWER'): Observable<ApiResponse<TripParticipant>> {
+  updateParticipantRole(
+    tripId: string,
+    userId: string,
+    role: 'ORGANIZER' | 'PARTICIPANT' | 'VIEWER',
+  ): Observable<ApiResponse<TripParticipant>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/participants/${userId}`;
     return this.http.put<ApiResponse<TripParticipant>>(endpoint, { role }).pipe(
-      catchError(error => {
-        console.error(`Error updating participant role in trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error updating participant role in trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -302,10 +311,10 @@ export class TripService {
   acceptTripInvitation(tripId: string): Observable<ApiResponse<TripParticipant>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/accept`;
     return this.http.post<ApiResponse<TripParticipant>>(endpoint, {}).pipe(
-      catchError(error => {
-        console.error(`Error accepting trip invitation ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error accepting trip invitation ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -315,10 +324,10 @@ export class TripService {
   declineTripInvitation(tripId: string): Observable<ApiResponse<void>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/decline`;
     return this.http.post<ApiResponse<void>>(endpoint, {}).pipe(
-      catchError(error => {
-        console.error(`Error declining trip invitation ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error declining trip invitation ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -330,23 +339,27 @@ export class TripService {
   addItineraryItem(tripId: string, itineraryData: Omit<TripItinerary, 'id'>): Observable<ApiResponse<TripItinerary>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/itinerary`;
     return this.http.post<ApiResponse<TripItinerary>>(endpoint, itineraryData).pipe(
-      catchError(error => {
-        console.error(`Error adding itinerary item to trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error adding itinerary item to trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
   /**
    * Update itinerary item
    */
-  updateItineraryItem(tripId: string, itemId: string, itineraryData: Partial<TripItinerary>): Observable<ApiResponse<TripItinerary>> {
+  updateItineraryItem(
+    tripId: string,
+    itemId: string,
+    itineraryData: Partial<TripItinerary>,
+  ): Observable<ApiResponse<TripItinerary>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/itinerary/${itemId}`;
     return this.http.put<ApiResponse<TripItinerary>>(endpoint, itineraryData).pipe(
-      catchError(error => {
-        console.error(`Error updating itinerary item ${itemId} in trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error updating itinerary item ${itemId} in trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -356,10 +369,10 @@ export class TripService {
   deleteItineraryItem(tripId: string, itemId: string): Observable<ApiResponse<void>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/itinerary/${itemId}`;
     return this.http.delete<ApiResponse<void>>(endpoint).pipe(
-      catchError(error => {
-        console.error(`Error deleting itinerary item ${itemId} from trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error deleting itinerary item ${itemId} from trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -371,23 +384,27 @@ export class TripService {
   addExpense(tripId: string, expenseData: Omit<TripExpense, 'id'>): Observable<ApiResponse<TripExpense>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/expenses`;
     return this.http.post<ApiResponse<TripExpense>>(endpoint, expenseData).pipe(
-      catchError(error => {
-        console.error(`Error adding expense to trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error adding expense to trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
   /**
    * Update expense
    */
-  updateExpense(tripId: string, expenseId: string, expenseData: Partial<TripExpense>): Observable<ApiResponse<TripExpense>> {
+  updateExpense(
+    tripId: string,
+    expenseId: string,
+    expenseData: Partial<TripExpense>,
+  ): Observable<ApiResponse<TripExpense>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/expenses/${expenseId}`;
     return this.http.put<ApiResponse<TripExpense>>(endpoint, expenseData).pipe(
-      catchError(error => {
-        console.error(`Error updating expense ${expenseId} in trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error updating expense ${expenseId} in trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -397,34 +414,40 @@ export class TripService {
   deleteExpense(tripId: string, expenseId: string): Observable<ApiResponse<void>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/expenses/${expenseId}`;
     return this.http.delete<ApiResponse<void>>(endpoint).pipe(
-      catchError(error => {
-        console.error(`Error deleting expense ${expenseId} from trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error deleting expense ${expenseId} from trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
   /**
    * Get trip expenses summary
    */
-  getTripExpensesSummary(tripId: string): Observable<ApiResponse<{
-    totalExpenses: number;
-    expensesByCategory: { [key: string]: number };
-    expensesByParticipant: { [key: string]: number };
-    currency: string;
-  }>> {
-    const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/expenses/summary`;
-    return this.http.get<ApiResponse<{
+  getTripExpensesSummary(tripId: string): Observable<
+    ApiResponse<{
       totalExpenses: number;
       expensesByCategory: { [key: string]: number };
       expensesByParticipant: { [key: string]: number };
       currency: string;
-    }>>(endpoint).pipe(
-      catchError(error => {
-        console.error(`Error fetching expenses summary for trip ${tripId}:`, error);
-        throw error;
-      })
-    );
+    }>
+  > {
+    const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/expenses/summary`;
+    return this.http
+      .get<
+        ApiResponse<{
+          totalExpenses: number;
+          expensesByCategory: { [key: string]: number };
+          expensesByParticipant: { [key: string]: number };
+          currency: string;
+        }>
+      >(endpoint)
+      .pipe(
+        catchError((error) => {
+          logger.error(`Error fetching expenses summary for trip ${tripId}:`, error);
+          throw error;
+        }),
+      );
   }
 
   // Trip Photos
@@ -444,10 +467,10 @@ export class TripService {
     }
 
     return this.http.post<ApiResponse<TripPhoto>>(endpoint, formData).pipe(
-      catchError(error => {
-        console.error(`Error uploading photo to trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error uploading photo to trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -456,15 +479,13 @@ export class TripService {
    */
   getTripPhotos(tripId: string, page: number = 0, size: number = 20): Observable<ApiListResponse<TripPhoto>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/photos`;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+    const params = new HttpParams().set('page', page.toString()).set('size', size.toString());
 
     return this.http.get<ApiListResponse<TripPhoto>>(endpoint, { params }).pipe(
-      catchError(error => {
-        console.error(`Error fetching photos for trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error fetching photos for trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -474,10 +495,10 @@ export class TripService {
   deleteTripPhoto(tripId: string, photoId: string): Observable<ApiResponse<void>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/photos/${photoId}`;
     return this.http.delete<ApiResponse<void>>(endpoint).pipe(
-      catchError(error => {
-        console.error(`Error deleting photo ${photoId} from trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error deleting photo ${photoId} from trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -486,13 +507,17 @@ export class TripService {
   /**
    * Share trip with user
    */
-  shareTrip(tripId: string, userId: string, role: 'PARTICIPANT' | 'VIEWER' = 'VIEWER'): Observable<ApiResponse<TripParticipant>> {
+  shareTrip(
+    tripId: string,
+    userId: string,
+    role: 'PARTICIPANT' | 'VIEWER' = 'VIEWER',
+  ): Observable<ApiResponse<TripParticipant>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/share`;
     return this.http.post<ApiResponse<TripParticipant>>(endpoint, { userId, role }).pipe(
-      catchError(error => {
-        console.error(`Error sharing trip ${tripId} with user ${userId}:`, error);
+      catchError((error) => {
+        logger.error(`Error sharing trip ${tripId} with user ${userId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -502,10 +527,10 @@ export class TripService {
   getTripSharingLink(tripId: string): Observable<ApiResponse<{ shareUrl: string; expiresAt: string }>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/share-link`;
     return this.http.get<ApiResponse<{ shareUrl: string; expiresAt: string }>>(endpoint).pipe(
-      catchError(error => {
-        console.error(`Error getting sharing link for trip ${tripId}:`, error);
+      catchError((error) => {
+        logger.error(`Error getting sharing link for trip ${tripId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -517,10 +542,10 @@ export class TripService {
   saveTripAsTemplate(tripId: string, templateName: string): Observable<ApiResponse<{ templateId: string }>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/${tripId}/template`;
     return this.http.post<ApiResponse<{ templateId: string }>>(endpoint, { templateName }).pipe(
-      catchError(error => {
-        console.error(`Error saving trip ${tripId} as template:`, error);
+      catchError((error) => {
+        logger.error(`Error saving trip ${tripId} as template:`, error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -530,11 +555,10 @@ export class TripService {
   createTripFromTemplate(templateId: string, tripData: CreateTripRequest): Observable<ApiResponse<Trip>> {
     const endpoint = `${this.API_BASE_URL}/api/trips/from-template/${templateId}`;
     return this.http.post<ApiResponse<Trip>>(endpoint, tripData).pipe(
-      catchError(error => {
-        console.error(`Error creating trip from template ${templateId}:`, error);
+      catchError((error) => {
+        logger.error(`Error creating trip from template ${templateId}:`, error);
         throw error;
-      })
+      }),
     );
   }
 }
-

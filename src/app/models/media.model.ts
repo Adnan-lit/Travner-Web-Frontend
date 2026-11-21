@@ -8,20 +8,20 @@ export interface Media extends MediaFile {
 }
 
 export interface UploadMediaRequest {
-    files: File[];
-    type: 'image' | 'video';
+  files: File[];
+  type: 'image' | 'video';
 }
 
 export interface MediaSearchParams {
-    page?: number;
-    size?: number;
-    sortBy?: string;
-    direction?: 'asc' | 'desc';
-    type?: 'image' | 'video';
-    userId?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  direction?: 'asc' | 'desc';
+  type?: 'image' | 'video';
+  userId?: string;
 }
 
 export type MediaResponse = ApiResponse<Media>;
 export type MediaListResponse = ApiResponse<Media[]> & {
-    pagination: ApiPaginationInfo;
+  pagination: ApiPaginationInfo;
 };

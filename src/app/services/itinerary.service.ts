@@ -1,18 +1,18 @@
+import { logger } from '../core/logging/logger';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { getApiBaseUrl } from '../config/runtime.config';
 import {
-  Itinerary,
   ItineraryCreate,
   ItinerarySearchParams,
   ItineraryListResponse,
-  ItineraryResponse
+  ItineraryResponse,
 } from '../models/location.model';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ItineraryService {
   private apiUrl = `${getApiBaseUrl()}/api/itineraries`;
@@ -22,13 +22,13 @@ export class ItineraryService {
   // Get all itineraries with search and pagination
   getItineraries(params?: ItinerarySearchParams): Observable<ItineraryListResponse> {
     let httpParams = new HttpParams();
-    
+
     if (params) {
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         const value = params[key as keyof ItinerarySearchParams];
         if (value !== undefined && value !== null) {
           if (Array.isArray(value)) {
-            value.forEach(v => httpParams = httpParams.append(key, v.toString()));
+            value.forEach((v) => (httpParams = httpParams.append(key, v.toString())));
           } else {
             httpParams = httpParams.set(key, value.toString());
           }
@@ -36,18 +36,18 @@ export class ItineraryService {
       });
     }
 
-    console.log('🧳 ItineraryService: Making request to:', this.apiUrl);
-    console.log('🧳 ItineraryService: Params:', params);
-    console.log('🧳 ItineraryService: HttpParams:', httpParams.toString());
+    logger.debug('🧳 ItineraryService: Making request to:', this.apiUrl);
+    logger.debug('🧳 ItineraryService: Params:', params);
+    logger.debug('🧳 ItineraryService: HttpParams:', httpParams.toString());
 
     return this.http.get<ItineraryListResponse>(this.apiUrl, { params: httpParams }).pipe(
       tap((response: any) => {
-        console.log('✅ ItineraryService: Response received:', response);
+        logger.debug('✅ ItineraryService: Response received:', response);
       }),
       catchError((error: any) => {
-        console.error('❌ ItineraryService: Error fetching itineraries:', error);
+        logger.error('❌ ItineraryService: Error fetching itineraries:', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -74,13 +74,13 @@ export class ItineraryService {
   // Get user's itineraries
   getUserItineraries(userId: string, params?: ItinerarySearchParams): Observable<ItineraryListResponse> {
     let httpParams = new HttpParams();
-    
+
     if (params) {
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         const value = params[key as keyof ItinerarySearchParams];
         if (value !== undefined && value !== null) {
           if (Array.isArray(value)) {
-            value.forEach(v => httpParams = httpParams.append(key, v.toString()));
+            value.forEach((v) => (httpParams = httpParams.append(key, v.toString())));
           } else {
             httpParams = httpParams.set(key, value.toString());
           }
@@ -94,13 +94,13 @@ export class ItineraryService {
   // Get public itineraries
   getPublicItineraries(params?: ItinerarySearchParams): Observable<ItineraryListResponse> {
     let httpParams = new HttpParams();
-    
+
     if (params) {
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         const value = params[key as keyof ItinerarySearchParams];
         if (value !== undefined && value !== null) {
           if (Array.isArray(value)) {
-            value.forEach(v => httpParams = httpParams.append(key, v.toString()));
+            value.forEach((v) => (httpParams = httpParams.append(key, v.toString())));
           } else {
             httpParams = httpParams.set(key, value.toString());
           }
@@ -114,13 +114,13 @@ export class ItineraryService {
   // Get template itineraries
   getTemplateItineraries(params?: ItinerarySearchParams): Observable<ItineraryListResponse> {
     let httpParams = new HttpParams();
-    
+
     if (params) {
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         const value = params[key as keyof ItinerarySearchParams];
         if (value !== undefined && value !== null) {
           if (Array.isArray(value)) {
-            value.forEach(v => httpParams = httpParams.append(key, v.toString()));
+            value.forEach((v) => (httpParams = httpParams.append(key, v.toString())));
           } else {
             httpParams = httpParams.set(key, value.toString());
           }
@@ -134,13 +134,13 @@ export class ItineraryService {
   // Search itineraries
   searchItineraries(query: string, params?: ItinerarySearchParams): Observable<ItineraryListResponse> {
     let httpParams = new HttpParams().set('query', query);
-    
+
     if (params) {
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         const value = params[key as keyof ItinerarySearchParams];
         if (value !== undefined && value !== null) {
           if (Array.isArray(value)) {
-            value.forEach(v => httpParams = httpParams.append(key, v.toString()));
+            value.forEach((v) => (httpParams = httpParams.append(key, v.toString())));
           } else {
             httpParams = httpParams.set(key, value.toString());
           }

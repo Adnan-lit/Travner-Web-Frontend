@@ -1,3 +1,4 @@
+import { logger } from '../../../core/logging/logger';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,7 +11,7 @@ import { ItineraryCreate } from '../../../models/location.model';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './itinerary-create.component.html',
-  styleUrls: ['./itinerary-create.component.css']
+  styleUrls: ['./itinerary-create.component.css'],
 })
 export class ItineraryCreateComponent implements OnInit {
   itinerary: ItineraryCreate = {
@@ -26,7 +27,7 @@ export class ItineraryCreateComponent implements OnInit {
     isPublic: true,
     isTemplate: false,
     estimatedBudget: 0,
-    currency: 'BDT' // Fixed to BDT
+    currency: 'BDT', // Fixed to BDT
   };
 
   loading = false;
@@ -35,14 +36,14 @@ export class ItineraryCreateComponent implements OnInit {
 
   constructor(
     private itineraryService: ItineraryService,
-    public router: Router
-  ) { }
+    public router: Router,
+  ) {}
 
   ngOnInit(): void {
-    console.log('🧳 ItineraryCreateComponent ngOnInit called');
-    console.log('🧳 Component data:', this.itinerary);
-    console.log('🧳 Loading state:', this.loading);
-    console.log('🧳 Error state:', this.error);
+    logger.debug('🧳 ItineraryCreateComponent ngOnInit called');
+    logger.debug('🧳 Component data:', this.itinerary);
+    logger.debug('🧳 Loading state:', this.loading);
+    logger.debug('🧳 Error state:', this.error);
   }
 
   onSubmit(): void {
@@ -54,26 +55,26 @@ export class ItineraryCreateComponent implements OnInit {
       ...this.itinerary,
       startDate: this.itinerary.startDate ? `${this.itinerary.startDate}T00:00:00` : '',
       endDate: this.itinerary.endDate ? `${this.itinerary.endDate}T23:59:59` : '',
-      items: this.itinerary.items.map(item => ({
+      items: this.itinerary.items.map((item) => ({
         ...item,
         startTime: item.startTime ? `${this.itinerary.startDate}T${item.startTime}:00` : '',
-        endTime: item.endTime ? `${this.itinerary.startDate}T${item.endTime}:00` : ''
-      }))
+        endTime: item.endTime ? `${this.itinerary.startDate}T${item.endTime}:00` : '',
+      })),
     };
 
-    console.log('🧳 Creating itinerary with data:', itineraryData);
+    logger.debug('🧳 Creating itinerary with data:', itineraryData);
 
     this.itineraryService.createItinerary(itineraryData).subscribe({
       next: (response) => {
-        console.log('✅ Itinerary created successfully:', response);
+        logger.debug('✅ Itinerary created successfully:', response);
         this.loading = false;
         this.router.navigate(['/itineraries']);
       },
       error: (err) => {
         this.loading = false;
         this.error = 'Failed to create itinerary. Please try again.';
-        console.error('❌ Error creating itinerary:', err);
-      }
+        logger.error('❌ Error creating itinerary:', err);
+      },
     });
   }
 
@@ -87,7 +88,7 @@ export class ItineraryCreateComponent implements OnInit {
       category: 'activity',
       notes: '',
       estimatedCost: 0,
-      currency: 'BDT'
+      currency: 'BDT',
     });
   }
 
@@ -97,7 +98,10 @@ export class ItineraryCreateComponent implements OnInit {
 
   addTag(): void {
     if (this.tagInput.trim()) {
-      const tags = this.tagInput.split(',').map(tag => tag.trim()).filter(tag => tag);
+      const tags = this.tagInput
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag);
       this.itinerary.tags.push(...tags);
       this.tagInput = '';
     }
@@ -106,7 +110,6 @@ export class ItineraryCreateComponent implements OnInit {
   removeTag(index: number): void {
     this.itinerary.tags.splice(index, 1);
   }
-
 
   onCancel(): void {
     this.router.navigate(['/itineraries']);

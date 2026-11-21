@@ -2,7 +2,11 @@
 .signin-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   position: relative;
   overflow: hidden;
 }
@@ -14,15 +18,20 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: 
+  background-image:
     radial-gradient(circle at 25% 25%, rgba(231, 76, 60, 0.1) 0%, transparent 50%),
     radial-gradient(circle at 75% 75%, rgba(52, 152, 219, 0.1) 0%, transparent 50%);
   animation: patternFloat 20s ease-in-out infinite;
 }
 
 @keyframes patternFloat {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(1deg); }
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(1deg);
+  }
 }
 
 .floating-element {
@@ -57,9 +66,16 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33% { transform: translateY(-30px) rotate(120deg); }
-  66% { transform: translateY(20px) rotate(240deg); }
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-30px) rotate(120deg);
+  }
+  66% {
+    transform: translateY(20px) rotate(240deg);
+  }
 }
 
 /* Main Container */
@@ -256,7 +272,7 @@
 }
 
 .form-input::placeholder {
-  color: #9ca3af;
+  color: #6b7280;
   opacity: 1;
 }
 
@@ -268,7 +284,7 @@
 .input-icon {
   position: absolute;
   left: 16px;
-  color: #9ca3af;
+  color: #6b7280;
   z-index: 1;
   display: flex;
   align-items: center;
@@ -286,7 +302,7 @@
   right: 16px;
   background: none;
   border: none;
-  color: #9ca3af;
+  color: #6b7280;
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -334,7 +350,7 @@
   color: #374151;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   display: none;
 }
 
@@ -347,12 +363,12 @@
   transition: all 0.2s ease;
 }
 
-.checkbox-label input[type="checkbox"]:checked + .checkmark {
+.checkbox-label input[type='checkbox']:checked + .checkmark {
   background: #e74c3c;
   border-color: #e74c3c;
 }
 
-.checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+.checkbox-label input[type='checkbox']:checked + .checkmark::after {
   content: '';
   position: absolute;
   left: 4px;
@@ -420,8 +436,12 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Footer */
@@ -506,7 +526,7 @@
 }
 
 .social-btn:hover {
-  border-color: #d1d5db;
+  border-color: #6b7280;
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
@@ -526,20 +546,20 @@
   .signin-container {
     padding: 1rem;
   }
-  
+
   .signin-card {
     padding: 2rem 1.5rem;
   }
-  
+
   .signin-title {
     font-size: 2rem;
   }
-  
+
   .home-nav {
     top: 1rem;
     left: 1rem;
   }
-  
+
   .social-buttons {
     flex-direction: column;
   }

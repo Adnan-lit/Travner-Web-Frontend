@@ -6,7 +6,7 @@ import {
   FormGroup,
   ReactiveFormsModule,
   ValidationErrors,
-  Validators
+  Validators,
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TravelBuddyService } from '../../../services/travel-buddy.service';
@@ -32,7 +32,7 @@ function dateRangeValidator(group: AbstractControl): ValidationErrors | null {
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './travel-buddy-create.component.html',
-  styleUrls: ['./travel-buddy-create.component.css']
+  styleUrls: ['./travel-buddy-create.component.css'],
 })
 export class TravelBuddyCreateComponent {
   private readonly failureMessage = 'Could not create your travel buddy request. Please try again.';
@@ -41,24 +41,24 @@ export class TravelBuddyCreateComponent {
     {
       destination: new FormControl('', {
         nonNullable: true,
-        validators: [Validators.required, Validators.maxLength(200)]
+        validators: [Validators.required, Validators.maxLength(200)],
       }),
       startDate: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
       endDate: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
       interests: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
       expiryDays: new FormControl(30, {
         nonNullable: true,
-        validators: [Validators.required, Validators.min(1), Validators.max(365)]
+        validators: [Validators.required, Validators.min(1), Validators.max(365)],
       }),
       minAge: new FormControl<number | null>(null, [Validators.min(18), Validators.max(100)]),
       maxAge: new FormControl<number | null>(null, [Validators.min(18), Validators.max(100)]),
       preferredGender: new FormControl('', { nonNullable: true }),
       budgetRange: new FormControl('', {
         nonNullable: true,
-        validators: [Validators.maxLength(100)]
-      })
+        validators: [Validators.maxLength(100)],
+      }),
     },
-    { validators: [dateRangeValidator] }
+    { validators: [dateRangeValidator] },
   );
 
   submitting = false;
@@ -66,7 +66,7 @@ export class TravelBuddyCreateComponent {
 
   constructor(
     private readonly travelBuddyService: TravelBuddyService,
-    private readonly router: Router
+    private readonly router: Router,
   ) {}
 
   onSubmit(): void {
@@ -90,7 +90,7 @@ export class TravelBuddyCreateComponent {
         .split(',')
         .map((interest) => interest.trim())
         .filter((interest) => interest.length > 0),
-      expiryDays: raw.expiryDays
+      expiryDays: raw.expiryDays,
     };
 
     if (raw.minAge !== null) {
@@ -119,7 +119,7 @@ export class TravelBuddyCreateComponent {
       error: () => {
         this.submitting = false;
         this.error = this.failureMessage;
-      }
+      },
     });
   }
 }

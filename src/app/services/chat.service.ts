@@ -1,30 +1,30 @@
+import { logger } from '../core/logging/logger';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable, map, tap, catchError, of } from 'rxjs';
 import {
   ChatMessage,
   ChatAttachment,
-  ChatConversation,
   ChatParticipant,
   ChatUser,
   SendMessageRequest,
-  ConversationWithParticipants
+  ConversationWithParticipants,
 } from '../models/chat.model';
-import { User } from '../models/common.model';
+
 import { ApiResponse } from '../models/common.model';
 import { getApiBaseUrl } from '../config/runtime.config';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ChatService {
   private readonly API_BASE_URL = getApiBaseUrl();
-  
+
   // BehaviorSubjects for real-time data
   private conversationsSubject = new BehaviorSubject<ConversationWithParticipants[]>([]);
   private messagesSubject = new BehaviorSubject<Map<string, ChatMessage[]>>(new Map());
   private typingIndicatorsSubject = new BehaviorSubject<Map<string, any>>(new Map());
-  
+
   // Public observables
   public conversations$ = this.conversationsSubject.asObservable();
   public messages$ = this.messagesSubject.asObservable();
@@ -37,12 +37,10 @@ export class ChatService {
    */
   getConversations(page: number = 0, size: number = 20): Observable<ConversationWithParticipants[]> {
     const endpoint = `${this.API_BASE_URL}/api/chat/conversations`;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+    const params = new HttpParams().set('page', page.toString()).set('size', size.toString());
 
     return this.http.get<ApiResponse<any>>(endpoint, { params }).pipe(
-      map(response => {
+      map((response) => {
         if (!response.data || !response.data.content) {
           return [];
         }
@@ -52,19 +50,17 @@ export class ChatService {
             ...conv,
             participants,
             // For direct conversations, prefer the resolved participant name
-            title: conv.type === 'DIRECT'
-              ? this.generateDirectConversationTitle(conv.title, participants)
-              : conv.title
+            title: conv.type === 'DIRECT' ? this.generateDirectConversationTitle(conv.title, participants) : conv.title,
           };
         });
       }),
-      tap(conversations => {
+      tap((conversations) => {
         this.conversationsSubject.next(conversations);
       }),
-      catchError(error => {
-        console.error('Error fetching conversations:', error);
+      catchError((error) => {
+        logger.error('Error fetching conversations:', error);
         return of([]);
-      })
+      }),
     );
   }
 
@@ -83,7 +79,7 @@ export class ChatService {
         firstName: '',
         lastName: '',
         profilePicture: p.avatarUrl ?? undefined,
-        isOnline: false
+        isOnline: false,
       }));
     }
     return (conv.participantIds || []).map((id: string) => ({
@@ -93,7 +89,7 @@ export class ChatService {
       displayName: 'Former user',
       firstName: '',
       lastName: '',
-      isOnline: false
+      isOnline: false,
     }));
   }
 
@@ -102,7 +98,7 @@ export class ChatService {
       return fallbackTitle;
     }
     const first = participants[0];
-    return first ? (first.displayName || first.username || 'Direct Message') : 'Direct Message';
+    return first ? first.displayName || first.username || 'Direct Message' : 'Direct Message';
   }
 
   /**
@@ -110,28 +106,28 @@ export class ChatService {
    */
   getDirectConversation(otherUserId: string): Observable<ConversationWithParticipants> {
     const endpoint = `${this.API_BASE_URL}/api/chat/conversations/direct/${otherUserId}`;
-    
+
     return this.http.get<ApiResponse<any>>(endpoint).pipe(
-      map(response => {
+      map((response) => {
         if (!response.data) {
           throw new Error('No conversation data received');
         }
         return {
           ...response.data,
-          participants: this.toChatUsers(response.data)
+          participants: this.toChatUsers(response.data),
         };
       }),
-      tap(conversation => {
+      tap((conversation) => {
         const currentConversations = this.conversationsSubject.value;
-        const exists = currentConversations.some(conv => conv.id === conversation.id);
+        const exists = currentConversations.some((conv) => conv.id === conversation.id);
         if (!exists) {
           this.conversationsSubject.next([conversation, ...currentConversations]);
         }
       }),
-      catchError(error => {
-        console.error('Error getting direct conversation:', error);
+      catchError((error) => {
+        logger.error('Error getting direct conversation:', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -140,26 +136,24 @@ export class ChatService {
    */
   getMessages(conversationId: string, page: number = 0, size: number = 50): Observable<ChatMessage[]> {
     const endpoint = `${this.API_BASE_URL}/api/chat/conversations/${conversationId}/messages`;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+    const params = new HttpParams().set('page', page.toString()).set('size', size.toString());
 
     return this.http.get<ApiResponse<any>>(endpoint, { params }).pipe(
-      map(response => {
+      map((response) => {
         if (!response.data || !response.data.content) {
           return [];
         }
         return response.data.content;
       }),
-      tap(messages => {
+      tap((messages) => {
         const currentMessages = this.messagesSubject.value;
         currentMessages.set(conversationId, messages);
         this.messagesSubject.next(new Map(currentMessages));
       }),
-      catchError(error => {
-        console.error('Error fetching messages:', error);
+      catchError((error) => {
+        logger.error('Error fetching messages:', error);
         return of([]);
-      })
+      }),
     );
   }
 
@@ -168,29 +162,29 @@ export class ChatService {
    */
   sendMessage(request: SendMessageRequest): Observable<ChatMessage> {
     const endpoint = `${this.API_BASE_URL}/api/chat/messages`;
-    
+
     return this.http.post<ApiResponse<ChatMessage>>(endpoint, request).pipe(
-      map(response => {
+      map((response) => {
         if (!response.data) {
           throw new Error('No message data received');
         }
         return response.data;
       }),
-      tap(message => {
+      tap((message) => {
         // Don't add to cache here - let WebSocket handle it to avoid duplicates
         // Just update conversation last message
         const currentConversations = this.conversationsSubject.value;
-        const conversation = currentConversations.find(c => c.id === request.conversationId);
+        const conversation = currentConversations.find((c) => c.id === request.conversationId);
         if (conversation) {
           conversation.lastMessage = message.content;
           conversation.lastMessageAt = message.createdAt;
           this.conversationsSubject.next([...currentConversations]);
         }
       }),
-      catchError(error => {
-        console.error('Error sending message:', error);
+      catchError((error) => {
+        logger.error('Error sending message:', error);
         throw error;
-      })
+      }),
     );
   }
 
@@ -199,13 +193,13 @@ export class ChatService {
    */
   markMessagesAsRead(conversationId: string): Observable<void> {
     const endpoint = `${this.API_BASE_URL}/api/chat/conversations/${conversationId}/mark-read`;
-    
+
     return this.http.post<ApiResponse<void>>(endpoint, {}).pipe(
-      map(response => void 0),
-      catchError(error => {
-        console.error('Error marking messages as read:', error);
+      map((response) => void 0),
+      catchError((error) => {
+        logger.error('Error marking messages as read:', error);
         return of(void 0);
-      })
+      }),
     );
   }
 
@@ -222,26 +216,25 @@ export class ChatService {
   addMessageToCache(message: ChatMessage): void {
     const currentMessages = this.messagesSubject.value;
     const conversationMessages = currentMessages.get(message.conversationId) || [];
-    
+
     // Check if message already exists to prevent duplicates
-    const messageExists = conversationMessages.some(existingMessage => 
-      existingMessage.id === message.id || 
-      (existingMessage.content === message.content && 
-       existingMessage.senderId === message.senderId && 
-       Math.abs(new Date(existingMessage.createdAt).getTime() - new Date(message.createdAt).getTime()) < 1000)
+    const messageExists = conversationMessages.some(
+      (existingMessage) =>
+        existingMessage.id === message.id ||
+        (existingMessage.content === message.content &&
+          existingMessage.senderId === message.senderId &&
+          Math.abs(new Date(existingMessage.createdAt).getTime() - new Date(message.createdAt).getTime()) < 1000),
     );
-    
+
     if (!messageExists) {
       conversationMessages.push(message);
       // Sort messages by creation time
-      conversationMessages.sort((a, b) => 
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      );
+      conversationMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       currentMessages.set(message.conversationId, conversationMessages);
       this.messagesSubject.next(new Map(currentMessages));
-      console.log('Added message to cache:', message.content);
+      logger.debug('Added message to cache:', message.content);
     } else {
-      console.log('Message already exists, skipping duplicate:', message.content);
+      logger.debug('Message already exists, skipping duplicate:', message.content);
     }
   }
 
@@ -264,16 +257,16 @@ export class ChatService {
     const endpoint = `${this.API_BASE_URL}/api/chat/upload`;
 
     return this.http.post<ApiResponse<ChatAttachment>>(endpoint, formData).pipe(
-      map(response => {
+      map((response) => {
         if (!response.data) {
           throw new Error('No file data received');
         }
         return response.data;
       }),
-      catchError(error => {
-        console.error('Error uploading file:', error);
+      catchError((error) => {
+        logger.error('Error uploading file:', error);
         throw error;
-      })
+      }),
     );
   }
 

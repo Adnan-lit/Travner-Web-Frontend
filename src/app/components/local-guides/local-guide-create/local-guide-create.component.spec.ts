@@ -17,10 +17,7 @@ describe('LocalGuideCreateComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [LocalGuideCreateComponent],
-      providers: [
-        provideRouter([]),
-        { provide: LocalGuideService, useValue: service }
-      ]
+      providers: [provideRouter([]), { provide: LocalGuideService, useValue: service }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LocalGuideCreateComponent);
@@ -44,7 +41,7 @@ describe('LocalGuideCreateComponent', () => {
       specialties: 'History, Food',
       availability: 'Weekends',
       contactMethod: 'email',
-      contactInfo: 'via profile'
+      contactInfo: 'via profile',
     });
   }
 
@@ -62,7 +59,7 @@ describe('LocalGuideCreateComponent', () => {
       specialties: ['History', 'Food'],
       availability: 'Weekends',
       contactMethod: 'email',
-      contactInfo: 'via profile'
+      contactInfo: 'via profile',
     });
     expect(router.navigate).toHaveBeenCalledWith(['/local-guides', 'guide-1']);
   });
@@ -94,10 +91,12 @@ describe('LocalGuideCreateComponent', () => {
   });
 
   it('shows a generic error without rendering server error details', () => {
-    service.createLocalGuide.and.returnValue(throwError(() => ({
-      status: 500,
-      message: 'SECRET-SERVER-DETAIL'
-    })));
+    service.createLocalGuide.and.returnValue(
+      throwError(() => ({
+        status: 500,
+        message: 'SECRET-SERVER-DETAIL',
+      })),
+    );
     fillValidForm();
 
     component.onSubmit();

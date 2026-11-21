@@ -10,7 +10,7 @@ type TripDetailState = 'loading' | 'ready' | 'error' | 'not-found' | 'missing-id
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './trip-detail.component.html',
-  styleUrls: ['./trip-detail.component.css']
+  styleUrls: ['./trip-detail.component.css'],
 })
 export class TripDetailComponent implements OnInit {
   state: TripDetailState = 'loading';
@@ -19,7 +19,7 @@ export class TripDetailComponent implements OnInit {
 
   constructor(
     private readonly route: ActivatedRoute,
-    private readonly tripService: TripService
+    private readonly tripService: TripService,
   ) {}
 
   ngOnInit(): void {
@@ -35,7 +35,7 @@ export class TripDetailComponent implements OnInit {
     this.errorMessage = '';
 
     this.tripService.getTripById(tripId).subscribe({
-      next: response => {
+      next: (response) => {
         if (!response?.success || !response?.data) {
           this.state = 'not-found';
           this.errorMessage = 'Trip not found.';
@@ -54,7 +54,7 @@ export class TripDetailComponent implements OnInit {
 
         this.state = 'error';
         this.errorMessage = 'We could not load this trip. Please try again later.';
-      }
+      },
     });
   }
 

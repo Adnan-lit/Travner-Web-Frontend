@@ -1,13 +1,15 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { logger } from '../../../core/logging/logger';
+import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MarketplaceService } from '../../../services/marketplace.service';
 import { AuthService } from '../../../services/auth.service';
 import { Order } from '../../../models/marketplace.model';
 import { User } from '../../../models/common.model';
-import { ApiResponse, ApiListResponse } from '../../../models/api-response.model';
+import { ApiResponse } from '../../../models/api-response.model';
 
 interface OrderFilters {
   status: string;
@@ -35,9 +37,9 @@ interface OrderStats {
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './order-management.component.html',
-  styleUrls: ['./order-management.component.css']
+  styleUrls: ['./order-management.component.css'],
 })
-export class OrderManagementComponent implements OnInit, OnDestroy {
+export class OrderManagementComponent implements OnInit {
   currentUser: User | null = null;
   orders: Order[] = [];
   orderStats: OrderStats = {
@@ -48,9 +50,9 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
     deliveredOrders: 0,
     cancelledOrders: 0,
     totalRevenue: 0,
-    averageOrderValue: 0
+    averageOrderValue: 0,
   };
-  
+
   filters: OrderFilters = {
     status: '',
     paymentStatus: '',
@@ -58,55 +60,49 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
     dateFrom: '',
     dateTo: '',
     sortBy: 'createdAt',
-    sortOrder: 'desc'
+    sortOrder: 'desc',
   };
-  
+
   pagination = {
     page: 0,
     size: 20,
     totalElements: 0,
-    totalPages: 0
+    totalPages: 0,
   };
-  
+
   isLoading = false;
   selectedOrders: Set<string> = new Set();
   showBulkActions = false;
-  
+
   // Modal states
   showOrderModal = false;
   showStatusModal = false;
   selectedOrder: Order | null = null;
   newStatus: string = '';
-  
-  private destroy$ = new Subject<void>();
+
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(
     private marketplaceService: MarketplaceService,
-    private authService: AuthService
-  ) { }
+    private authService: AuthService,
+  ) {}
 
   ngOnInit(): void {
-    this.authService.currentUser$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(user => {
-        this.currentUser = user;
-        if (user && this.authService.isAdmin()) {
-          this.loadOrders();
-          this.loadOrderStats();
-        }
-      });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    this.authService.currentUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((user) => {
+      this.currentUser = user;
+      if (user && this.authService.isAdmin()) {
+        this.loadOrders();
+        this.loadOrderStats();
+      }
+    });
   }
 
   loadOrders(): void {
     this.isLoading = true;
-    
-    this.marketplaceService.getAllOrders()
-      .pipe(takeUntil(this.destroy$))
+
+    this.marketplaceService
+      .getAllOrders()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response: ApiResponse<Order[]>) => {
           this.orders = response.data || [];
@@ -114,29 +110,28 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
           this.isLoading = false;
         },
         error: (error) => {
-          console.error('Error loading orders:', error);
+          logger.error('Error loading orders:', error);
           this.isLoading = false;
-        }
+        },
       });
   }
 
   loadOrderStats(): void {
     // Calculate stats from orders
     this.orderStats.totalOrders = this.orders.length;
-    this.orderStats.pendingOrders = this.orders.filter(order => order.status === 'PENDING').length;
-    this.orderStats.paidOrders = this.orders.filter(order => order.status === 'PAID').length;
-    this.orderStats.shippedOrders = this.orders.filter(order => order.status === 'SHIPPED').length;
-    this.orderStats.deliveredOrders = this.orders.filter(order => order.status === 'DELIVERED').length;
-    this.orderStats.cancelledOrders = this.orders.filter(order => order.status === 'CANCELLED').length;
-    
+    this.orderStats.pendingOrders = this.orders.filter((order) => order.status === 'PENDING').length;
+    this.orderStats.paidOrders = this.orders.filter((order) => order.status === 'PAID').length;
+    this.orderStats.shippedOrders = this.orders.filter((order) => order.status === 'SHIPPED').length;
+    this.orderStats.deliveredOrders = this.orders.filter((order) => order.status === 'DELIVERED').length;
+    this.orderStats.cancelledOrders = this.orders.filter((order) => order.status === 'CANCELLED').length;
+
     // Calculate revenue
     this.orderStats.totalRevenue = this.orders
-      .filter(order => order.status === 'DELIVERED')
+      .filter((order) => order.status === 'DELIVERED')
       .reduce((total, order) => total + (order.totalAmount || 0), 0);
-    
-    this.orderStats.averageOrderValue = this.orderStats.totalOrders > 0 
-      ? this.orderStats.totalRevenue / this.orderStats.totalOrders 
-      : 0;
+
+    this.orderStats.averageOrderValue =
+      this.orderStats.totalOrders > 0 ? this.orderStats.totalRevenue / this.orderStats.totalOrders : 0;
   }
 
   applyFilters(): void {
@@ -144,44 +139,41 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
 
     // Apply status filter
     if (this.filters.status) {
-      filteredOrders = filteredOrders.filter(order => order.status === this.filters.status);
+      filteredOrders = filteredOrders.filter((order) => order.status === this.filters.status);
     }
 
     // Apply payment status filter (backend field is paymentStatus)
     if (this.filters.paymentStatus) {
-      filteredOrders = filteredOrders.filter(order =>
-        order.paymentInfo?.paymentStatus === this.filters.paymentStatus
+      filteredOrders = filteredOrders.filter(
+        (order) => order.paymentInfo?.paymentStatus === this.filters.paymentStatus,
       );
     }
 
     // Apply search filter
     if (this.filters.search) {
       const searchTerm = this.filters.search.toLowerCase();
-      filteredOrders = filteredOrders.filter(order =>
-        order.id.toLowerCase().includes(searchTerm) ||
-        order.customerEmail?.toLowerCase().includes(searchTerm) ||
-        order.customerName?.toLowerCase().includes(searchTerm)
+      filteredOrders = filteredOrders.filter(
+        (order) =>
+          order.id.toLowerCase().includes(searchTerm) ||
+          order.customerEmail?.toLowerCase().includes(searchTerm) ||
+          order.customerName?.toLowerCase().includes(searchTerm),
       );
     }
 
     // Apply date filters
     if (this.filters.dateFrom) {
-      filteredOrders = filteredOrders.filter(order =>
-        new Date(order.createdAt) >= new Date(this.filters.dateFrom)
-      );
+      filteredOrders = filteredOrders.filter((order) => new Date(order.createdAt) >= new Date(this.filters.dateFrom));
     }
 
     if (this.filters.dateTo) {
-      filteredOrders = filteredOrders.filter(order =>
-        new Date(order.createdAt) <= new Date(this.filters.dateTo)
-      );
+      filteredOrders = filteredOrders.filter((order) => new Date(order.createdAt) <= new Date(this.filters.dateTo));
     }
 
     // Apply sorting
     filteredOrders.sort((a, b) => {
       const aValue = this.getSortValue(a, this.filters.sortBy);
       const bValue = this.getSortValue(b, this.filters.sortBy);
-      
+
       if (this.filters.sortOrder === 'asc') {
         return aValue > bValue ? 1 : -1;
       } else {
@@ -196,11 +188,16 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
 
   private getSortValue(order: Order, sortBy: string): any {
     switch (sortBy) {
-      case 'createdAt': return new Date(order.createdAt).getTime();
-      case 'totalAmount': return order.totalAmount || 0;
-      case 'status': return order.status;
-      case 'customerName': return order.customerName || '';
-      default: return order.createdAt;
+      case 'createdAt':
+        return new Date(order.createdAt).getTime();
+      case 'totalAmount':
+        return order.totalAmount || 0;
+      case 'status':
+        return order.status;
+      case 'customerName':
+        return order.customerName || '';
+      default:
+        return order.createdAt;
     }
   }
 
@@ -237,7 +234,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
       this.selectedOrders.clear();
     } else {
       this.selectedOrders.clear();
-      this.orders.forEach(order => this.selectedOrders.add(order.id));
+      this.orders.forEach((order) => this.selectedOrders.add(order.id));
     }
     this.showBulkActions = this.selectedOrders.size > 0;
   }
@@ -269,40 +266,40 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
         updateMethod = this.marketplaceService.adminCancelOrder(this.selectedOrder.id);
         break;
       default:
-        console.error('Unknown status update:', this.newStatus);
+        logger.error('Unknown status update:', this.newStatus);
         return;
     }
 
-    updateMethod.pipe(takeUntil(this.destroy$)).subscribe({
+    updateMethod.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (response) => {
-        console.log('Order status updated:', response);
+        logger.debug('Order status updated:', response);
         this.loadOrders();
         this.loadOrderStats();
         this.showStatusModal = false;
         this.selectedOrder = null;
       },
       error: (error) => {
-        console.error('Error updating order status:', error);
-      }
+        logger.error('Error updating order status:', error);
+      },
     });
   }
 
   bulkAction(action: string): void {
     const orderIds = Array.from(this.selectedOrders);
-    
+
     switch (action) {
       case 'mark_shipped':
         // Implement bulk mark as shipped
-        console.log('Bulk mark as shipped:', orderIds);
+        logger.debug('Bulk mark as shipped:', orderIds);
         break;
       case 'cancel':
         // Implement bulk cancel
-        console.log('Bulk cancel:', orderIds);
+        logger.debug('Bulk cancel:', orderIds);
         break;
       default:
-        console.log('Unknown bulk action:', action);
+        logger.debug('Unknown bulk action:', action);
     }
-    
+
     // Clear selection after action
     this.selectedOrders.clear();
     this.showBulkActions = false;
@@ -310,31 +307,46 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
 
   exportOrders(): void {
     // Implement order export functionality
-    console.log('Export orders');
+    logger.debug('Export orders');
   }
 
   getStatusBadgeClass(status: string): string {
     switch (status) {
-      case 'PENDING': return 'badge-warning';
-      case 'PAID': return 'badge-info';
-      case 'CONFIRMED': return 'badge-primary';
-      case 'PROCESSING': return 'badge-secondary';
-      case 'FULFILLED': return 'badge-success';
-      case 'SHIPPED': return 'badge-info';
-      case 'DELIVERED': return 'badge-success';
-      case 'CANCELLED': return 'badge-danger';
-      case 'REFUNDED': return 'badge-secondary';
-      default: return 'badge-secondary';
+      case 'PENDING':
+        return 'badge-warning';
+      case 'PAID':
+        return 'badge-info';
+      case 'CONFIRMED':
+        return 'badge-primary';
+      case 'PROCESSING':
+        return 'badge-secondary';
+      case 'FULFILLED':
+        return 'badge-success';
+      case 'SHIPPED':
+        return 'badge-info';
+      case 'DELIVERED':
+        return 'badge-success';
+      case 'CANCELLED':
+        return 'badge-danger';
+      case 'REFUNDED':
+        return 'badge-secondary';
+      default:
+        return 'badge-secondary';
     }
   }
 
   getPaymentStatusBadgeClass(status: string): string {
     switch (status) {
-      case 'PENDING': return 'badge-warning';
-      case 'COMPLETED': return 'badge-success';
-      case 'FAILED': return 'badge-danger';
-      case 'REFUNDED': return 'badge-secondary';
-      default: return 'badge-secondary';
+      case 'PENDING':
+        return 'badge-warning';
+      case 'COMPLETED':
+        return 'badge-success';
+      case 'FAILED':
+        return 'badge-danger';
+      case 'REFUNDED':
+        return 'badge-secondary';
+      default:
+        return 'badge-secondary';
     }
   }
 
@@ -344,14 +356,14 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'USD',
     }).format(amount);
   }
 
@@ -363,7 +375,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
 
   getOrderItemsSummary(order: Order): string {
     if (!order.items || order.items.length === 0) return 'No items';
-    
+
     const itemCount = order.items.reduce((total, item) => total + item.quantity, 0);
     return `${itemCount} item${itemCount !== 1 ? 's' : ''}`;
   }

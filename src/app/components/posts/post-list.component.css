@@ -410,7 +410,7 @@
   transform: scale(1.05);
 }
 
-.media-item img[src*="data:image/svg"] {
+.media-item img[src*='data:image/svg'] {
   background-color: #f0f0f0;
   border: 1px solid #e0e0e0;
 }
@@ -595,8 +595,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-state p {
@@ -706,22 +710,22 @@
   .posts-container {
     padding: var(--space-4);
   }
-  
+
   .posts-grid {
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: var(--space-4);
   }
-  
+
   .posts-header {
     flex-direction: column;
     gap: var(--space-4);
     align-items: stretch;
   }
-  
+
   .header-actions {
     align-items: stretch;
   }
-  
+
   .search-box {
     width: 100%;
   }
@@ -737,59 +741,59 @@
     grid-template-columns: 1fr;
     gap: var(--space-4);
   }
-  
+
   .posts-header {
     padding: var(--space-6);
   }
-  
+
   .page-title {
     font-size: var(--text-3xl);
   }
-  
+
   .page-subtitle {
     font-size: var(--text-base);
   }
-  
+
   .filter-tabs {
     flex-wrap: wrap;
     gap: var(--space-1);
   }
-  
+
   .filter-tab {
     padding: var(--space-2) var(--space-4);
     font-size: var(--text-sm);
   }
-  
+
   .filter-options {
     flex-direction: column;
   }
-  
+
   .filter-select {
     min-width: auto;
     width: 100%;
   }
-  
+
   .post-header {
     padding: var(--space-4) var(--space-4) var(--space-3);
   }
-  
+
   .post-content {
     padding: 0 var(--space-4) var(--space-3);
   }
-  
+
   .post-actions {
     padding: var(--space-3) var(--space-4) var(--space-4);
   }
-  
+
   .action-buttons {
     gap: var(--space-2);
   }
-  
+
   .action-btn {
     padding: var(--space-2) var(--space-3);
     font-size: var(--text-xs);
   }
-  
+
   .comments-preview {
     padding: 0 var(--space-4) var(--space-3);
   }
@@ -799,48 +803,48 @@
   .posts-container {
     padding: var(--space-3);
   }
-  
+
   .posts-header {
     padding: var(--space-4);
   }
-  
+
   .page-title {
     font-size: var(--text-2xl);
   }
-  
+
   .filter-tab {
     padding: var(--space-2) var(--space-3);
     font-size: var(--text-xs);
   }
-  
+
   .filter-tab i {
     display: none;
   }
-  
+
   .post-header {
     padding: var(--space-3);
   }
-  
+
   .post-content {
     padding: 0 var(--space-3) var(--space-3);
   }
-  
+
   .post-actions {
     padding: var(--space-3);
   }
-  
+
   .action-buttons {
     justify-content: space-between;
   }
-  
+
   .action-btn span {
     display: none;
   }
-  
+
   .comments-preview {
     padding: 0 var(--space-3) var(--space-3);
   }
-  
+
   .empty-actions {
     flex-direction: column;
     align-items: stretch;

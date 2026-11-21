@@ -21,7 +21,7 @@ describe('TravelBuddyCreateComponent', () => {
     status: 'active',
     expiryDate: '2026-12-15',
     createdAt: '2026-11-20T00:00:00Z',
-    updatedAt: '2026-11-20T00:00:00Z'
+    updatedAt: '2026-11-20T00:00:00Z',
   };
   const successResponse: TravelBuddyResponse = { success: true, data: created };
 
@@ -30,7 +30,7 @@ describe('TravelBuddyCreateComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [TravelBuddyCreateComponent],
-      providers: [provideRouter([]), { provide: TravelBuddyService, useValue: serviceSpy }]
+      providers: [provideRouter([]), { provide: TravelBuddyService, useValue: serviceSpy }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TravelBuddyCreateComponent);
@@ -48,7 +48,7 @@ describe('TravelBuddyCreateComponent', () => {
       minAge: includeOptional ? 22 : null,
       maxAge: includeOptional ? 35 : null,
       preferredGender: includeOptional ? 'female' : '',
-      budgetRange: includeOptional ? ' 1000-2000 BDT ' : ''
+      budgetRange: includeOptional ? ' 1000-2000 BDT ' : '',
     });
   }
 
@@ -71,7 +71,7 @@ describe('TravelBuddyCreateComponent', () => {
       minAge: 22,
       maxAge: 35,
       preferredGender: 'female',
-      budgetRange: '1000-2000 BDT'
+      budgetRange: '1000-2000 BDT',
     });
     expect(navigateSpy).toHaveBeenCalledOnceWith(['/travel-buddies', 'tb-1']);
     expect(component.error).toBeNull();
@@ -88,7 +88,7 @@ describe('TravelBuddyCreateComponent', () => {
       startDate: '2026-12-01',
       endDate: '2026-12-10',
       interests: ['hiking', 'food', 'photography'],
-      expiryDays: 14
+      expiryDays: 14,
     });
   });
 
@@ -115,7 +115,7 @@ describe('TravelBuddyCreateComponent', () => {
 
   it('shows a safe generic error and never displays server details', () => {
     serviceSpy.createTravelBuddy.and.returnValue(
-      throwError(() => ({ status: 500, error: { detail: 'SECRET alice@example.com' } }))
+      throwError(() => ({ status: 500, error: { detail: 'SECRET alice@example.com' } })),
     );
     fillForm();
 
